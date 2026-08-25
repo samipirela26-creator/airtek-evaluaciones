@@ -37,10 +37,11 @@ async function cargarLista(perfil, uid) {
   const cont = document.getElementById("lista");
   try {
     const ref = collection(db, "evaluaciones");
-    // Supervisor: solo las suyas. Coordinador: todas.
+    // Supervisor: solo las suyas (sin orderBy, para no requerir un índice
+    // compuesto en Firestore; ordenamos aquí abajo). Coordinador: todas.
     const q =
       perfil.rol === "supervisor"
-        ? query(ref, where("supervisorUid", "==", uid), orderBy("createdAt", "desc"))
+        ? query(ref, where("supervisorUid", "==", uid))
         : query(ref, orderBy("createdAt", "desc"));
 
     const snap = await getDocs(q);
@@ -49,9 +50,14 @@ async function cargarLista(perfil, uid) {
       return;
     }
 
+    // Pasamos a un arreglo y, para el supervisor, ordenamos por fecha (recientes primero).
+    const items = snap.docs.map((d) => d.data());
+    if (perfil.rol === "supervisor") {
+      items.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+    }
+
     let html = "";
-    snap.forEach((d) => {
-      const e = d.data();
+    items.forEach((e) => {
       const fecha = e.createdAt?.toDate
         ? e.createdAt.toDate().toLocaleString("es-VE")
         : "";
