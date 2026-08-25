@@ -125,6 +125,15 @@ export const PLANTILLA_DEFAULT = {
   },
 };
 
+// Devuelve las columnas de calificación de una sección.
+// Soporta el formato nuevo (sec.opciones: [{label, valor}]) y el viejo
+// (sec.escala: "calidad" que apunta a ESCALAS), para no romper lo ya guardado.
+export function opcionesDeSeccion(sec) {
+  if (Array.isArray(sec.opciones) && sec.opciones.length) return sec.opciones;
+  if (sec.escala && ESCALAS[sec.escala]) return ESCALAS[sec.escala];
+  return ESCALAS.calidad;
+}
+
 // Lee la plantilla vigente desde Firebase (documento plantillas/activa).
 // Si el coordinador aún no ha guardado ninguna, usa PLANTILLA_DEFAULT.
 export async function cargarPlantillaActiva(db) {

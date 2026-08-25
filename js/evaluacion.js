@@ -1,7 +1,7 @@
 // evaluacion.js — renderiza la plantilla, recoge respuestas, calcula puntajes y guarda.
 import { db } from "./firebase.js";
 import { protegerPagina } from "./session.js";
-import { cargarPlantillaActiva, ESCALAS } from "./plantilla.js";
+import { cargarPlantillaActiva, opcionesDeSeccion } from "./plantilla.js";
 import {
   collection,
   addDoc,
@@ -62,7 +62,7 @@ function campoDato(c) {
 }
 
 function seccionHTML(sec) {
-  const escala = ESCALAS[sec.escala];
+  const escala = opcionesDeSeccion(sec);
   const cabeceras = escala.map((op) => `<th>${op.label}</th>`).join("");
   const filas = sec.preguntas
     .map((preg, i) => {
@@ -137,7 +137,7 @@ function calcularPuntajes(respuestas) {
   const porSeccion = {};
   const todos = [];
   for (const sec of P.secciones) {
-    const escala = ESCALAS[sec.escala];
+    const escala = opcionesDeSeccion(sec);
     const valores = [];
     sec.preguntas.forEach((_, i) => {
       const elegido = respuestas[sec.id][i];
