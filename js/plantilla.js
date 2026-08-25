@@ -1,7 +1,12 @@
 // plantilla.js
 // El formulario NO está fijo en el HTML: se describe aquí como datos.
-// Hoy usamos esta plantilla por defecto. Mañana el coordinador podrá
-// guardar/editar su propia versión en Firebase y esto se leerá de ahí.
+// PLANTILLA_DEFAULT es el punto de partida. El coordinador puede guardar su
+// propia versión en Firebase (plantillas/activa) y la app la lee de ahí.
+
+import {
+  doc,
+  getDoc,
+} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
 // Escalas reutilizables. Cada opción tiene una etiqueta y un valor numérico
 // (para poder calcular puntajes). "No Aplica" usa valor null: no cuenta.
@@ -119,3 +124,15 @@ export const PLANTILLA_DEFAULT = {
       "Conoce el técnico nuestros canales de Atención (Solicitud de Servicio, Métodos de Pago, Tlf de Atención, Horarios y Ubicación nuestras Sedes)",
   },
 };
+
+// Lee la plantilla vigente desde Firebase (documento plantillas/activa).
+// Si el coordinador aún no ha guardado ninguna, usa PLANTILLA_DEFAULT.
+export async function cargarPlantillaActiva(db) {
+  try {
+    const snap = await getDoc(doc(db, "plantillas", "activa"));
+    if (snap.exists()) return snap.data();
+  } catch (err) {
+    console.warn("No se pudo leer la plantilla activa, usando la de por defecto:", err);
+  }
+  return PLANTILLA_DEFAULT;
+}

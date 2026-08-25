@@ -17,6 +17,13 @@ service cloud.firestore {
       return request.auth != null && perfil().rol == 'coordinador';
     }
 
+    // Plantilla del formulario: todos los usuarios autenticados la leen
+    // (supervisores para evaluar); solo el coordinador la edita.
+    match /plantillas/{id} {
+      allow read: if request.auth != null;
+      allow write: if esCoordinador();
+    }
+
     match /evaluaciones/{id} {
       // Crear: solo un usuario autenticado, y solo a su propio nombre
       // (no puede firmar una evaluación como si fuera otro supervisor).

@@ -1,22 +1,23 @@
 // evaluacion.js — renderiza la plantilla, recoge respuestas, calcula puntajes y guarda.
 import { db } from "./firebase.js";
 import { protegerPagina } from "./session.js";
-import { PLANTILLA_DEFAULT, ESCALAS } from "./plantilla.js";
+import { cargarPlantillaActiva, ESCALAS } from "./plantilla.js";
 import {
   collection,
   addDoc,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-// La plantilla que se usa hoy. (Más adelante se leerá de Firebase.)
-const P = PLANTILLA_DEFAULT;
+// La plantilla vigente se carga desde Firebase al abrir la página.
+let P = null;
 
 let sesion = null; // { user, perfil }
 const firmas = {}; // guarda los controladores de cada canvas
 
 // Solo supervisores evalúan.
-protegerPagina("supervisor", (s) => {
+protegerPagina("supervisor", async (s) => {
   sesion = s;
+  P = await cargarPlantillaActiva(db);
   render();
 });
 

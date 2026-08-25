@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Editor de formulario · Airtek</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="topbar">
+    <div class="marca">AIRTEK · Editor de formulario</div>
+    <div><a class="btn link" href="panel.html">← Volver</a></div>
+  </div>
+
+  <div class="contenedor">
+    <div class="card">
+      <h1>Editor del formulario de evaluación</h1>
+      <p>Modifica las preguntas, secciones y escalas. Al publicar, todos los
+      supervisores usarán esta versión en sus próximas evaluaciones.</p>
+      <div id="mensaje"></div>
+    </div>
+
+    <!-- El JS inserta aquí el editor -->
+    <div id="editor">Cargando…</div>
+
+    <div class="card">
+      <button class="btn" id="btn-publicar">Guardar y publicar</button>
+      <button class="btn secundario" id="btn-restaurar" style="margin-left:8px">Restaurar formulario original</button>
+    </div>
+  </div>
+
+  <script type="module" src="js/editor.js"></script>
+</body>
+</html>

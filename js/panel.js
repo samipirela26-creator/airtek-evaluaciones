@@ -25,7 +25,8 @@ protegerPagina(null, async ({ user, perfil }) => {
   } else {
     acciones.innerHTML = `
       <h2>Hola, ${perfil.nombre} (Coordinador)</h2>
-      <p>Aquí ves todas las evaluaciones que hacen tus supervisores.</p>`;
+      <p>Aquí ves todas las evaluaciones que hacen tus supervisores.</p>
+      <a class="btn" href="editor.html">✎ Editar formulario de evaluación</a>`;
     document.getElementById("titulo-lista").textContent = "Todas las evaluaciones";
   }
 
