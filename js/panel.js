@@ -71,6 +71,23 @@ async function enviarReset(correo, nombre) {
   }
 }
 
+// Elimina a un usuario del sistema (borra su perfil → pierde acceso y desaparece).
+async function eliminarUsuario(uid, nombre, recargar) {
+  if (!confirm(
+    `¿Eliminar a ${nombre} del sistema?\n\n` +
+    `Perderá el acceso y desaparecerá de la lista. NO borra a sus subordinados, ` +
+    `y su correo queda reservado hasta purgar la cuenta en el servidor.`
+  )) return;
+  try {
+    await deleteDoc(doc(db, "usuarios", uid));
+    logAudit("usuario_eliminado", { objetivoUid: uid, nombre });
+    toast("Usuario eliminado del sistema");
+    recargar();
+  } catch (err) {
+    toast("No se pudo eliminar: " + err.message, { ms: 5000 });
+  }
+}
+
 document.getElementById("btn-salir").addEventListener("click", cerrarSesion);
 
 let sesion = null;
@@ -277,6 +294,7 @@ async function eliminarTecnico(id) {
 // ───────── Vista del root: sus coordinadores ─────────
 async function cargarCoordinadores() {
   const cont = document.getElementById("lista");
+  document.getElementById("acciones").style.display = "";
   document.getElementById("titulo-lista").textContent = "Coordinadores";
   cont.innerHTML = "Cargando…";
   try {
@@ -317,6 +335,7 @@ async function cargarCoordinadores() {
 
 async function mostrarCoordinador(uid, nombre) {
   const cont = document.getElementById("lista");
+  document.getElementById("acciones").style.display = "none";
   document.getElementById("titulo-lista").textContent = `Coordinador: ${nombre}`;
   cont.innerHTML = "Cargando…";
   try {
@@ -336,6 +355,7 @@ async function mostrarCoordinador(uid, nombre) {
       <button class="btn secundario" id="btn-volver-coords">← Volver</button>
       ${htmlBotonEstado(activo, "coordinador")}
       <button class="btn secundario" id="btn-reset-coord">🔑 Restablecer contraseña</button>
+      <button class="btn secundario" id="btn-eliminar-coord" style="color:#c0392b;border-color:#c0392b">🗑 Eliminar</button>
     </div>`;
     html += `<h3 style="margin-top:16px">Supervisores (${sups.length})</h3>`;
     html += sups.length
@@ -356,8 +376,9 @@ async function mostrarCoordinador(uid, nombre) {
     document.getElementById("btn-volver-coords").addEventListener("click", cargarCoordinadores);
     wireBotonEstado(uid, nombre, activo, "Coordinador", () => mostrarCoordinador(uid, nombre));
     document.getElementById("btn-reset-coord").addEventListener("click", () => enviarReset(perfilC.correo, nombre));
+    document.getElementById("btn-eliminar-coord").addEventListener("click", () => eliminarUsuario(uid, nombre, cargarCoordinadores));
     cont.querySelectorAll("[data-sup]").forEach((el) =>
-      el.addEventListener("click", () => mostrarSupervisor(el.dataset.sup, el.dataset.nombre))
+      el.addEventListener("click", () => mostrarSupervisor(el.dataset.sup, el.dataset.nombre, () => mostrarCoordinador(uid, nombre)))
     );
   } catch (err) {
     console.error(err);
@@ -479,6 +500,7 @@ async function cargarInvitaciones() {
 // ───────── Vista del coordinador: sus supervisores ─────────
 async function cargarSupervisores() {
   const cont = document.getElementById("lista");
+  document.getElementById("acciones").style.display = "";
   document.getElementById("titulo-lista").textContent = "Mis supervisores";
   cont.innerHTML = "Cargando…";
   try {
@@ -521,8 +543,10 @@ async function cargarSupervisores() {
   }
 }
 
-async function mostrarSupervisor(uid, nombre) {
+async function mostrarSupervisor(uid, nombre, volverFn) {
+  const volver = volverFn || cargarSupervisores;
   const cont = document.getElementById("lista");
+  document.getElementById("acciones").style.display = "none"; // ocultar saludo/acciones al entrar
   document.getElementById("titulo-lista").textContent = `Supervisor: ${nombre}`;
   cont.innerHTML = "Cargando…";
   try {
@@ -549,6 +573,7 @@ async function mostrarSupervisor(uid, nombre) {
       <button class="btn secundario" id="btn-volver-sups">← Volver</button>
       ${htmlBotonEstado(activo, "supervisor")}
       <button class="btn secundario" id="btn-reset">🔑 Restablecer contraseña</button>
+      <button class="btn secundario" id="btn-eliminar-sup" style="color:#c0392b;border-color:#c0392b">🗑 Eliminar</button>
     </div>`;
 
     html += `<h3 style="margin-top:16px">Técnicos (${tecnicos.length})</h3>`;
@@ -615,11 +640,12 @@ async function mostrarSupervisor(uid, nombre) {
     }
 
     cont.innerHTML = html;
-    document.getElementById("btn-volver-sups").addEventListener("click", cargarSupervisores);
+    document.getElementById("btn-volver-sups").addEventListener("click", volver);
     const btnLink = document.getElementById("btn-link-sup");
     if (btnLink) btnLink.addEventListener("click", () => generarLinkSupervisor(uid, nombre));
-    wireBotonEstado(uid, nombre, activo, "Supervisor", () => mostrarSupervisor(uid, nombre));
+    wireBotonEstado(uid, nombre, activo, "Supervisor", () => mostrarSupervisor(uid, nombre, volverFn));
     document.getElementById("btn-reset").addEventListener("click", () => enviarReset(perfilSup.correo, nombre));
+    document.getElementById("btn-eliminar-sup").addEventListener("click", () => eliminarUsuario(uid, nombre, volver));
     cont.querySelectorAll("[data-id]").forEach((el) =>
       el.addEventListener("click", () => (window.location.href = `detalle.html?id=${el.dataset.id}`))
     );

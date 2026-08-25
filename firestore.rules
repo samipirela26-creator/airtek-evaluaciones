@@ -45,7 +45,9 @@ service cloud.firestore {
       allow update: if request.auth != null
                     && (request.auth.uid == uid || esCoordinador() || esRoot())
                     && request.resource.data.rol == resource.data.rol;
-      allow delete: if false;
+      // Eliminar perfil: el root a cualquiera; el coordinador a sus supervisores.
+      allow delete: if esRoot()
+                    || (esCoordinador() && resource.data.coordinadorUid == request.auth.uid);
     }
 
     // Plantilla del formulario: todos los usuarios autenticados la leen
