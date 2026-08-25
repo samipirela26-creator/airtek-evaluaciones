@@ -8,9 +8,11 @@
 // Estas claves son públicas por diseño (van en el navegador). La seguridad real
 // se hace con las Reglas de Firestore (ver README.md), no ocultando estas claves.
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
 import {
   getAuth,
+  createUserWithEmailAndPassword,
+  signOut,
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 import {
   getFirestore,
@@ -31,6 +33,21 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// Crea una cuenta de acceso (correo+contraseña) SIN cerrar la sesión actual,
+// usando una app de Firebase secundaria y temporal. Devuelve el uid nuevo.
+export async function crearCuentaAux(correo, password) {
+  const sec = initializeApp(firebaseConfig, "aux-" + Math.random().toString(36).slice(2));
+  const secAuth = getAuth(sec);
+  try {
+    const cred = await createUserWithEmailAndPassword(secAuth, correo, password);
+    const uid = cred.user.uid;
+    await signOut(secAuth).catch(() => {});
+    return uid;
+  } finally {
+    await deleteApp(sec).catch(() => {});
+  }
+}
 
 // Registro de auditoría (best-effort: nunca rompe la acción principal).
 export async function logAudit(accion, detalle = {}) {

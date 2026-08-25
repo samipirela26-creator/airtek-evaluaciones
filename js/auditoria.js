@@ -26,6 +26,7 @@ const ACCIONES = {
   link_evaluacion_creado: "Link de evaluación creado",
   reset_contrasena_enviado: "Restablecimiento de contraseña enviado",
   usuario_eliminado: "Usuario eliminado",
+  usuario_creado_directo: "Usuario creado directamente",
 };
 
 protegerPagina("root", async () => {

@@ -35,12 +35,18 @@ service cloud.firestore {
       // Un invitado crea su propio perfil (coordinador o supervisor) solo si
       // presenta una invitación existente, sin usar y con ese mismo rol.
       // El primer root se crea desde la consola (que ignora estas reglas).
-      allow create: if request.auth != null
-                    && request.auth.uid == uid
-                    && (request.resource.data.rol == 'supervisor' || request.resource.data.rol == 'coordinador')
-                    && exists(/databases/$(database)/documents/invitaciones/$(request.resource.data.inviteToken))
-                    && invit(request.resource.data.inviteToken).usadoPor == request.auth.uid
-                    && invit(request.resource.data.inviteToken).rol == request.resource.data.rol;
+      allow create: if
+        // 1) Auto-registro por invitación (link)
+        (request.auth != null && request.auth.uid == uid
+          && (request.resource.data.rol == 'supervisor' || request.resource.data.rol == 'coordinador')
+          && exists(/databases/$(database)/documents/invitaciones/$(request.resource.data.inviteToken))
+          && invit(request.resource.data.inviteToken).usadoPor == request.auth.uid
+          && invit(request.resource.data.inviteToken).rol == request.resource.data.rol)
+        // 2) El root crea un coordinador directamente
+        || (esRoot() && request.resource.data.rol == 'coordinador')
+        // 3) El coordinador crea un supervisor directamente (ligado a él)
+        || (esCoordinador() && activo() && request.resource.data.rol == 'supervisor'
+            && request.resource.data.coordinadorUid == request.auth.uid);
       // Actualizar nombre: el dueño, su coordinador o el root. El rol NO cambia.
       allow update: if request.auth != null
                     && (request.auth.uid == uid || esCoordinador() || esRoot())

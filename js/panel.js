@@ -1,7 +1,7 @@
 // panel.js — panel según el rol.
 //  - Supervisor: gestiona sus técnicos (avatar cards) y hace clic para evaluar; ve sus planillas.
 //  - Coordinador: edita el formulario y ve todas las planillas.
-import { db, auth, toast, logAudit } from "./firebase.js";
+import { db, auth, toast, logAudit, crearCuentaAux } from "./firebase.js";
 import { protegerPagina, cerrarSesion } from "./session.js";
 import { cargarPlantillasDeCoordinador, opcionesDeSeccion } from "./plantilla.js";
 import { sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
@@ -13,6 +13,7 @@ import {
   getDocs,
   getDoc,
   addDoc,
+  setDoc,
   deleteDoc,
   updateDoc,
   doc,
@@ -119,15 +120,18 @@ protegerPagina(null, async ({ user, perfil }) => {
       <h2>Hola, ${esc(perfil.nombre)} (Administrador)</h2>
       <p>Crea y administra a los coordinadores de Airtek.</p>
       <div class="btn-row">
-        <button class="btn" id="btn-invitar-coord">🎟️ Invitar coordinador</button>
+        <button class="btn" id="btn-crear-coord">➕ Crear coordinador</button>
+        <button class="btn secundario" id="btn-invitar-coord">🎟️ Invitar por link</button>
         <a class="btn secundario" href="auditoria.html">📜 Auditoría</a>
         <button class="btn secundario" id="btn-respaldo">⬇️ Respaldo</button>
         <a class="btn secundario" href="perfil.html">⚙️ Mi cuenta</a>
       </div>
+      <div id="crear-box"></div>
       <div id="invite-box"></div>
       <div id="invites-list"></div>`;
     document.getElementById("titulo-lista").textContent = "Coordinadores";
 
+    document.getElementById("btn-crear-coord").addEventListener("click", () => crearUsuarioDirecto("coordinador"));
     document.getElementById("btn-invitar-coord")
       .addEventListener("click", (e) => generarInvitacion("coordinador", e.currentTarget));
     document.getElementById("btn-respaldo").addEventListener("click", descargarRespaldo);
@@ -140,13 +144,16 @@ protegerPagina(null, async ({ user, perfil }) => {
       <div class="btn-row">
         <a class="btn" href="dashboard.html">📊 Tablero de eficiencia</a>
         <a class="btn" href="editor.html">✎ Editar formulario</a>
-        <button class="btn secundario" id="btn-invitar">🎟️ Invitar supervisor</button>
+        <button class="btn" id="btn-crear-sup">➕ Crear supervisor</button>
+        <button class="btn secundario" id="btn-invitar">🎟️ Invitar por link</button>
         <a class="btn secundario" href="perfil.html">⚙️ Mi cuenta</a>
       </div>
+      <div id="crear-box"></div>
       <div id="invite-box"></div>
       <div id="invites-list"></div>`;
     document.getElementById("titulo-lista").textContent = "Mis supervisores";
 
+    document.getElementById("btn-crear-sup").addEventListener("click", () => crearUsuarioDirecto("supervisor"));
     document.getElementById("btn-invitar")
       .addEventListener("click", (e) => generarInvitacion("supervisor", e.currentTarget));
     cargarSupervisores();
@@ -722,6 +729,53 @@ async function generarLinkSupervisor(supUid, supNombre) {
   } catch (err) {
     box.innerHTML = `<div class="msg error">No se pudo: ${err.message}</div>`;
   }
+}
+
+// ───────── Crear usuario directamente (root→coordinador, coordinador→supervisor) ─────────
+function crearUsuarioDirecto(rol) {
+  const box = document.getElementById("crear-box");
+  const quien = rol === "coordinador" ? "coordinador" : "supervisor";
+  box.innerHTML = `
+    <div class="card">
+      <h3 style="margin-top:0">Crear ${quien}</h3>
+      <div class="campo"><label>Nombre y apellido</label><input type="text" id="c-nombre"></div>
+      <div class="campo"><label>Correo</label><input type="email" id="c-correo"></div>
+      <div class="campo"><label>Contraseña (mínimo 6)</label><input type="text" id="c-pass" placeholder="La verás para entregársela"></div>
+      <button class="btn" id="c-guardar">Crear cuenta</button>
+      <div id="c-msg"></div>
+    </div>`;
+  document.getElementById("c-guardar").addEventListener("click", async () => {
+    const nombre = document.getElementById("c-nombre").value.trim();
+    const correo = document.getElementById("c-correo").value.trim();
+    const pass = document.getElementById("c-pass").value;
+    const msg = document.getElementById("c-msg");
+    msg.innerHTML = "";
+    if (!nombre) return (msg.innerHTML = `<div class="msg error">Falta el nombre.</div>`);
+    if (pass.length < 6) return (msg.innerHTML = `<div class="msg error">La contraseña debe tener al menos 6 caracteres.</div>`);
+    const btn = document.getElementById("c-guardar");
+    btn.disabled = true;
+    btn.textContent = "Creando…";
+    try {
+      const uid = await crearCuentaAux(correo, pass);
+      const perfilDoc = { nombre, correo, rol, activo: true, createdAt: serverTimestamp() };
+      if (rol === "coordinador") perfilDoc.rootUid = sesion.user.uid;
+      else perfilDoc.coordinadorUid = sesion.user.uid;
+      await setDoc(doc(db, "usuarios", uid), perfilDoc);
+      logAudit("usuario_creado_directo", { rol, correo });
+      toast(`${quien} creado ✓`);
+      box.innerHTML = `<div class="card"><div class="msg ok">✔ ${quien} creado. Entrégale estos datos:<br>
+        <strong>Correo:</strong> ${esc(correo)}<br><strong>Contraseña:</strong> ${esc(pass)}</div></div>`;
+      if (rol === "coordinador") cargarCoordinadores(); else cargarSupervisores();
+    } catch (err) {
+      let t = err.message;
+      if (err.code === "auth/email-already-in-use") t = "Ese correo ya tiene una cuenta.";
+      else if (err.code === "auth/invalid-email") t = "Correo inválido.";
+      else if (err.code === "auth/weak-password") t = "Contraseña muy débil.";
+      msg.innerHTML = `<div class="msg error">${t}</div>`;
+      btn.disabled = false;
+      btn.textContent = "Crear cuenta";
+    }
+  });
 }
 
 // ───────── Respaldo descargable (root) ─────────
