@@ -37,6 +37,14 @@ async function verLista() {
   const forms = await cargarPlantillasDeCoordinador(db, sesion.user.uid);
 
   let html = `<div class="card"><button class="btn" id="btn-nuevo">+ Crear formulario</button></div>`;
+  // Formulario oficial de Airtek (precargado para todos, disponible a los supervisores).
+  html += `<div class="card"><div class="srow" style="cursor:default">
+      <div class="srow-main">
+        <span class="srow-name">${escapar(PLANTILLA_DEFAULT.nombre)}</span>
+        <span class="srow-sub">Oficial de Airtek · ya disponible para tus supervisores</span>
+      </div>
+      <button class="btn secundario" id="btn-duplicar-oficial">Duplicar para editar</button>
+    </div></div>`;
   if (!forms.length) {
     html += `<div class="card lista-vacia">Aún no tienes formularios. Crea el primero (parte de la plantilla oficial de Airtek y edítala a tu gusto).</div>`;
   } else {
@@ -58,7 +66,16 @@ async function verLista() {
   document.getElementById("btn-nuevo").addEventListener("click", () => {
     P = clonar(PLANTILLA_DEFAULT);
     P.id = null;
+    P.oficial = false;
     P.nombre = "Nuevo formulario";
+    normalizarColumnas(P);
+    verEditor();
+  });
+  document.getElementById("btn-duplicar-oficial").addEventListener("click", () => {
+    P = clonar(PLANTILLA_DEFAULT);
+    P.id = null;
+    P.oficial = false;
+    P.nombre = "Copia de " + PLANTILLA_DEFAULT.nombre;
     normalizarColumnas(P);
     verEditor();
   });

@@ -38,7 +38,9 @@ export const ESCALAS = {
 
 export const PLANTILLA_DEFAULT = {
   id: "default",
-  nombre: "Evaluación de Desempeño Técnico - Airtek",
+  nombre: "Evaluación de Aspectos Generales (Inspección Técnica en Campo)",
+  tipo: "tecnico",
+  oficial: true, // viene precargada para todos los coordinadores
   version: 1,
 
   // 1) Datos generales del encabezado

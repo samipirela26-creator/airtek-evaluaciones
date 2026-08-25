@@ -27,9 +27,10 @@ let evalCargada = null; // datos de la evaluación que se está editando
 protegerPagina("supervisor", async (s) => {
   sesion = s;
   const forms = await cargarPlantillasDeCoordinador(db, sesion.perfil.coordinadorUid);
-  // Los supervisores solo ven formularios para evaluar TÉCNICOS (no los privados).
-  plantillasDisponibles = forms.filter((f) => (f.tipo || "tecnico") === "tecnico");
-  if (!plantillasDisponibles.length) plantillasDisponibles = [PLANTILLA_DEFAULT];
+  // Solo formularios para evaluar TÉCNICOS (no los privados de supervisores).
+  const propios = forms.filter((f) => (f.tipo || "tecnico") === "tecnico");
+  // El formulario OFICIAL de Airtek siempre está disponible, más los del coordinador.
+  plantillasDisponibles = [...propios, PLANTILLA_DEFAULT];
   P = plantillasDisponibles[0];
 
   const params = new URLSearchParams(location.search);
