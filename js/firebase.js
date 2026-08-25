@@ -14,6 +14,9 @@ import {
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 import {
   getFirestore,
+  collection,
+  addDoc,
+  serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -28,6 +31,20 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// Registro de auditoría (best-effort: nunca rompe la acción principal).
+export async function logAudit(accion, detalle = {}) {
+  try {
+    await addDoc(collection(db, "auditoria"), {
+      accion,
+      detalle,
+      uid: auth.currentUser ? auth.currentUser.uid : null,
+      en: serverTimestamp(),
+    });
+  } catch (e) {
+    /* si falla, no pasa nada */
+  }
+}
 
 // ── PWA: manifiesto + service worker (instalable, offline, siempre lo más nuevo) ──
 // Se inyecta desde aquí porque todas las páginas importan este módulo.
@@ -73,11 +90,28 @@ if (typeof document !== "undefined") {
   }
 }
 
+// Aviso flotante reutilizable. ms=0 lo deja fijo hasta que se toque.
+export function toast(msg, { ms = 3000, tappable = false, onClick } = {}) {
+  const t = document.createElement("div");
+  t.className = "toast-airtek" + (tappable ? " tappable" : "");
+  t.innerHTML = msg;
+  if (onClick) t.addEventListener("click", onClick);
+  document.body.appendChild(t);
+  if (ms) setTimeout(() => t.remove(), ms);
+  return t;
+}
+
 function mostrarToastActualizacion() {
   if (document.querySelector(".toast-airtek")) return; // no duplicar
-  const t = document.createElement("div");
-  t.className = "toast-airtek tappable";
-  t.innerHTML = "🔄 Nueva versión disponible — toca para actualizar";
-  t.addEventListener("click", () => location.reload());
-  document.body.appendChild(t);
+  toast("🔄 Nueva versión disponible — toca para actualizar", {
+    ms: 0,
+    tappable: true,
+    onClick: () => location.reload(),
+  });
+}
+
+// Aviso de conexión: si se cae internet, avisa; si vuelve, confirma.
+if (typeof window !== "undefined") {
+  window.addEventListener("offline", () => toast("📴 Sin conexión — revisa tu internet", { ms: 4000 }));
+  window.addEventListener("online", () => toast("✅ Conexión restablecida", { ms: 2500 }));
 }

@@ -37,6 +37,12 @@ export function protegerPagina(rolRequerido, callback) {
       window.location.href = "index.html";
       return;
     }
+    if (perfil.activo === false) {
+      alert("Tu cuenta fue inhabilitada. Contacta a tu coordinador o administrador.");
+      await signOut(auth);
+      window.location.href = "index.html";
+      return;
+    }
     if (rolRequerido && perfil.rol !== rolRequerido) {
       window.location.href = "panel.html";
       return;

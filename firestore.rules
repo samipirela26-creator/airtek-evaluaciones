@@ -80,5 +80,12 @@ service cloud.firestore {
       // Por ahora las evaluaciones no se editan ni borran desde la app.
       allow update, delete: if false;
     }
+
+    // Auditoría: cualquiera autenticado deja registro; solo el root lo lee.
+    match /auditoria/{id} {
+      allow create: if request.auth != null;
+      allow read: if esRoot();
+      allow update, delete: if false;
+    }
   }
 }

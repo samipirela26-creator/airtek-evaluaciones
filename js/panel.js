@@ -1,7 +1,7 @@
 // panel.js — panel según el rol.
 //  - Supervisor: gestiona sus técnicos (avatar cards) y hace clic para evaluar; ve sus planillas.
 //  - Coordinador: edita el formulario y ve todas las planillas.
-import { db } from "./firebase.js";
+import { db, toast, logAudit } from "./firebase.js";
 import { protegerPagina, cerrarSesion } from "./session.js";
 import {
   collection,
@@ -9,8 +9,10 @@ import {
   where,
   orderBy,
   getDocs,
+  getDoc,
   addDoc,
   deleteDoc,
+  updateDoc,
   doc,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
@@ -22,6 +24,33 @@ function initials(n) {
 }
 function esc(s) {
   return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+// ── Inhabilitar / reactivar usuarios ──
+async function leerActivo(uid) {
+  const s = await getDoc(doc(db, "usuarios", uid));
+  return s.exists() ? s.data().activo !== false : true;
+}
+function htmlBotonEstado(activo, quienLabel) {
+  return activo
+    ? `<button class="btn secundario" id="btn-estado" style="color:#c0392b;border-color:#c0392b">Inhabilitar ${quienLabel}</button>`
+    : `<button class="btn" id="btn-estado">Reactivar ${quienLabel}</button>`;
+}
+function wireBotonEstado(uid, nombre, activo, quienLabel, recargar) {
+  const b = document.getElementById("btn-estado");
+  if (!b) return;
+  b.addEventListener("click", async () => {
+    const accion = activo ? "Inhabilitar" : "Reactivar";
+    if (!confirm(`¿${accion} a ${nombre}? ${activo ? "No podrá iniciar sesión." : ""}`)) return;
+    try {
+      await updateDoc(doc(db, "usuarios", uid), { activo: !activo });
+      logAudit(activo ? "usuario_inhabilitado" : "usuario_reactivado", { objetivoUid: uid, nombre });
+      toast(`${quienLabel} ${activo ? "inhabilitado" : "reactivado"} ✓`);
+      recargar();
+    } catch (err) {
+      toast("No se pudo: " + err.message, { ms: 5000 });
+    }
+  });
 }
 
 document.getElementById("btn-salir").addEventListener("click", cerrarSesion);
@@ -56,6 +85,7 @@ protegerPagina(null, async ({ user, perfil }) => {
       <p>Crea y administra a los coordinadores de Airtek.</p>
       <div class="btn-row">
         <button class="btn" id="btn-invitar-coord">🎟️ Invitar coordinador</button>
+        <button class="btn secundario" id="btn-respaldo">⬇️ Respaldo</button>
         <a class="btn secundario" href="perfil.html">⚙️ Mi cuenta</a>
       </div>
       <div id="invite-box"></div>
@@ -64,6 +94,7 @@ protegerPagina(null, async ({ user, perfil }) => {
 
     document.getElementById("btn-invitar-coord")
       .addEventListener("click", (e) => generarInvitacion("coordinador", e.currentTarget));
+    document.getElementById("btn-respaldo").addEventListener("click", descargarRespaldo);
     cargarCoordinadores();
     cargarInvitaciones();
   } else {
@@ -170,10 +201,11 @@ async function agregarTecnico() {
     );
     input.value = "";
     actualizarHint();
+    toast(`${nombres.length} técnico${nombres.length === 1 ? "" : "s"} agregado${nombres.length === 1 ? "" : "s"} ✓`);
     await cargarTecnicos();
   } catch (err) {
     console.error(err);
-    alert("No se pudieron agregar: " + err.message);
+    toast("No se pudieron agregar: " + err.message, { ms: 5000 });
   } finally {
     input.disabled = false;
     btn.disabled = false;
@@ -185,10 +217,11 @@ async function eliminarTecnico(id) {
   if (!confirm("¿Eliminar este técnico? (sus evaluaciones ya guardadas se conservan)")) return;
   try {
     await deleteDoc(doc(db, "tecnicos", id));
+    toast("Técnico eliminado");
     await cargarTecnicos();
   } catch (err) {
     console.error(err);
-    alert("No se pudo eliminar: " + err.message);
+    toast("No se pudo eliminar: " + err.message, { ms: 5000 });
   }
 }
 
@@ -248,7 +281,11 @@ async function mostrarCoordinador(uid, nombre) {
       .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
     const tecs = tSnap.docs.map((d) => d.data());
     const countTec = (sid) => tecs.filter((t) => t.supervisorUid === sid).length;
-    let html = `<button class="btn secundario" id="btn-volver-coords">← Volver a coordinadores</button>`;
+    const activo = await leerActivo(uid);
+    let html = `<div class="btn-row">
+      <button class="btn secundario" id="btn-volver-coords">← Volver</button>
+      ${htmlBotonEstado(activo, "coordinador")}
+    </div>`;
     html += `<h3 style="margin-top:16px">Supervisores (${sups.length})</h3>`;
     html += sups.length
       ? sups
@@ -266,6 +303,7 @@ async function mostrarCoordinador(uid, nombre) {
       : `<div class="lista-vacia">Sin supervisores.</div>`;
     cont.innerHTML = html;
     document.getElementById("btn-volver-coords").addEventListener("click", cargarCoordinadores);
+    wireBotonEstado(uid, nombre, activo, "Coordinador", () => mostrarCoordinador(uid, nombre));
     cont.querySelectorAll("[data-sup]").forEach((el) =>
       el.addEventListener("click", () => mostrarSupervisor(el.dataset.sup, el.dataset.nombre))
     );
@@ -290,6 +328,7 @@ async function generarInvitacion(rol, btn) {
       expiraEnMs: Date.now() + 7 * 24 * 60 * 60 * 1000, // vence en 7 días
       createdAt: serverTimestamp(),
     });
+    logAudit("invitacion_creada", { rol, invitacionId: ref.id });
     const link = new URL(`registro.html?invite=${ref.id}`, location.href).href;
     box.innerHTML = `
       <div class="msg ok" style="margin-top:12px">
@@ -372,9 +411,11 @@ async function cargarInvitaciones() {
         if (!confirm("¿Revocar esta invitación? El enlace dejará de funcionar.")) return;
         try {
           await deleteDoc(doc(db, "invitaciones", b.dataset.revocar));
+          logAudit("invitacion_revocada", { invitacionId: b.dataset.revocar });
+          toast("Invitación revocada");
           cargarInvitaciones();
         } catch (err) {
-          alert("No se pudo revocar: " + err.message);
+          toast("No se pudo revocar: " + err.message, { ms: 5000 });
         }
       })
     );
@@ -440,7 +481,11 @@ async function mostrarSupervisor(uid, nombre) {
     const tecnicos = tSnap.docs.map((d) => d.data()).sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
     const evals = eSnap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 
-    let html = `<button class="btn secundario" id="btn-volver-sups">← Volver a supervisores</button>`;
+    const activo = await leerActivo(uid);
+    let html = `<div class="btn-row">
+      <button class="btn secundario" id="btn-volver-sups">← Volver</button>
+      ${htmlBotonEstado(activo, "supervisor")}
+    </div>`;
 
     html += `<h3 style="margin-top:16px">Técnicos (${tecnicos.length})</h3>`;
     html += tecnicos.length
@@ -472,12 +517,39 @@ async function mostrarSupervisor(uid, nombre) {
 
     cont.innerHTML = html;
     document.getElementById("btn-volver-sups").addEventListener("click", cargarSupervisores);
+    wireBotonEstado(uid, nombre, activo, "Supervisor", () => mostrarSupervisor(uid, nombre));
     cont.querySelectorAll("[data-id]").forEach((el) =>
       el.addEventListener("click", () => (window.location.href = `detalle.html?id=${el.dataset.id}`))
     );
   } catch (err) {
     console.error(err);
     cont.innerHTML = `<div class="msg error">Error: ${err.message}</div>`;
+  }
+}
+
+// ───────── Respaldo descargable (root) ─────────
+async function descargarRespaldo() {
+  toast("Generando respaldo…");
+  try {
+    const cols = ["usuarios", "tecnicos", "evaluaciones", "invitaciones", "plantillas"];
+    const data = { generadoEn: new Date().toISOString() };
+    for (const c of cols) {
+      const snap = await getDocs(collection(db, c));
+      data[c] = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `airtek-respaldo-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast("Respaldo descargado ✓");
+  } catch (err) {
+    console.error(err);
+    toast("No se pudo el respaldo: " + err.message, { ms: 5000 });
   }
 }
 
