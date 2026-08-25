@@ -11,6 +11,11 @@ service cloud.firestore {
     function esRoot() {
       return request.auth != null && perfil().rol == 'root';
     }
+    // Usuario NO inhabilitado. Si el campo 'activo' no existe, cuenta como activo
+    // (así los usuarios creados antes de esta regla siguen funcionando igual).
+    function activo() {
+      return request.auth != null && perfil().get('activo', true) == true;
+    }
     function invit(token) {
       return get(/databases/$(database)/documents/invitaciones/$(token)).data;
     }
@@ -40,14 +45,15 @@ service cloud.firestore {
     // (supervisores para evaluar); solo el coordinador la edita.
     match /plantillas/{id} {
       allow read: if request.auth != null;
-      allow write: if esCoordinador();
+      allow write: if esCoordinador() && activo();
     }
 
     // Invitaciones: el root invita coordinadores; el coordinador, supervisores.
     match /invitaciones/{token} {
       allow read: if true;                 // se valida antes de tener sesión
-      allow create: if (esRoot() && request.resource.data.rol == 'coordinador')
-                    || (esCoordinador() && request.resource.data.rol == 'supervisor');
+      allow create: if ((esRoot() && request.resource.data.rol == 'coordinador')
+                    || (esCoordinador() && request.resource.data.rol == 'supervisor'))
+                    && activo();
       // Reclamo atómico de un solo uso: solo se puede pasar de sin-usar a
       // usada, y quien la reclama se pone como usadoPor (a prueba de carreras).
       allow update: if request.auth != null
@@ -60,7 +66,8 @@ service cloud.firestore {
     // Técnicos: cada supervisor gestiona los suyos; el coordinador los lee.
     match /tecnicos/{id} {
       allow create: if request.auth != null
-                    && request.resource.data.supervisorUid == request.auth.uid;
+                    && request.resource.data.supervisorUid == request.auth.uid
+                    && activo();
       allow read: if request.auth != null
                   && (resource.data.supervisorUid == request.auth.uid || esCoordinador() || esRoot());
       allow update, delete: if request.auth != null
@@ -71,14 +78,18 @@ service cloud.firestore {
       // Crear: solo un usuario autenticado, y solo a su propio nombre
       // (no puede firmar una evaluación como si fuera otro supervisor).
       allow create: if request.auth != null
-                    && request.resource.data.supervisorUid == request.auth.uid;
+                    && request.resource.data.supervisorUid == request.auth.uid
+                    && activo();
 
       // Leer: el supervisor dueño, el coordinador o el root.
       allow read: if request.auth != null
                   && (resource.data.supervisorUid == request.auth.uid || esCoordinador() || esRoot());
 
-      // Por ahora las evaluaciones no se editan ni borran desde la app.
-      allow update, delete: if false;
+      // No se editan; sí se pueden BORRAR (para corregir una equivocada):
+      // el supervisor dueño, el coordinador o el root.
+      allow update: if false;
+      allow delete: if request.auth != null
+                    && (resource.data.supervisorUid == request.auth.uid || esCoordinador() || esRoot());
     }
 
     // Auditoría: cualquiera autenticado deja registro; solo el root lo lee.

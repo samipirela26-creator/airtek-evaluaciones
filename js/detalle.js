@@ -1,9 +1,10 @@
 // detalle.js — muestra una evaluación completa (solo lectura) y la exporta a PDF.
-import { db } from "./firebase.js";
+import { db, toast, logAudit } from "./firebase.js";
 import { protegerPagina } from "./session.js";
 import {
   doc,
   getDoc,
+  deleteDoc,
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
 function esc(s) {
@@ -28,11 +29,25 @@ protegerPagina(null, async () => {
     E = snap.data();
     render(cont);
     document.getElementById("btn-pdf").addEventListener("click", generarPDF);
+    document.getElementById("btn-eliminar").addEventListener("click", eliminar);
   } catch (err) {
     console.error(err);
     cont.innerHTML = `<div class="msg error">No se pudo cargar: ${err.message}</div>`;
   }
 });
+
+async function eliminar() {
+  if (!confirm("¿Eliminar esta evaluación? No se puede deshacer.")) return;
+  try {
+    await deleteDoc(doc(db, "evaluaciones", id));
+    logAudit("evaluacion_eliminada", { evaluacionId: id, tecnico: E.tecnicoNombre });
+    toast("Evaluación eliminada");
+    setTimeout(() => (window.location.href = "panel.html"), 800);
+  } catch (err) {
+    console.error(err);
+    toast("No se pudo eliminar: " + err.message, { ms: 5000 });
+  }
+}
 
 function fechaLegible() {
   return E.createdAt?.toDate ? E.createdAt.toDate().toLocaleString("es-VE") : E.fechaHora || "";
