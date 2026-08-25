@@ -28,3 +28,24 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// ── PWA: manifiesto + service worker (instalable, offline, siempre lo más nuevo) ──
+// Se inyecta desde aquí porque todas las páginas importan este módulo.
+if (typeof document !== "undefined") {
+  const add = (tag, attrs) => {
+    const sel = Object.entries(attrs).map(([k, v]) => `[${k}="${v}"]`).join("");
+    if (document.querySelector(tag + sel)) return;
+    const el = document.createElement(tag);
+    Object.entries(attrs).forEach(([k, v]) => (el[k] = v));
+    document.head.appendChild(el);
+  };
+  add("link", { rel: "manifest", href: "manifest.json" });
+  add("meta", { name: "theme-color", content: "#0066ff" });
+  add("link", { rel: "apple-touch-icon", href: "icons/apple-touch-icon.png" });
+
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("service-worker.js").catch((e) => console.warn("SW:", e));
+    });
+  }
+}
