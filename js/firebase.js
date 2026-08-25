@@ -50,7 +50,34 @@ if (typeof document !== "undefined") {
 
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("service-worker.js").catch((e) => console.warn("SW:", e));
+      navigator.serviceWorker
+        .register("service-worker.js")
+        .then((reg) => {
+          // Detecta cuando hay una versión NUEVA lista y avisa al usuario
+          // (estilo AsistApp: "toca para actualizar"), sin recargar de golpe.
+          reg.addEventListener("updatefound", () => {
+            const nuevo = reg.installing;
+            if (!nuevo) return;
+            nuevo.addEventListener("statechange", () => {
+              if (nuevo.state === "installed" && navigator.serviceWorker.controller) {
+                mostrarToastActualizacion();
+              }
+            });
+          });
+          // Busca actualizaciones al abrir y cada 60 min si la dejan abierta.
+          reg.update().catch(() => {});
+          setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000);
+        })
+        .catch((e) => console.warn("SW:", e));
     });
   }
+}
+
+function mostrarToastActualizacion() {
+  if (document.querySelector(".toast-airtek")) return; // no duplicar
+  const t = document.createElement("div");
+  t.className = "toast-airtek tappable";
+  t.innerHTML = "🔄 Nueva versión disponible — toca para actualizar";
+  t.addEventListener("click", () => location.reload());
+  document.body.appendChild(t);
 }

@@ -105,6 +105,21 @@ textarea { min-height: 70px; resize: vertical; }
 
 /* Fila de botones de acción: se acomodan y saltan de línea con separación */
 .btn-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+
+/* Aviso flotante (toast), estilo AsistApp */
+.toast-airtek {
+  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+  background: var(--negro); color: #fff; padding: 12px 18px;
+  border-radius: 30px; box-shadow: 0 6px 20px rgba(0, 0, 0, .3);
+  font-size: .9rem; font-weight: 500; z-index: 9999; max-width: 92%;
+  display: flex; align-items: center; gap: 8px; cursor: pointer;
+  animation: toast-in .25s ease;
+}
+.toast-airtek.tappable { border: 1.5px solid var(--azul); }
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
 .btn.secundario { background: #fff; color: var(--azul); border: 1px solid var(--azul); }
 .btn.link { background: none; color: #fff; border: 1px solid rgba(255,255,255,.5); padding: 6px 12px; font-size: .85rem; }
 
