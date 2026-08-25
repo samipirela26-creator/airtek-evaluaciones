@@ -288,8 +288,12 @@ async function generarInvitacion(rol, btn) {
     const link = new URL(`registro.html?invite=${ref.id}`, location.href).href;
     box.innerHTML = `
       <div class="msg ok" style="margin-top:12px">
-        Comparte este enlace con <strong>${quien}</strong> (sirve una sola vez):
+        📎 Enlace para <strong>${quien}</strong>. Cópialo y compártelo.
       </div>
+      <div class="msg" style="background:#fffbeb;color:#92400e">
+        ⚠️ <strong>Un solo uso:</strong> este enlace crea <strong>una sola cuenta</strong>. Cuando ${quien} lo use, deja de funcionar. Para invitar a otra persona, genera un enlace nuevo.
+      </div>`;
+    box.innerHTML += `
       <div class="add-row">
         <input id="invite-link" type="text" readonly value="${esc(link)}">
         <button class="btn" id="btn-copiar">Copiar</button>
