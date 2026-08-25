@@ -8,24 +8,30 @@ service cloud.firestore {
     function esCoordinador() {
       return request.auth != null && perfil().rol == 'coordinador';
     }
+    function esRoot() {
+      return request.auth != null && perfil().rol == 'root';
+    }
+    function invit(token) {
+      return get(/databases/$(database)/documents/invitaciones/$(token)).data;
+    }
 
     // Perfil del usuario (nombre + rol).
     match /usuarios/{uid} {
-      // El usuario lee su propio perfil; el coordinador lee los demás
-      // (para ver a sus supervisores).
-      allow read: if request.auth != null && (request.auth.uid == uid || esCoordinador());
-      // Un supervisor invitado crea su propio perfil (rol supervisor) solo si
-      // presenta una invitación existente y sin usar. Coordinadores se crean
-      // desde la consola (que ignora estas reglas).
+      // Lee su propio perfil; coordinador y root leen los demás.
+      allow read: if request.auth != null
+                  && (request.auth.uid == uid || esCoordinador() || esRoot());
+      // Un invitado crea su propio perfil (coordinador o supervisor) solo si
+      // presenta una invitación existente, sin usar y con ese mismo rol.
+      // El primer root se crea desde la consola (que ignora estas reglas).
       allow create: if request.auth != null
                     && request.auth.uid == uid
-                    && request.resource.data.rol == 'supervisor'
+                    && (request.resource.data.rol == 'supervisor' || request.resource.data.rol == 'coordinador')
                     && exists(/databases/$(database)/documents/invitaciones/$(request.resource.data.inviteToken))
-                    && get(/databases/$(database)/documents/invitaciones/$(request.resource.data.inviteToken)).data.usado == false;
-      // Actualizar: el dueño (su nombre) o el coordinador (nombre de sus
-      // supervisores). El rol NO puede cambiar por esta vía.
+                    && invit(request.resource.data.inviteToken).usado == false
+                    && invit(request.resource.data.inviteToken).rol == request.resource.data.rol;
+      // Actualizar nombre: el dueño, su coordinador o el root. El rol NO cambia.
       allow update: if request.auth != null
-                    && (request.auth.uid == uid || esCoordinador())
+                    && (request.auth.uid == uid || esCoordinador() || esRoot())
                     && request.resource.data.rol == resource.data.rol;
       allow delete: if false;
     }
@@ -37,12 +43,13 @@ service cloud.firestore {
       allow write: if esCoordinador();
     }
 
-    // Invitaciones para registrar supervisores.
+    // Invitaciones: el root invita coordinadores; el coordinador, supervisores.
     match /invitaciones/{token} {
       allow read: if true;                 // se valida antes de tener sesión
-      allow create: if esCoordinador();    // solo el coordinador invita
+      allow create: if (esRoot() && request.resource.data.rol == 'coordinador')
+                    || (esCoordinador() && request.resource.data.rol == 'supervisor');
       allow update: if request.auth != null && request.resource.data.usado == true;
-      allow delete: if esCoordinador();
+      allow delete: if esRoot() || esCoordinador();
     }
 
     // Técnicos: cada supervisor gestiona los suyos; el coordinador los lee.
@@ -50,7 +57,7 @@ service cloud.firestore {
       allow create: if request.auth != null
                     && request.resource.data.supervisorUid == request.auth.uid;
       allow read: if request.auth != null
-                  && (resource.data.supervisorUid == request.auth.uid || esCoordinador());
+                  && (resource.data.supervisorUid == request.auth.uid || esCoordinador() || esRoot());
       allow update, delete: if request.auth != null
                             && resource.data.supervisorUid == request.auth.uid;
     }
@@ -61,9 +68,9 @@ service cloud.firestore {
       allow create: if request.auth != null
                     && request.resource.data.supervisorUid == request.auth.uid;
 
-      // Leer: el supervisor dueño, o el coordinador (que ve todo).
+      // Leer: el supervisor dueño, el coordinador o el root.
       allow read: if request.auth != null
-                  && (resource.data.supervisorUid == request.auth.uid || esCoordinador());
+                  && (resource.data.supervisorUid == request.auth.uid || esCoordinador() || esRoot());
 
       // Por ahora las evaluaciones no se editan ni borran desde la app.
       allow update, delete: if false;

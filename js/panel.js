@@ -50,18 +50,31 @@ protegerPagina(null, async ({ user, perfil }) => {
     document.getElementById("nuevo-tecnico").addEventListener("input", actualizarHint);
     cargarTecnicos();
     cargarLista(perfil, user.uid);
+  } else if (perfil.rol === "root") {
+    document.getElementById("acciones").innerHTML = `
+      <h2>Hola, ${esc(perfil.nombre)} (Administrador)</h2>
+      <p>Crea y administra a los coordinadores de Airtek.</p>
+      <button class="btn" id="btn-invitar-coord">🎟️ Invitar coordinador</button>
+      <a class="btn secundario" href="perfil.html" style="margin-left:8px">⚙️ Mi cuenta</a>
+      <div id="invite-box"></div>`;
+    document.getElementById("titulo-lista").textContent = "Coordinadores";
+
+    document.getElementById("btn-invitar-coord")
+      .addEventListener("click", (e) => generarInvitacion("coordinador", e.currentTarget));
+    cargarCoordinadores();
   } else {
     document.getElementById("acciones").innerHTML = `
       <h2>Hola, ${esc(perfil.nombre)} (Coordinador)</h2>
-      <p>Aquí ves todas las evaluaciones que hacen tus supervisores.</p>
+      <p>Aquí ves a tus supervisores y sus planillas.</p>
       <a class="btn" href="dashboard.html">📊 Tablero de eficiencia</a>
       <a class="btn" href="editor.html" style="margin-left:8px">✎ Editar formulario</a>
       <button class="btn secundario" id="btn-invitar" style="margin-left:8px">🎟️ Invitar supervisor</button>
       <a class="btn secundario" href="perfil.html" style="margin-left:8px">⚙️ Mi cuenta</a>
       <div id="invite-box"></div>`;
-    document.getElementById("titulo-lista").textContent = "Todas las evaluaciones";
+    document.getElementById("titulo-lista").textContent = "Mis supervisores";
 
-    document.getElementById("btn-invitar").addEventListener("click", generarInvitacion);
+    document.getElementById("btn-invitar")
+      .addEventListener("click", (e) => generarInvitacion("supervisor", e.currentTarget));
     cargarSupervisores();
   }
 });
@@ -171,23 +184,94 @@ async function eliminarTecnico(id) {
   }
 }
 
-// ───────── Invitaciones (solo coordinador) ─────────
-async function generarInvitacion() {
+// ───────── Vista del root: sus coordinadores ─────────
+async function cargarCoordinadores() {
+  const cont = document.getElementById("lista");
+  document.getElementById("titulo-lista").textContent = "Coordinadores";
+  cont.innerHTML = "Cargando…";
+  try {
+    const snap = await getDocs(
+      query(collection(db, "usuarios"), where("creadorUid", "==", sesion.user.uid))
+    );
+    const coords = snap.docs
+      .map((d) => ({ uid: d.id, ...d.data() }))
+      .filter((u) => u.rol === "coordinador")
+      .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
+    if (!coords.length) {
+      cont.innerHTML = `<div class="lista-vacia">Aún no tienes coordinadores. Genera un enlace con "🎟️ Invitar coordinador".</div>`;
+      return;
+    }
+    cont.innerHTML = coords
+      .map((c, i) => {
+        const bg = AVATAR_COLORS[i % AVATAR_COLORS.length];
+        return `
+        <div class="srow" data-coord="${c.uid}" data-nombre="${esc(c.nombre)}">
+          <div class="aa-avatar" style="background:${bg}">${initials(c.nombre)}</div>
+          <span class="srow-name">${esc(c.nombre)}</span>
+          <span class="badge">ver ›</span>
+        </div>`;
+      })
+      .join("");
+    cont.querySelectorAll("[data-coord]").forEach((el) =>
+      el.addEventListener("click", () => mostrarCoordinador(el.dataset.coord, el.dataset.nombre))
+    );
+  } catch (err) {
+    console.error(err);
+    cont.innerHTML = `<div class="msg error">No se pudieron cargar los coordinadores: ${err.message}</div>`;
+  }
+}
+
+async function mostrarCoordinador(uid, nombre) {
+  const cont = document.getElementById("lista");
+  document.getElementById("titulo-lista").textContent = `Coordinador: ${nombre}`;
+  cont.innerHTML = "Cargando…";
+  try {
+    const snap = await getDocs(query(collection(db, "usuarios"), where("coordinadorUid", "==", uid)));
+    const sups = snap.docs
+      .map((d) => ({ uid: d.id, ...d.data() }))
+      .filter((u) => u.rol === "supervisor")
+      .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
+    let html = `<button class="btn secundario" id="btn-volver-coords">← Volver a coordinadores</button>`;
+    html += `<h3 style="margin-top:16px">Supervisores (${sups.length})</h3>`;
+    html += sups.length
+      ? sups
+          .map((s, i) => {
+            const bg = AVATAR_COLORS[i % AVATAR_COLORS.length];
+            return `<div class="srow" data-sup="${s.uid}" data-nombre="${esc(s.nombre)}">
+              <div class="aa-avatar" style="background:${bg}">${initials(s.nombre)}</div>
+              <span class="srow-name">${esc(s.nombre)}</span><span class="badge">ver ›</span></div>`;
+          })
+          .join("")
+      : `<div class="lista-vacia">Sin supervisores.</div>`;
+    cont.innerHTML = html;
+    document.getElementById("btn-volver-coords").addEventListener("click", cargarCoordinadores);
+    cont.querySelectorAll("[data-sup]").forEach((el) =>
+      el.addEventListener("click", () => mostrarSupervisor(el.dataset.sup, el.dataset.nombre))
+    );
+  } catch (err) {
+    console.error(err);
+    cont.innerHTML = `<div class="msg error">Error: ${err.message}</div>`;
+  }
+}
+
+// ───────── Invitaciones (root o coordinador) ─────────
+async function generarInvitacion(rol, btn) {
   const box = document.getElementById("invite-box");
-  const btn = document.getElementById("btn-invitar");
-  btn.disabled = true;
+  if (btn) btn.disabled = true;
+  const quien = rol === "coordinador" ? "un coordinador" : "un supervisor";
   box.innerHTML = `<p class="meta" style="margin-top:12px">Generando enlace…</p>`;
   try {
     const ref = await addDoc(collection(db, "invitaciones"), {
-      coordinadorUid: sesion.user.uid,
-      coordinadorNombre: sesion.perfil.nombre,
+      creadorUid: sesion.user.uid,
+      creadorNombre: sesion.perfil.nombre,
+      rol,
       usado: false,
       createdAt: serverTimestamp(),
     });
     const link = new URL(`registro.html?invite=${ref.id}`, location.href).href;
     box.innerHTML = `
       <div class="msg ok" style="margin-top:12px">
-        Comparte este enlace con <strong>un</strong> supervisor (sirve una sola vez):
+        Comparte este enlace con <strong>${quien}</strong> (sirve una sola vez):
       </div>
       <div class="add-row">
         <input id="invite-link" type="text" readonly value="${esc(link)}">
@@ -208,7 +292,7 @@ async function generarInvitacion() {
     console.error(err);
     box.innerHTML = `<div class="msg error" style="margin-top:12px">No se pudo generar: ${err.message}</div>`;
   } finally {
-    btn.disabled = false;
+    if (btn) btn.disabled = false;
   }
 }
 

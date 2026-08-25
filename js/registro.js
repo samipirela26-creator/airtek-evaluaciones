@@ -33,11 +33,14 @@ let invitacion = null;
     }
     invitacion = snap.data();
     if (invitacion.usado) {
-      estado.innerHTML = `<div class="msg error">Esta invitación ya fue usada. Pídele al coordinador un nuevo enlace.</div>`;
+      estado.innerHTML = `<div class="msg error">Esta invitación ya fue usada. Pide un nuevo enlace.</div>`;
       return;
     }
-    // Invitación válida → mostrar formulario
-    estado.innerHTML = `<div class="msg ok">Invitación de <strong>${invitacion.coordinadorNombre || "tu coordinador"}</strong>. Completa tus datos.</div>`;
+    // Invitación válida → mostrar formulario, con el rol que corresponde.
+    const rol = invitacion.rol || "supervisor";
+    const rolTexto = rol === "coordinador" ? "Coordinador" : "Supervisor";
+    document.getElementById("sub-registro").textContent = `Crear cuenta de ${rolTexto}`;
+    estado.innerHTML = `<div class="msg ok">Invitación de <strong>${invitacion.creadorNombre || invitacion.coordinadorNombre || "Airtek"}</strong> para <strong>${rolTexto}</strong>. Completa tus datos.</div>`;
     form.style.display = "block";
   } catch (err) {
     console.error(err);
@@ -62,14 +65,13 @@ form.addEventListener("submit", async (e) => {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     const uid = cred.user.uid;
 
-    // Crea su perfil de supervisor, ligado al coordinador que lo invitó.
-    await setDoc(doc(db, "usuarios", uid), {
-      nombre,
-      rol: "supervisor",
-      coordinadorUid: invitacion.coordinadorUid,
-      inviteToken: token,
-      createdAt: serverTimestamp(),
-    });
+    // Crea su perfil con el rol de la invitación, ligado a quien lo invitó.
+    const rol = invitacion.rol || "supervisor";
+    const creadorUid = invitacion.creadorUid || invitacion.coordinadorUid;
+    const perfilDoc = { nombre, rol, inviteToken: token, createdAt: serverTimestamp() };
+    if (rol === "supervisor") perfilDoc.coordinadorUid = creadorUid;
+    else if (rol === "coordinador") perfilDoc.rootUid = creadorUid;
+    await setDoc(doc(db, "usuarios", uid), perfilDoc);
 
     // Marca la invitación como usada (un solo uso).
     await updateDoc(doc(db, "invitaciones", token), { usado: true, usadoPor: uid });
