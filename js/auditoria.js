@@ -24,6 +24,7 @@ const ACCIONES = {
   evaluacion_eliminada: "Evaluación eliminada",
   tecnicos_reasignados: "Técnicos reasignados",
   link_evaluacion_creado: "Link de evaluación creado",
+  reset_contrasena_enviado: "Restablecimiento de contraseña enviado",
 };
 
 protegerPagina("root", async () => {

@@ -92,7 +92,7 @@ form.addEventListener("submit", async (e) => {
     // Ya reclamada: crea su perfil con el rol de la invitación.
     const rol = invitacion.rol || "supervisor";
     const creadorUid = invitacion.creadorUid || invitacion.coordinadorUid;
-    const perfilDoc = { nombre, rol, inviteToken: token, createdAt: serverTimestamp() };
+    const perfilDoc = { nombre, correo: email, rol, inviteToken: token, createdAt: serverTimestamp() };
     if (rol === "supervisor") perfilDoc.coordinadorUid = creadorUid;
     else if (rol === "coordinador") perfilDoc.rootUid = creadorUid;
     await setDoc(doc(db, "usuarios", uid), perfilDoc);

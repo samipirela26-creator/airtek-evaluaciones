@@ -1,9 +1,10 @@
 // panel.js — panel según el rol.
 //  - Supervisor: gestiona sus técnicos (avatar cards) y hace clic para evaluar; ve sus planillas.
 //  - Coordinador: edita el formulario y ve todas las planillas.
-import { db, toast, logAudit } from "./firebase.js";
+import { db, auth, toast, logAudit } from "./firebase.js";
 import { protegerPagina, cerrarSesion } from "./session.js";
 import { cargarPlantillasDeCoordinador, opcionesDeSeccion } from "./plantilla.js";
+import { sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 import {
   collection,
   query,
@@ -52,6 +53,22 @@ function wireBotonEstado(uid, nombre, activo, quienLabel, recargar) {
       toast("No se pudo: " + err.message, { ms: 5000 });
     }
   });
+}
+
+// Enviar a un usuario un correo para que restablezca su contraseña.
+async function enviarReset(correo, nombre) {
+  if (!correo) {
+    toast("Ese usuario no tiene correo registrado (cuenta antigua). Que use 'Olvidé mi contraseña' en el login.", { ms: 7000 });
+    return;
+  }
+  if (!confirm(`¿Enviar a ${nombre} un correo para restablecer su contraseña?\n(${correo})`)) return;
+  try {
+    await sendPasswordResetEmail(auth, correo);
+    logAudit("reset_contrasena_enviado", { correo });
+    toast("Correo de restablecimiento enviado ✓");
+  } catch (err) {
+    toast("No se pudo: " + err.message, { ms: 5000 });
+  }
 }
 
 document.getElementById("btn-salir").addEventListener("click", cerrarSesion);
@@ -313,10 +330,12 @@ async function mostrarCoordinador(uid, nombre) {
       .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
     const tecs = tSnap.docs.map((d) => d.data());
     const countTec = (sid) => tecs.filter((t) => t.supervisorUid === sid).length;
-    const activo = await leerActivo(uid);
+    const perfilC = (await getDoc(doc(db, "usuarios", uid))).data() || {};
+    const activo = perfilC.activo !== false;
     let html = `<div class="btn-row">
       <button class="btn secundario" id="btn-volver-coords">← Volver</button>
       ${htmlBotonEstado(activo, "coordinador")}
+      <button class="btn secundario" id="btn-reset-coord">🔑 Restablecer contraseña</button>
     </div>`;
     html += `<h3 style="margin-top:16px">Supervisores (${sups.length})</h3>`;
     html += sups.length
@@ -336,6 +355,7 @@ async function mostrarCoordinador(uid, nombre) {
     cont.innerHTML = html;
     document.getElementById("btn-volver-coords").addEventListener("click", cargarCoordinadores);
     wireBotonEstado(uid, nombre, activo, "Coordinador", () => mostrarCoordinador(uid, nombre));
+    document.getElementById("btn-reset-coord").addEventListener("click", () => enviarReset(perfilC.correo, nombre));
     cont.querySelectorAll("[data-sup]").forEach((el) =>
       el.addEventListener("click", () => mostrarSupervisor(el.dataset.sup, el.dataset.nombre))
     );
@@ -528,6 +548,7 @@ async function mostrarSupervisor(uid, nombre) {
     let html = `<div class="btn-row">
       <button class="btn secundario" id="btn-volver-sups">← Volver</button>
       ${htmlBotonEstado(activo, "supervisor")}
+      <button class="btn secundario" id="btn-reset">🔑 Restablecer contraseña</button>
     </div>`;
 
     html += `<h3 style="margin-top:16px">Técnicos (${tecnicos.length})</h3>`;
@@ -598,6 +619,7 @@ async function mostrarSupervisor(uid, nombre) {
     const btnLink = document.getElementById("btn-link-sup");
     if (btnLink) btnLink.addEventListener("click", () => generarLinkSupervisor(uid, nombre));
     wireBotonEstado(uid, nombre, activo, "Supervisor", () => mostrarSupervisor(uid, nombre));
+    document.getElementById("btn-reset").addEventListener("click", () => enviarReset(perfilSup.correo, nombre));
     cont.querySelectorAll("[data-id]").forEach((el) =>
       el.addEventListener("click", () => (window.location.href = `detalle.html?id=${el.dataset.id}`))
     );
