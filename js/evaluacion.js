@@ -5,6 +5,8 @@ import { cargarPlantillaActiva, opcionesDeSeccion } from "./plantilla.js";
 import {
   collection,
   addDoc,
+  doc,
+  getDoc,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
@@ -13,17 +15,40 @@ let P = null;
 
 let sesion = null; // { user, perfil }
 const firmas = {}; // guarda los controladores de cada canvas
+let tecnicoId = null; // técnico seleccionado (viene en ?tecnico=ID)
+let tecnicoPre = null; // nombre pre-cargado de ese técnico
 
 // Solo supervisores evalúan.
 protegerPagina("supervisor", async (s) => {
   sesion = s;
   P = await cargarPlantillaActiva(db);
+
+  // Si se abrió desde una tarjeta de técnico, pre-cargamos su nombre.
+  tecnicoId = new URLSearchParams(location.search).get("tecnico");
+  if (tecnicoId) {
+    try {
+      const snap = await getDoc(doc(db, "tecnicos", tecnicoId));
+      if (snap.exists()) tecnicoPre = snap.data().nombre;
+    } catch (err) {
+      console.warn("No se pudo cargar el técnico:", err);
+    }
+  }
   render();
 });
 
 function render() {
   document.getElementById("titulo-form").textContent = P.nombre;
   document.getElementById("datos-generales").innerHTML = P.datos.map(campoDato).join("");
+
+  // Si venimos de una tarjeta de técnico, fijamos su nombre (no editable).
+  if (tecnicoPre) {
+    const el = document.getElementById("tecnicoNombre");
+    if (el) {
+      el.value = tecnicoPre;
+      el.readOnly = true;
+      el.style.background = "#eef2ff";
+    }
+  }
   document.getElementById("secciones").innerHTML = P.secciones.map(seccionHTML).join("");
   document.getElementById("bloque-sino").innerHTML = `
     <label class="requerido">${P.siNo.label}</label>
@@ -194,6 +219,7 @@ async function guardar(e) {
     plantillaVersion: P.version,
     supervisorUid: sesion.user.uid,
     supervisorNombre: sesion.perfil.nombre,
+    tecnicoId: tecnicoId || null,
     tecnicoNombre: datos.tecnicoNombre,
     fechaHora: datos.fechaHora,
     ordenTrabajo: datos.ordenTrabajo,

@@ -133,6 +133,34 @@ textarea { min-height: 70px; resize: vertical; }
 .lista-item .meta { font-size: .85rem; color: #667; }
 .badge { background: var(--azul); color: #fff; border-radius: 20px; padding: 3px 10px; font-size: .8rem; font-weight: 700; }
 
+/* Avatares y filas tipo lista (estilo AsistApp, colores Airtek) */
+.aa-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 700; font-size: 14px; flex-shrink: 0;
+}
+.aa-avatar.sm { width: 32px; height: 32px; font-size: 11px; }
+.aa-avatar.lg { width: 52px; height: 52px; font-size: 18px; }
+
+.srow {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; margin-bottom: 8px;
+  border: 1px solid var(--borde); border-radius: 12px; background: #fff;
+  cursor: pointer; transition: box-shadow .15s, transform .05s;
+}
+.srow:hover { box-shadow: var(--sombra); }
+.srow:active { transform: scale(.995); }
+.srow-name { flex: 1; font-weight: 600; }
+.srow-x {
+  color: var(--error); border: none; background: none; cursor: pointer;
+  font-size: 15px; padding: 4px 9px; border-radius: 8px;
+}
+.srow-x:hover { background: #fdecea; }
+
+.add-row { display: flex; gap: 8px; margin: 12px 0 16px; }
+.add-row input { flex: 1; }
+.lista-vacia { text-align: center; color: #8a8a9a; padding: 18px; }
+
 @media (max-width: 600px) {
   .tabla-escala th, .tabla-escala td { font-size: .8rem; padding: 5px; }
   .tabla-escala th:first-child, .tabla-escala td:first-child { width: 45%; }

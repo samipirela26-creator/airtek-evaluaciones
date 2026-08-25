@@ -24,6 +24,16 @@ service cloud.firestore {
       allow write: if esCoordinador();
     }
 
+    // Técnicos: cada supervisor gestiona los suyos; el coordinador los lee.
+    match /tecnicos/{id} {
+      allow create: if request.auth != null
+                    && request.resource.data.supervisorUid == request.auth.uid;
+      allow read: if request.auth != null
+                  && (resource.data.supervisorUid == request.auth.uid || esCoordinador());
+      allow update, delete: if request.auth != null
+                            && resource.data.supervisorUid == request.auth.uid;
+    }
+
     match /evaluaciones/{id} {
       // Crear: solo un usuario autenticado, y solo a su propio nombre
       // (no puede firmar una evaluación como si fuera otro supervisor).

@@ -1,4 +1,6 @@
-// panel.js — muestra acciones y lista de evaluaciones según el rol.
+// panel.js — panel según el rol.
+//  - Supervisor: gestiona sus técnicos (avatar cards) y hace clic para evaluar; ve sus planillas.
+//  - Coordinador: edita el formulario y ve todas las planillas.
 import { db } from "./firebase.js";
 import { protegerPagina, cerrarSesion } from "./session.js";
 import {
@@ -7,24 +9,48 @@ import {
   where,
   orderBy,
   getDocs,
+  addDoc,
+  deleteDoc,
+  doc,
+  serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+const AVATAR_COLORS = ["#0066ff", "#059669", "#7c3aed", "#dc2626", "#d97706", "#0891b2", "#be185d", "#374151"];
+function initials(n) {
+  if (!n) return "?";
+  return n.split(/\s+/).slice(0, 2).map((w) => w[0] || "").join("").toUpperCase();
+}
+function esc(s) {
+  return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
 
 document.getElementById("btn-salir").addEventListener("click", cerrarSesion);
 
-protegerPagina(null, async ({ user, perfil }) => {
-  document.getElementById("usuario-info").textContent =
-    `${perfil.nombre} · ${perfil.rol}`;
+let sesion = null;
 
-  const acciones = document.getElementById("acciones");
+protegerPagina(null, async ({ user, perfil }) => {
+  sesion = { user, perfil };
+  document.getElementById("usuario-info").textContent = `${perfil.nombre} · ${perfil.rol}`;
+
   if (perfil.rol === "supervisor") {
-    acciones.innerHTML = `
-      <h2>Hola, ${perfil.nombre}</h2>
-      <p>Evalúa a tus técnicos con el formulario vigente.</p>
-      <a class="btn" href="evaluacion.html">+ Nueva evaluación</a>`;
+    document.getElementById("acciones").innerHTML = `
+      <h2>Hola, ${esc(perfil.nombre)}</h2>
+      <p>Tus técnicos. Haz clic en uno para evaluarlo.</p>
+      <div class="add-row">
+        <input id="nuevo-tecnico" placeholder="Nombre del técnico">
+        <button class="btn" id="btn-add-tecnico">+ Agregar</button>
+      </div>
+      <div id="tecnicos-list">Cargando…</div>`;
     document.getElementById("titulo-lista").textContent = "Mis evaluaciones realizadas";
+
+    document.getElementById("btn-add-tecnico").addEventListener("click", agregarTecnico);
+    document.getElementById("nuevo-tecnico").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") agregarTecnico();
+    });
+    cargarTecnicos();
   } else {
-    acciones.innerHTML = `
-      <h2>Hola, ${perfil.nombre} (Coordinador)</h2>
+    document.getElementById("acciones").innerHTML = `
+      <h2>Hola, ${esc(perfil.nombre)} (Coordinador)</h2>
       <p>Aquí ves todas las evaluaciones que hacen tus supervisores.</p>
       <a class="btn" href="editor.html">✎ Editar formulario de evaluación</a>`;
     document.getElementById("titulo-lista").textContent = "Todas las evaluaciones";
@@ -33,12 +59,85 @@ protegerPagina(null, async ({ user, perfil }) => {
   cargarLista(perfil, user.uid);
 });
 
+// ───────── Técnicos (solo supervisor) ─────────
+async function cargarTecnicos() {
+  const cont = document.getElementById("tecnicos-list");
+  try {
+    const snap = await getDocs(query(collection(db, "tecnicos"), where("supervisorUid", "==", sesion.user.uid)));
+    const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    items.sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
+    if (!items.length) {
+      cont.innerHTML = `<div class="lista-vacia">Aún no tienes técnicos. Agrega el primero arriba. 👆</div>`;
+      return;
+    }
+    cont.innerHTML = items
+      .map((t, i) => {
+        const bg = AVATAR_COLORS[i % AVATAR_COLORS.length];
+        return `
+        <div class="srow" data-eval="${t.id}">
+          <div class="aa-avatar" style="background:${bg}">${initials(t.nombre)}</div>
+          <span class="srow-name">${esc(t.nombre)}</span>
+          <button class="srow-x" data-del="${t.id}" title="Eliminar técnico">✕</button>
+        </div>`;
+      })
+      .join("");
+
+    // Clic en la tarjeta → evaluar ese técnico
+    cont.querySelectorAll("[data-eval]").forEach((el) =>
+      el.addEventListener("click", () => (window.location.href = `evaluacion.html?tecnico=${el.dataset.eval}`))
+    );
+    // Botón eliminar
+    cont.querySelectorAll("[data-del]").forEach((el) =>
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        eliminarTecnico(el.dataset.del);
+      })
+    );
+  } catch (err) {
+    console.error(err);
+    cont.innerHTML = `<div class="msg error">No se pudieron cargar los técnicos: ${err.message}</div>`;
+  }
+}
+
+async function agregarTecnico() {
+  const input = document.getElementById("nuevo-tecnico");
+  const nombre = input.value.trim();
+  if (!nombre) return;
+  input.disabled = true;
+  try {
+    await addDoc(collection(db, "tecnicos"), {
+      nombre,
+      supervisorUid: sesion.user.uid,
+      supervisorNombre: sesion.perfil.nombre,
+      createdAt: serverTimestamp(),
+    });
+    input.value = "";
+    await cargarTecnicos();
+  } catch (err) {
+    console.error(err);
+    alert("No se pudo agregar: " + err.message);
+  } finally {
+    input.disabled = false;
+    input.focus();
+  }
+}
+
+async function eliminarTecnico(id) {
+  if (!confirm("¿Eliminar este técnico? (sus evaluaciones ya guardadas se conservan)")) return;
+  try {
+    await deleteDoc(doc(db, "tecnicos", id));
+    await cargarTecnicos();
+  } catch (err) {
+    console.error(err);
+    alert("No se pudo eliminar: " + err.message);
+  }
+}
+
+// ───────── Lista de evaluaciones (ambos roles) ─────────
 async function cargarLista(perfil, uid) {
   const cont = document.getElementById("lista");
   try {
     const ref = collection(db, "evaluaciones");
-    // Supervisor: solo las suyas (sin orderBy, para no requerir un índice
-    // compuesto en Firestore; ordenamos aquí abajo). Coordinador: todas.
     const q =
       perfil.rol === "supervisor"
         ? query(ref, where("supervisorUid", "==", uid))
@@ -50,7 +149,6 @@ async function cargarLista(perfil, uid) {
       return;
     }
 
-    // Pasamos a un arreglo y, para el supervisor, ordenamos por fecha (recientes primero).
     const items = snap.docs.map((d) => d.data());
     if (perfil.rol === "supervisor") {
       items.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
@@ -58,18 +156,16 @@ async function cargarLista(perfil, uid) {
 
     let html = "";
     items.forEach((e) => {
-      const fecha = e.createdAt?.toDate
-        ? e.createdAt.toDate().toLocaleString("es-VE")
-        : "";
+      const fecha = e.createdAt?.toDate ? e.createdAt.toDate().toLocaleString("es-VE") : "";
       const prom = e.puntajes?.promedioGeneral;
       const badge = prom != null ? `${prom.toFixed(2)} / 4` : "—";
       html += `
         <div class="lista-item">
           <div>
-            <strong>${e.tecnicoNombre || "(sin nombre)"}</strong>
+            <strong>${esc(e.tecnicoNombre) || "(sin nombre)"}</strong>
             <div class="meta">
-              ${e.area || ""} · ${e.motivo || "s/motivo"}<br>
-              Supervisor: ${e.supervisorNombre || ""} · ${fecha}
+              ${esc(e.area) || ""} · ${esc(e.motivo) || "s/motivo"}<br>
+              Supervisor: ${esc(e.supervisorNombre) || ""} · ${fecha}
             </div>
           </div>
           <span class="badge" title="Promedio general">${badge}</span>
@@ -78,8 +174,6 @@ async function cargarLista(perfil, uid) {
     cont.innerHTML = html;
   } catch (err) {
     console.error(err);
-    // Firestore pide un índice cuando combinas where + orderBy: el error trae un enlace.
-    cont.innerHTML = `<div class="msg error">Error al cargar. Revisa la consola (F12).
-      Si menciona un "index", abre el enlace que aparece ahí para crearlo.</div>`;
+    cont.innerHTML = `<div class="msg error">Error al cargar. Revisa la consola (F12).</div>`;
   }
 }
