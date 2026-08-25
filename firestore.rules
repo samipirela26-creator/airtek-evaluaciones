@@ -22,7 +22,12 @@ service cloud.firestore {
                     && request.resource.data.rol == 'supervisor'
                     && exists(/databases/$(database)/documents/invitaciones/$(request.resource.data.inviteToken))
                     && get(/databases/$(database)/documents/invitaciones/$(request.resource.data.inviteToken)).data.usado == false;
-      allow update, delete: if false;
+      // Actualizar: el dueño (su nombre) o el coordinador (nombre de sus
+      // supervisores). El rol NO puede cambiar por esta vía.
+      allow update: if request.auth != null
+                    && (request.auth.uid == uid || esCoordinador())
+                    && request.resource.data.rol == resource.data.rol;
+      allow delete: if false;
     }
 
     // Plantilla del formulario: todos los usuarios autenticados la leen

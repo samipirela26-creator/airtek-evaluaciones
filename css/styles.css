@@ -5,12 +5,14 @@
   --azul: #0066ff;       /* azul de marca Airtek */
   --azul-osc: #0047b3;   /* azul para hover */
   --negro: #111111;      /* barras/encabezados oscuros */
-  --gris: #f4f6f9;
-  --borde: #dfe3e8;
-  --texto: #1f2933;
-  --ok: #1e7e34;
-  --error: #c0392b;
-  --sombra: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --gris: #f4f5f7;       /* fondo tipo AsistApp */
+  --borde: #ececf0;
+  --texto: #1a1a2e;
+  --texto2: #8a8a9a;     /* texto secundario/etiquetas */
+  --ok: #059669;
+  --error: #dc2626;
+  --sombra: 0 2px 12px rgba(0, 0, 0, 0.06);
+  --sombra-btn: 0 4px 14px rgba(0, 102, 255, 0.25);
 }
 
 * { box-sizing: border-box; }
@@ -41,16 +43,16 @@ body {
 .topbar .marca { font-weight: 700; font-size: 1.1rem; letter-spacing: 0.5px; }
 .topbar .usuario { font-size: 0.9rem; opacity: 0.95; }
 
-.contenedor { max-width: 900px; margin: 0 auto; padding: 20px; }
+.contenedor { max-width: 600px; margin: 0 auto; padding: 18px 16px 40px; }
 
-/* Tarjeta genérica */
+/* Tarjeta genérica (estilo AsistApp) */
 .card {
   background: #fff;
   border: 1px solid var(--borde);
-  border-radius: 10px;
+  border-radius: 16px;
   box-shadow: var(--sombra);
-  padding: 20px;
-  margin-bottom: 18px;
+  padding: 18px;
+  margin-bottom: 14px;
 }
 
 h1, h2, h3 { color: var(--azul-osc); }
@@ -58,16 +60,28 @@ h1 { font-size: 1.4rem; }
 h2 { font-size: 1.15rem; margin-top: 0; }
 
 label { font-weight: 600; display: block; margin-bottom: 6px; }
+/* Etiquetas cortas de campo en mayúsculas, al estilo AsistApp */
+.campo > label {
+  font-size: .72rem; text-transform: uppercase; letter-spacing: .5px;
+  color: var(--texto2); font-weight: 600;
+}
 .requerido::after { content: " *"; color: var(--error); }
 
 input[type="text"], input[type="email"], input[type="password"],
 input[type="datetime-local"], select, textarea {
   width: 100%;
-  padding: 10px;
+  padding: 13px 14px;
   border: 1px solid var(--borde);
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 1rem;
   font-family: inherit;
+  background: #fff;
+  transition: border-color .15s, box-shadow .15s;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--azul);
+  box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.12);
 }
 textarea { min-height: 70px; resize: vertical; }
 .campo { margin-bottom: 16px; }
@@ -77,13 +91,17 @@ textarea { min-height: 70px; resize: vertical; }
   background: var(--azul);
   color: #fff;
   border: none;
-  padding: 11px 20px;
-  border-radius: 8px;
+  padding: 12px 20px;
+  border-radius: 12px;
   font-size: 1rem;
   cursor: pointer;
   font-weight: 600;
+  box-shadow: var(--sombra-btn);
+  transition: background .15s, transform .05s;
 }
 .btn:hover { background: var(--azul-osc); }
+.btn:active { transform: scale(.98); }
+.btn.secundario { box-shadow: none; }
 .btn.secundario { background: #fff; color: var(--azul); border: 1px solid var(--azul); }
 .btn.link { background: none; color: #fff; border: 1px solid rgba(255,255,255,.5); padding: 6px 12px; font-size: .85rem; }
 

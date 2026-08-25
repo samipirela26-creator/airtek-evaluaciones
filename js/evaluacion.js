@@ -233,6 +233,18 @@ async function guardar(e) {
     firmaSupervisor: firmas["firma-supervisor"].dataURL(),
     firmaTecnico: firmas["firma-tecnico"].dataURL(),
     puntajes,
+    // Foto del formulario usado, para poder ver/exportar la planilla aunque
+    // el coordinador edite la plantilla después.
+    plantillaSnapshot: {
+      nombre: P.nombre,
+      siNo: P.siNo,
+      secciones: P.secciones.map((s) => ({
+        id: s.id,
+        titulo: s.titulo,
+        preguntas: s.preguntas,
+        opciones: opcionesDeSeccion(s),
+      })),
+    },
     createdAt: serverTimestamp(),
   };
 

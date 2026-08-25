@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tablero de eficiencia · Airtek</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="topbar">
+    <div class="marca">AIRTEK · Tablero</div>
+    <div><a class="btn link" href="panel.html">← Volver</a></div>
+  </div>
+
+  <div class="contenedor">
+    <div class="card">
+      <h1>Tablero de eficiencia</h1>
+      <p class="meta">Resumen del desempeño evaluado por tus supervisores.</p>
+      <div id="kpis" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px"></div>
+    </div>
+
+    <div class="card">
+      <h2>Promedio otorgado por cada supervisor</h2>
+      <p class="meta">Un promedio muy alto o muy bajo frente a los demás puede indicar sesgo del supervisor.</p>
+      <canvas id="chart-sup" height="220"></canvas>
+    </div>
+
+    <div class="card">
+      <h2>Evaluaciones realizadas por supervisor</h2>
+      <canvas id="chart-cant" height="200"></canvas>
+    </div>
+
+    <div class="card">
+      <h2>Promedio por sección (todos los técnicos)</h2>
+      <p class="meta">Dónde están más fuertes o más débiles los técnicos.</p>
+      <canvas id="chart-sec" height="240"></canvas>
+    </div>
+
+    <div id="vacio"></div>
+  </div>
+
+  <script type="module" src="js/dashboard.js"></script>
+</body>
+</html>

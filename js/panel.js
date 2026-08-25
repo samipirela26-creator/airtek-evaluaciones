@@ -35,7 +35,8 @@ protegerPagina(null, async ({ user, perfil }) => {
   if (perfil.rol === "supervisor") {
     document.getElementById("acciones").innerHTML = `
       <h2>Hola, ${esc(perfil.nombre)}</h2>
-      <p>Tus técnicos. Haz clic en uno para evaluarlo.</p>
+      <p>Tus técnicos. Haz clic en uno para evaluarlo.
+         <a href="perfil.html" style="color:var(--azul);font-weight:600">⚙️ Mi cuenta</a></p>
       <div class="add-row">
         <textarea id="nuevo-tecnico" rows="2"
           placeholder="Un técnico por línea. Puedes pegar una lista completa y se agregan todos."></textarea>
@@ -53,8 +54,10 @@ protegerPagina(null, async ({ user, perfil }) => {
     document.getElementById("acciones").innerHTML = `
       <h2>Hola, ${esc(perfil.nombre)} (Coordinador)</h2>
       <p>Aquí ves todas las evaluaciones que hacen tus supervisores.</p>
-      <a class="btn" href="editor.html">✎ Editar formulario de evaluación</a>
+      <a class="btn" href="dashboard.html">📊 Tablero de eficiencia</a>
+      <a class="btn" href="editor.html" style="margin-left:8px">✎ Editar formulario</a>
       <button class="btn secundario" id="btn-invitar" style="margin-left:8px">🎟️ Invitar supervisor</button>
+      <a class="btn secundario" href="perfil.html" style="margin-left:8px">⚙️ Mi cuenta</a>
       <div id="invite-box"></div>`;
     document.getElementById("titulo-lista").textContent = "Todas las evaluaciones";
 
@@ -257,7 +260,7 @@ async function mostrarSupervisor(uid, nombre) {
       getDocs(query(collection(db, "evaluaciones"), where("supervisorUid", "==", uid))),
     ]);
     const tecnicos = tSnap.docs.map((d) => d.data()).sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
-    const evals = eSnap.docs.map((d) => d.data()).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+    const evals = eSnap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 
     let html = `<button class="btn secundario" id="btn-volver-sups">← Volver a supervisores</button>`;
 
@@ -280,7 +283,7 @@ async function mostrarSupervisor(uid, nombre) {
             const fecha = e.createdAt?.toDate ? e.createdAt.toDate().toLocaleString("es-VE") : "";
             const prom = e.puntajes?.promedioGeneral;
             const badge = prom != null ? `${prom.toFixed(2)} / 4` : "—";
-            return `<div class="lista-item">
+            return `<div class="lista-item" data-id="${e.id}" style="cursor:pointer">
               <div><strong>${esc(e.tecnicoNombre) || "(sin nombre)"}</strong>
                 <div class="meta">${esc(e.area) || ""} · ${esc(e.motivo) || "s/motivo"}<br>${fecha}</div>
               </div>
@@ -291,6 +294,9 @@ async function mostrarSupervisor(uid, nombre) {
 
     cont.innerHTML = html;
     document.getElementById("btn-volver-sups").addEventListener("click", cargarSupervisores);
+    cont.querySelectorAll("[data-id]").forEach((el) =>
+      el.addEventListener("click", () => (window.location.href = `detalle.html?id=${el.dataset.id}`))
+    );
   } catch (err) {
     console.error(err);
     cont.innerHTML = `<div class="msg error">Error: ${err.message}</div>`;
@@ -313,7 +319,7 @@ async function cargarLista(perfil, uid) {
       return;
     }
 
-    const items = snap.docs.map((d) => d.data());
+    const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
     if (perfil.rol === "supervisor") {
       items.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
     }
@@ -324,7 +330,7 @@ async function cargarLista(perfil, uid) {
       const prom = e.puntajes?.promedioGeneral;
       const badge = prom != null ? `${prom.toFixed(2)} / 4` : "—";
       html += `
-        <div class="lista-item">
+        <div class="lista-item" data-id="${e.id}" style="cursor:pointer">
           <div>
             <strong>${esc(e.tecnicoNombre) || "(sin nombre)"}</strong>
             <div class="meta">
@@ -336,6 +342,9 @@ async function cargarLista(perfil, uid) {
         </div>`;
     });
     cont.innerHTML = html;
+    cont.querySelectorAll("[data-id]").forEach((el) =>
+      el.addEventListener("click", () => (window.location.href = `detalle.html?id=${el.dataset.id}`))
+    );
   } catch (err) {
     console.error(err);
     cont.innerHTML = `<div class="msg error">Error al cargar. Revisa la consola (F12).</div>`;
