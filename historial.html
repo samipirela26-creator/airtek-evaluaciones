@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Historial del técnico · Airtek</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="topbar">
+    <div class="marca">AIRTEK · Historial</div>
+    <div><a class="btn link" href="panel.html">← Volver</a></div>
+  </div>
+
+  <div class="contenedor">
+    <div class="card">
+      <h1 id="tec-nombre">Historial</h1>
+      <div id="tec-resumen" class="meta"></div>
+    </div>
+
+    <div class="card">
+      <h2>Evolución del promedio</h2>
+      <canvas id="chart-evol" height="200"></canvas>
+    </div>
+
+    <div class="card">
+      <h2>Evaluaciones</h2>
+      <div id="lista-evals">Cargando…</div>
+    </div>
+  </div>
+
+  <script type="module" src="js/historial.js"></script>
+</body>
+</html>

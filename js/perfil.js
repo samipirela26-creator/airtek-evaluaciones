@@ -3,6 +3,8 @@ import { auth, db } from "./firebase.js";
 import { protegerPagina } from "./session.js";
 import {
   updateEmail,
+  updatePassword,
+  sendEmailVerification,
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 import {
   doc,
@@ -28,6 +30,8 @@ protegerPagina(null, async ({ user, perfil }) => {
 
   document.getElementById("btn-nombre").addEventListener("click", guardarNombre);
   document.getElementById("btn-correo").addEventListener("click", cambiarCorreo);
+  document.getElementById("btn-pass").addEventListener("click", cambiarPassword);
+  document.getElementById("btn-verificar").addEventListener("click", verificarCorreo);
 
   if (perfil.rol === "coordinador") {
     document.getElementById("card-sups").style.display = "block";
@@ -63,6 +67,34 @@ async function cambiarCorreo() {
     else if (err.code === "auth/operation-not-allowed")
       t = "Firebase pide verificar el correo nuevo primero. Actívalo en Authentication → Configuración.";
     set("msg-correo", "error", t);
+  }
+}
+
+// ── Cambiar contraseña ──
+async function cambiarPassword() {
+  const pass = document.getElementById("mi-pass").value;
+  if (pass.length < 6) return set("msg-pass", "error", "La contraseña debe tener al menos 6 caracteres.");
+  try {
+    await updatePassword(auth.currentUser, pass);
+    document.getElementById("mi-pass").value = "";
+    set("msg-pass", "ok", "✔ Contraseña actualizada.");
+  } catch (err) {
+    let t = err.message;
+    if (err.code === "auth/requires-recent-login")
+      t = "Por seguridad, cierra sesión y vuelve a entrar antes de cambiar la contraseña.";
+    else if (err.code === "auth/weak-password") t = "La contraseña es muy débil.";
+    set("msg-pass", "error", t);
+  }
+}
+
+// ── Verificar correo ──
+async function verificarCorreo() {
+  try {
+    if (auth.currentUser.emailVerified) return set("msg-verificar", "ok", "Tu correo ya está verificado ✓");
+    await sendEmailVerification(auth.currentUser);
+    set("msg-verificar", "ok", "Te enviamos un correo de verificación. Revisa tu bandeja (y spam).");
+  } catch (err) {
+    set("msg-verificar", "error", "No se pudo enviar: " + err.message);
   }
 }
 

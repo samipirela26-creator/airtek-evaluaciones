@@ -85,6 +85,7 @@ protegerPagina(null, async ({ user, perfil }) => {
       <p>Crea y administra a los coordinadores de Airtek.</p>
       <div class="btn-row">
         <button class="btn" id="btn-invitar-coord">🎟️ Invitar coordinador</button>
+        <a class="btn secundario" href="auditoria.html">📜 Auditoría</a>
         <button class="btn secundario" id="btn-respaldo">⬇️ Respaldo</button>
         <a class="btn secundario" href="perfil.html">⚙️ Mi cuenta</a>
       </div>
@@ -136,6 +137,8 @@ async function cargarTecnicos() {
         <div class="srow" data-eval="${t.id}">
           <div class="aa-avatar" style="background:${bg}">${initials(t.nombre)}</div>
           <span class="srow-name">${esc(t.nombre)}</span>
+          <button class="srow-x" data-hist="${t.id}" title="Historial" style="color:var(--azul)">📋</button>
+          <button class="srow-x" data-editar="${t.id}" data-nombre="${esc(t.nombre)}" title="Editar nombre">✏️</button>
           <button class="srow-x" data-del="${t.id}" title="Eliminar técnico">✕</button>
         </div>`;
       })
@@ -144,6 +147,20 @@ async function cargarTecnicos() {
     // Clic en la tarjeta → evaluar ese técnico
     cont.querySelectorAll("[data-eval]").forEach((el) =>
       el.addEventListener("click", () => (window.location.href = `evaluacion.html?tecnico=${el.dataset.eval}`))
+    );
+    // Historial del técnico
+    cont.querySelectorAll("[data-hist]").forEach((el) =>
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        window.location.href = `historial.html?tecnico=${el.dataset.hist}`;
+      })
+    );
+    // Editar nombre del técnico
+    cont.querySelectorAll("[data-editar]").forEach((el) =>
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        editarTecnico(el.dataset.editar, el.dataset.nombre);
+      })
     );
     // Botón eliminar
     cont.querySelectorAll("[data-del]").forEach((el) =>
@@ -210,6 +227,20 @@ async function agregarTecnico() {
     input.disabled = false;
     btn.disabled = false;
     input.focus();
+  }
+}
+
+async function editarTecnico(id, nombreActual) {
+  const nuevo = prompt("Nuevo nombre del técnico:", nombreActual);
+  if (nuevo === null) return;
+  const nombre = nuevo.trim();
+  if (!nombre || nombre === nombreActual) return;
+  try {
+    await updateDoc(doc(db, "tecnicos", id), { nombre });
+    toast("Nombre actualizado ✓");
+    await cargarTecnicos();
+  } catch (err) {
+    toast("No se pudo: " + err.message, { ms: 5000 });
   }
 }
 

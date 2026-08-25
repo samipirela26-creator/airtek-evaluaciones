@@ -1,5 +1,5 @@
 // evaluacion.js — renderiza la plantilla, recoge respuestas, calcula puntajes y guarda.
-import { db } from "./firebase.js";
+import { db, toast } from "./firebase.js";
 import { protegerPagina } from "./session.js";
 import { cargarPlantillasDeCoordinador, opcionesDeSeccion, PLANTILLA_DEFAULT } from "./plantilla.js";
 import {
@@ -18,6 +18,7 @@ let sesion = null; // { user, perfil }
 const firmas = {}; // guarda los controladores de cada canvas
 let tecnicoId = null; // técnico seleccionado (viene en ?tecnico=ID)
 let tecnicoPre = null; // nombre pre-cargado de ese técnico
+let borradorRestaurado = false; // para restaurar el borrador una sola vez
 
 // Solo supervisores evalúan.
 protegerPagina("supervisor", async (s) => {
@@ -47,7 +48,47 @@ function render() {
     b.addEventListener("click", () => firmas[b.dataset.limpiar].limpiar())
   );
   document.getElementById("form-eval").addEventListener("submit", guardar);
+  // Autoguardado de borrador: guarda mientras escribe (sin las firmas).
+  let t;
+  document.getElementById("form-eval").addEventListener("input", () => {
+    clearTimeout(t);
+    t = setTimeout(guardarBorrador, 500);
+  });
   pintarPlantilla();
+}
+
+// ---- Borrador (localStorage), para no perder una evaluación a medio llenar ----
+function draftKey() {
+  return `airtek_borrador_${tecnicoId || "nuevo"}`;
+}
+function guardarBorrador() {
+  const form = document.getElementById("form-eval");
+  const data = {};
+  form.querySelectorAll("input, select, textarea").forEach((el) => {
+    if (el.type === "radio") { if (el.checked) data[el.name] = el.value; }
+    else if (el.id) data[el.id] = el.value;
+  });
+  try { localStorage.setItem(draftKey(), JSON.stringify({ data, ts: Date.now() })); } catch {}
+}
+function restaurarBorrador() {
+  let raw;
+  try { raw = localStorage.getItem(draftKey()); } catch { return; }
+  if (!raw) return;
+  try {
+    const { data } = JSON.parse(raw);
+    let algo = false;
+    Object.entries(data).forEach(([k, v]) => {
+      if (!v) return;
+      const radios = document.querySelectorAll(`input[type=radio][name="${k}"]`);
+      if (radios.length) { radios.forEach((r) => { if (r.value === v) { r.checked = true; algo = true; } }); return; }
+      const el = document.getElementById(k);
+      if (el && !el.readOnly) { el.value = v; algo = true; }
+    });
+    if (algo) toast("📝 Borrador restaurado", { ms: 2500 });
+  } catch {}
+}
+function limpiarBorrador() {
+  try { localStorage.removeItem(draftKey()); } catch {}
 }
 
 // Pinta las partes que dependen del formulario elegido (P). Se puede repintar
@@ -86,6 +127,8 @@ function pintarPlantilla() {
 
   const sel = document.getElementById("sel-form");
   if (sel) sel.addEventListener("change", () => { P = plantillasDisponibles[+sel.value]; pintarPlantilla(); });
+
+  if (!borradorRestaurado) { restaurarBorrador(); borradorRestaurado = true; }
 }
 
 // ---- Render de campos ----
@@ -270,7 +313,9 @@ async function guardar(e) {
   btn.textContent = "Guardando…";
   try {
     await addDoc(collection(db, "evaluaciones"), registro);
+    limpiarBorrador();
     msg.innerHTML = `<div class="msg ok">✔ Evaluación guardada. Redirigiendo…</div>`;
+    toast("Evaluación guardada ✓");
     setTimeout(() => (window.location.href = "panel.html"), 1200);
   } catch (err) {
     console.error(err);
