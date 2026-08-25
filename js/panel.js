@@ -54,8 +54,10 @@ protegerPagina(null, async ({ user, perfil }) => {
     document.getElementById("acciones").innerHTML = `
       <h2>Hola, ${esc(perfil.nombre)} (Administrador)</h2>
       <p>Crea y administra a los coordinadores de Airtek.</p>
-      <button class="btn" id="btn-invitar-coord">🎟️ Invitar coordinador</button>
-      <a class="btn secundario" href="perfil.html" style="margin-left:8px">⚙️ Mi cuenta</a>
+      <div class="btn-row">
+        <button class="btn" id="btn-invitar-coord">🎟️ Invitar coordinador</button>
+        <a class="btn secundario" href="perfil.html">⚙️ Mi cuenta</a>
+      </div>
       <div id="invite-box"></div>`;
     document.getElementById("titulo-lista").textContent = "Coordinadores";
 
@@ -66,10 +68,12 @@ protegerPagina(null, async ({ user, perfil }) => {
     document.getElementById("acciones").innerHTML = `
       <h2>Hola, ${esc(perfil.nombre)} (Coordinador)</h2>
       <p>Aquí ves a tus supervisores y sus planillas.</p>
-      <a class="btn" href="dashboard.html">📊 Tablero de eficiencia</a>
-      <a class="btn" href="editor.html" style="margin-left:8px">✎ Editar formulario</a>
-      <button class="btn secundario" id="btn-invitar" style="margin-left:8px">🎟️ Invitar supervisor</button>
-      <a class="btn secundario" href="perfil.html" style="margin-left:8px">⚙️ Mi cuenta</a>
+      <div class="btn-row">
+        <a class="btn" href="dashboard.html">📊 Tablero de eficiencia</a>
+        <a class="btn" href="editor.html">✎ Editar formulario</a>
+        <button class="btn secundario" id="btn-invitar">🎟️ Invitar supervisor</button>
+        <a class="btn secundario" href="perfil.html">⚙️ Mi cuenta</a>
+      </div>
       <div id="invite-box"></div>`;
     document.getElementById("titulo-lista").textContent = "Mis supervisores";
 

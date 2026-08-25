@@ -102,6 +102,9 @@ textarea { min-height: 70px; resize: vertical; }
 .btn:hover { background: var(--azul-osc); }
 .btn:active { transform: scale(.98); }
 .btn.secundario { box-shadow: none; }
+
+/* Fila de botones de acción: se acomodan y saltan de línea con separación */
+.btn-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
 .btn.secundario { background: #fff; color: var(--azul); border: 1px solid var(--azul); }
 .btn.link { background: none; color: #fff; border: 1px solid rgba(255,255,255,.5); padding: 6px 12px; font-size: .85rem; }
 
@@ -208,6 +211,8 @@ textarea { min-height: 70px; resize: vertical; }
 
   /* Botones de acción cómodos al tacto */
   .card > .btn, .card > a.btn { display: block; width: 100%; text-align: center; margin: 6px 0 0; }
+  .btn-row { flex-direction: column; }
+  .btn-row .btn, .btn-row a.btn { width: 100%; text-align: center; }
   .btn { padding: 12px 20px; }
   input, select, textarea { font-size: 16px; } /* evita el zoom automático en iOS */
 
