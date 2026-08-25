@@ -198,7 +198,7 @@ async function cargarCoordinadores() {
     const snap = await getDocs(collection(db, "usuarios"));
     const all = snap.docs.map((d) => ({ uid: d.id, ...d.data() }));
     const coords = all
-      .filter((u) => u.rol === "coordinador" && u.creadorUid === sesion.user.uid)
+      .filter((u) => u.rol === "coordinador" && u.rootUid === sesion.user.uid)
       .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
     const countSup = (cid) => all.filter((u) => u.rol === "supervisor" && u.coordinadorUid === cid).length;
     if (!coords.length) {
