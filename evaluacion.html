@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nueva evaluación · Airtek</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="topbar">
+    <div class="marca">AIRTEK · Nueva evaluación</div>
+    <div>
+      <a class="btn link" href="panel.html">← Volver</a>
+    </div>
+  </div>
+
+  <div class="contenedor">
+    <form id="form-eval">
+      <div class="card">
+        <h1 id="titulo-form">Evaluación</h1>
+        <div id="datos-generales"></div>
+      </div>
+
+      <!-- Aquí el JS inserta las secciones con escalas -->
+      <div id="secciones"></div>
+
+      <!-- Pregunta Sí/No -->
+      <div class="card" id="bloque-sino"></div>
+
+      <!-- Firmas -->
+      <div class="card">
+        <h2>Firmas</h2>
+        <div class="firma-caja">
+          <div class="firma">
+            <label>Firma del Supervisor</label>
+            <canvas id="firma-supervisor"></canvas>
+            <button type="button" class="btn secundario" data-limpiar="firma-supervisor" style="margin-top:6px">Limpiar</button>
+          </div>
+          <div class="firma">
+            <label>Firma del Técnico Evaluado</label>
+            <canvas id="firma-tecnico"></canvas>
+            <button type="button" class="btn secundario" data-limpiar="firma-tecnico" style="margin-top:6px">Limpiar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div id="mensaje"></div>
+        <button class="btn" type="submit" id="btn-guardar">Guardar evaluación</button>
+      </div>
+    </form>
+  </div>
+
+  <script type="module" src="js/evaluacion.js"></script>
+</body>
+</html>

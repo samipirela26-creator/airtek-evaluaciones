@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel · Airtek Evaluaciones</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="topbar">
+    <div class="marca">AIRTEK · Evaluaciones</div>
+    <div>
+      <span class="usuario" id="usuario-info"></span>
+      <button class="btn link" id="btn-salir">Salir</button>
+    </div>
+  </div>
+
+  <div class="contenedor">
+    <!-- Acciones según rol -->
+    <div class="card" id="acciones"></div>
+
+    <!-- Lista de evaluaciones -->
+    <div class="card">
+      <h2 id="titulo-lista">Evaluaciones</h2>
+      <div id="lista">Cargando…</div>
+    </div>
+  </div>
+
+  <script type="module" src="js/panel.js"></script>
+</body>
+</html>

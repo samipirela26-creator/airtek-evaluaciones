@@ -1,0 +1,135 @@
+:root {
+  --azul: #0a4d8c;
+  --azul-osc: #073763;
+  --gris: #f4f6f9;
+  --borde: #dfe3e8;
+  --texto: #1f2933;
+  --ok: #1e7e34;
+  --error: #c0392b;
+  --sombra: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--gris);
+  color: var(--texto);
+  line-height: 1.5;
+}
+
+/* Barra superior */
+.topbar {
+  background: var(--azul);
+  color: #fff;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--sombra);
+}
+.topbar .marca { font-weight: 700; font-size: 1.1rem; letter-spacing: 0.5px; }
+.topbar .usuario { font-size: 0.9rem; opacity: 0.95; }
+
+.contenedor { max-width: 900px; margin: 0 auto; padding: 20px; }
+
+/* Tarjeta genérica */
+.card {
+  background: #fff;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  box-shadow: var(--sombra);
+  padding: 20px;
+  margin-bottom: 18px;
+}
+
+h1, h2, h3 { color: var(--azul-osc); }
+h1 { font-size: 1.4rem; }
+h2 { font-size: 1.15rem; margin-top: 0; }
+
+label { font-weight: 600; display: block; margin-bottom: 6px; }
+.requerido::after { content: " *"; color: var(--error); }
+
+input[type="text"], input[type="email"], input[type="password"],
+input[type="datetime-local"], select, textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+}
+textarea { min-height: 70px; resize: vertical; }
+.campo { margin-bottom: 16px; }
+
+/* Botones */
+.btn {
+  background: var(--azul);
+  color: #fff;
+  border: none;
+  padding: 11px 20px;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+.btn:hover { background: var(--azul-osc); }
+.btn.secundario { background: #fff; color: var(--azul); border: 1px solid var(--azul); }
+.btn.link { background: none; color: #fff; border: 1px solid rgba(255,255,255,.5); padding: 6px 12px; font-size: .85rem; }
+
+/* Tabla de escala (Mala/Regular/Buena/Excelente...) */
+.tabla-escala { width: 100%; border-collapse: collapse; margin-top: 8px; }
+.tabla-escala th, .tabla-escala td {
+  border: 1px solid var(--borde);
+  padding: 8px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+.tabla-escala th:first-child, .tabla-escala td:first-child {
+  text-align: left;
+  width: 55%;
+}
+.tabla-escala thead th { background: var(--gris); }
+.tabla-escala input[type="radio"] { width: auto; }
+
+/* Firmas */
+.firma-caja { display: flex; flex-wrap: wrap; gap: 20px; }
+.firma { flex: 1; min-width: 260px; }
+.firma canvas {
+  border: 1px dashed var(--azul);
+  border-radius: 8px;
+  background: #fff;
+  width: 100%;
+  height: 150px;
+  touch-action: none;
+}
+
+/* Mensajes */
+.msg { padding: 10px 14px; border-radius: 8px; margin: 10px 0; font-size: .95rem; }
+.msg.ok { background: #e5f6e9; color: var(--ok); }
+.msg.error { background: #fdecea; color: var(--error); }
+
+/* Login */
+.login-wrap {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.login-card { width: 100%; max-width: 380px; }
+.login-card .logo { text-align: center; font-size: 1.6rem; font-weight: 800; color: var(--azul); margin-bottom: 4px; }
+.login-card .sub { text-align: center; color: #667; margin-bottom: 18px; font-size: .9rem; }
+
+/* Lista de evaluaciones */
+.lista-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px; border: 1px solid var(--borde); border-radius: 8px; margin-bottom: 8px;
+  background: #fff;
+}
+.lista-item .meta { font-size: .85rem; color: #667; }
+.badge { background: var(--azul); color: #fff; border-radius: 20px; padding: 3px 10px; font-size: .8rem; font-weight: 700; }
+
+@media (max-width: 600px) {
+  .tabla-escala th, .tabla-escala td { font-size: .8rem; padding: 5px; }
+  .tabla-escala th:first-child, .tabla-escala td:first-child { width: 45%; }
+}
