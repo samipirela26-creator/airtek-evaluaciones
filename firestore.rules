@@ -27,7 +27,7 @@ service cloud.firestore {
                     && request.auth.uid == uid
                     && (request.resource.data.rol == 'supervisor' || request.resource.data.rol == 'coordinador')
                     && exists(/databases/$(database)/documents/invitaciones/$(request.resource.data.inviteToken))
-                    && invit(request.resource.data.inviteToken).usado == false
+                    && invit(request.resource.data.inviteToken).usadoPor == request.auth.uid
                     && invit(request.resource.data.inviteToken).rol == request.resource.data.rol;
       // Actualizar nombre: el dueño, su coordinador o el root. El rol NO cambia.
       allow update: if request.auth != null
@@ -48,7 +48,12 @@ service cloud.firestore {
       allow read: if true;                 // se valida antes de tener sesión
       allow create: if (esRoot() && request.resource.data.rol == 'coordinador')
                     || (esCoordinador() && request.resource.data.rol == 'supervisor');
-      allow update: if request.auth != null && request.resource.data.usado == true;
+      // Reclamo atómico de un solo uso: solo se puede pasar de sin-usar a
+      // usada, y quien la reclama se pone como usadoPor (a prueba de carreras).
+      allow update: if request.auth != null
+                    && resource.data.usado == false
+                    && request.resource.data.usado == true
+                    && request.resource.data.usadoPor == request.auth.uid;
       allow delete: if esRoot() || esCoordinador();
     }
 

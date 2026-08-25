@@ -8,7 +8,7 @@ import {
   doc,
   getDoc,
   setDoc,
-  updateDoc,
+  runTransaction,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
@@ -65,16 +65,33 @@ form.addEventListener("submit", async (e) => {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     const uid = cred.user.uid;
 
-    // Crea su perfil con el rol de la invitación, ligado a quien lo invitó.
+    // Reclama la invitación de forma ATÓMICA (a prueba de que el link se
+    // comparta en un grupo y varios lo abran a la vez): solo UNO gana.
+    try {
+      await runTransaction(db, async (tx) => {
+        const invRef = doc(db, "invitaciones", token);
+        const s = await tx.get(invRef);
+        if (!s.exists()) throw new Error("NO_EXISTE");
+        if (s.data().usado) throw new Error("USADA");
+        tx.update(invRef, { usado: true, usadoPor: uid });
+      });
+    } catch (txErr) {
+      // Otra persona ganó el enlace → borramos esta cuenta para no dejarla huérfana.
+      await cred.user.delete().catch(() => {});
+      throw new Error(
+        txErr.message === "USADA"
+          ? "Otra persona acaba de usar este enlace. Pídele al coordinador un enlace NUEVO."
+          : "La invitación ya no es válida. Pide un enlace nuevo."
+      );
+    }
+
+    // Ya reclamada: crea su perfil con el rol de la invitación.
     const rol = invitacion.rol || "supervisor";
     const creadorUid = invitacion.creadorUid || invitacion.coordinadorUid;
     const perfilDoc = { nombre, rol, inviteToken: token, createdAt: serverTimestamp() };
     if (rol === "supervisor") perfilDoc.coordinadorUid = creadorUid;
     else if (rol === "coordinador") perfilDoc.rootUid = creadorUid;
     await setDoc(doc(db, "usuarios", uid), perfilDoc);
-
-    // Marca la invitación como usada (un solo uso).
-    await updateDoc(doc(db, "invitaciones", token), { usado: true, usadoPor: uid });
 
     window.location.href = "panel.html";
   } catch (err) {
