@@ -157,7 +157,8 @@ textarea { min-height: 70px; resize: vertical; }
 }
 .srow-x:hover { background: #fdecea; }
 
-.add-row { display: flex; gap: 8px; margin: 12px 0 16px; }
+.add-row { display: flex; gap: 8px; margin: 12px 0 16px; align-items: flex-start; }
+.add-row textarea { min-height: 46px; }
 .add-row input { flex: 1; }
 .lista-vacia { text-align: center; color: #8a8a9a; padding: 18px; }
 

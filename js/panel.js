@@ -37,16 +37,16 @@ protegerPagina(null, async ({ user, perfil }) => {
       <h2>Hola, ${esc(perfil.nombre)}</h2>
       <p>Tus técnicos. Haz clic en uno para evaluarlo.</p>
       <div class="add-row">
-        <input id="nuevo-tecnico" placeholder="Nombre del técnico">
+        <textarea id="nuevo-tecnico" rows="2"
+          placeholder="Un técnico por línea. Puedes pegar una lista completa y se agregan todos."></textarea>
         <button class="btn" id="btn-add-tecnico">+ Agregar</button>
       </div>
+      <div id="add-hint" class="meta" style="margin:-8px 0 12px"></div>
       <div id="tecnicos-list">Cargando…</div>`;
     document.getElementById("titulo-lista").textContent = "Mis evaluaciones realizadas";
 
     document.getElementById("btn-add-tecnico").addEventListener("click", agregarTecnico);
-    document.getElementById("nuevo-tecnico").addEventListener("keydown", (e) => {
-      if (e.key === "Enter") agregarTecnico();
-    });
+    document.getElementById("nuevo-tecnico").addEventListener("input", actualizarHint);
     cargarTecnicos();
   } else {
     document.getElementById("acciones").innerHTML = `
@@ -99,25 +99,56 @@ async function cargarTecnicos() {
   }
 }
 
+// Convierte el texto (una lista pegada) en nombres limpios, sin numeración
+// tipo "1." o "-", sin vacíos y sin repetidos.
+function parseNombres(texto) {
+  const vistos = new Set();
+  return texto
+    .split(/\n+/)
+    .map((l) => l.replace(/^\s*\d+[.)\-]?\s*/, "").replace(/^\s*[-•*]\s*/, "").trim())
+    .filter((l) => {
+      if (!l) return false;
+      const k = l.toLowerCase();
+      if (vistos.has(k)) return false;
+      vistos.add(k);
+      return true;
+    });
+}
+
+function actualizarHint() {
+  const n = parseNombres(document.getElementById("nuevo-tecnico").value).length;
+  document.getElementById("add-hint").textContent =
+    n > 1 ? `Se agregarán ${n} técnicos` : "";
+}
+
 async function agregarTecnico() {
   const input = document.getElementById("nuevo-tecnico");
-  const nombre = input.value.trim();
-  if (!nombre) return;
+  const btn = document.getElementById("btn-add-tecnico");
+  const nombres = parseNombres(input.value);
+  if (!nombres.length) return;
   input.disabled = true;
+  btn.disabled = true;
   try {
-    await addDoc(collection(db, "tecnicos"), {
-      nombre,
-      supervisorUid: sesion.user.uid,
-      supervisorNombre: sesion.perfil.nombre,
-      createdAt: serverTimestamp(),
-    });
+    // Agrega todos de golpe.
+    await Promise.all(
+      nombres.map((nombre) =>
+        addDoc(collection(db, "tecnicos"), {
+          nombre,
+          supervisorUid: sesion.user.uid,
+          supervisorNombre: sesion.perfil.nombre,
+          createdAt: serverTimestamp(),
+        })
+      )
+    );
     input.value = "";
+    actualizarHint();
     await cargarTecnicos();
   } catch (err) {
     console.error(err);
-    alert("No se pudo agregar: " + err.message);
+    alert("No se pudieron agregar: " + err.message);
   } finally {
     input.disabled = false;
+    btn.disabled = false;
     input.focus();
   }
 }
