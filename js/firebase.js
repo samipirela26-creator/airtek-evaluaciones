@@ -17,12 +17,12 @@ import {
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "TU_API_KEY",
-  authDomain: "TU_PROYECTO.firebaseapp.com",
-  projectId: "TU_PROYECTO",
-  storageBucket: "TU_PROYECTO.appspot.com",
-  messagingSenderId: "TU_SENDER_ID",
-  appId: "TU_APP_ID",
+  apiKey: "AIzaSyAwyEN5JCV0Ps5xkp9iwln9CkA2c-GC0ag",
+  authDomain: "airtek-evaluaciones.firebaseapp.com",
+  projectId: "airtek-evaluaciones",
+  storageBucket: "airtek-evaluaciones.firebasestorage.app",
+  messagingSenderId: "889371807026",
+  appId: "1:889371807026:web:7220c1c3711910be9c9b2b",
 };
 
 const app = initializeApp(firebaseConfig);
