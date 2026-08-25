@@ -14,7 +14,7 @@ function esc(s) {
 const id = new URLSearchParams(location.search).get("id");
 let E = null; // la evaluación
 
-protegerPagina(null, async () => {
+protegerPagina(null, async ({ user, perfil }) => {
   const cont = document.getElementById("detalle");
   if (!id) {
     cont.innerHTML = `<div class="msg error">Falta el identificador de la evaluación.</div>`;
@@ -30,6 +30,12 @@ protegerPagina(null, async () => {
     render(cont);
     document.getElementById("btn-pdf").addEventListener("click", generarPDF);
     document.getElementById("btn-eliminar").addEventListener("click", eliminar);
+    // El supervisor dueño puede editar su evaluación.
+    if (perfil.rol === "supervisor" && E.supervisorUid === user.uid) {
+      const be = document.getElementById("btn-editar");
+      be.style.display = "";
+      be.addEventListener("click", () => (window.location.href = `evaluacion.html?edit=${id}`));
+    }
   } catch (err) {
     console.error(err);
     cont.innerHTML = `<div class="msg error">No se pudo cargar: ${err.message}</div>`;

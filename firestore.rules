@@ -75,8 +75,9 @@ service cloud.firestore {
                     && activo();
       allow read: if request.auth != null
                   && (resource.data.supervisorUid == request.auth.uid || esCoordinador() || esRoot());
+      // Editar/reasignar/borrar: el dueño, el coordinador o el root.
       allow update, delete: if request.auth != null
-                            && resource.data.supervisorUid == request.auth.uid;
+                            && (resource.data.supervisorUid == request.auth.uid || esCoordinador() || esRoot());
     }
 
     match /evaluaciones/{id} {
@@ -90,11 +91,9 @@ service cloud.firestore {
       allow read: if request.auth != null
                   && (resource.data.supervisorUid == request.auth.uid || esCoordinador() || esRoot());
 
-      // No se editan; sí se pueden BORRAR (para corregir una equivocada):
-      // el supervisor dueño, el coordinador o el root.
-      allow update: if false;
-      allow delete: if request.auth != null
-                    && (resource.data.supervisorUid == request.auth.uid || esCoordinador() || esRoot());
+      // Editar o borrar (para corregir): el supervisor dueño, coordinador o root.
+      allow update, delete: if request.auth != null
+                            && (resource.data.supervisorUid == request.auth.uid || esCoordinador() || esRoot());
     }
 
     // Auditoría: cualquiera autenticado deja registro; solo el root lo lee.

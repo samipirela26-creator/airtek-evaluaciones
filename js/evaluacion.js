@@ -5,6 +5,7 @@ import { cargarPlantillasDeCoordinador, opcionesDeSeccion, PLANTILLA_DEFAULT } f
 import {
   collection,
   addDoc,
+  updateDoc,
   doc,
   getDoc,
   serverTimestamp,
@@ -19,6 +20,8 @@ const firmas = {}; // guarda los controladores de cada canvas
 let tecnicoId = null; // técnico seleccionado (viene en ?tecnico=ID)
 let tecnicoPre = null; // nombre pre-cargado de ese técnico
 let borradorRestaurado = false; // para restaurar el borrador una sola vez
+let editId = null; // si venimos a EDITAR una evaluación (?edit=ID)
+let evalCargada = null; // datos de la evaluación que se está editando
 
 // Solo supervisores evalúan.
 protegerPagina("supervisor", async (s) => {
@@ -27,9 +30,28 @@ protegerPagina("supervisor", async (s) => {
   if (!plantillasDisponibles.length) plantillasDisponibles = [PLANTILLA_DEFAULT];
   P = plantillasDisponibles[0];
 
-  // Si se abrió desde una tarjeta de técnico, pre-cargamos su nombre.
-  tecnicoId = new URLSearchParams(location.search).get("tecnico");
-  if (tecnicoId) {
+  const params = new URLSearchParams(location.search);
+  editId = params.get("edit");
+  tecnicoId = params.get("tecnico");
+
+  if (editId) {
+    // Modo edición: cargamos la evaluación y usamos su mismo formulario (snapshot).
+    try {
+      const snap = await getDoc(doc(db, "evaluaciones", editId));
+      if (snap.exists()) {
+        evalCargada = snap.data();
+        if (evalCargada.plantillaSnapshot) {
+          plantillasDisponibles = [evalCargada.plantillaSnapshot];
+          P = evalCargada.plantillaSnapshot;
+        }
+        tecnicoId = evalCargada.tecnicoId || null;
+        tecnicoPre = evalCargada.tecnicoNombre || null;
+      }
+    } catch (err) {
+      console.warn("No se pudo cargar la evaluación a editar:", err);
+    }
+  } else if (tecnicoId) {
+    // Si se abrió desde una tarjeta de técnico, pre-cargamos su nombre.
     try {
       const snap = await getDoc(doc(db, "tecnicos", tecnicoId));
       if (snap.exists()) tecnicoPre = snap.data().nombre;
@@ -38,6 +60,7 @@ protegerPagina("supervisor", async (s) => {
     }
   }
   render();
+  if (evalCargada) prellenar();
 });
 
 // Configuración fija (una sola vez): firmas y submit.
@@ -62,6 +85,7 @@ function draftKey() {
   return `airtek_borrador_${tecnicoId || "nuevo"}`;
 }
 function guardarBorrador() {
+  if (editId) return; // en edición no usamos borrador
   const form = document.getElementById("form-eval");
   const data = {};
   form.querySelectorAll("input, select, textarea").forEach((el) => {
@@ -71,6 +95,7 @@ function guardarBorrador() {
   try { localStorage.setItem(draftKey(), JSON.stringify({ data, ts: Date.now() })); } catch {}
 }
 function restaurarBorrador() {
+  if (editId) return; // en edición no restauramos borrador
   let raw;
   try { raw = localStorage.getItem(draftKey()); } catch { return; }
   if (!raw) return;
@@ -89,6 +114,30 @@ function restaurarBorrador() {
 }
 function limpiarBorrador() {
   try { localStorage.removeItem(draftKey()); } catch {}
+}
+
+// Pre-llena el formulario con una evaluación existente (modo edición).
+function prellenar() {
+  const E = evalCargada;
+  document.getElementById("titulo-form").textContent = "Editar: " + (P.nombre || "");
+  for (const c of P.datos) {
+    const el = document.getElementById(c.id);
+    if (el && E[c.id] != null) el.value = E[c.id];
+  }
+  for (const sec of P.secciones) {
+    const arr = E.respuestas?.[sec.id] || [];
+    sec.preguntas.forEach((_, i) => {
+      const val = arr[i];
+      if (val) document.querySelectorAll(`input[name="${sec.id}_${i}"]`).forEach((r) => { if (r.value === val) r.checked = true; });
+    });
+    const obs = document.getElementById(sec.id + "_obs");
+    if (obs && E.observaciones?.[sec.id]) obs.value = E.observaciones[sec.id];
+  }
+  if (E.conoceCanales) document.querySelectorAll(`input[name="${P.siNo.id}"]`).forEach((r) => { if (r.value === E.conoceCanales) r.checked = true; });
+  const so = document.getElementById(P.siNo.id + "_obs");
+  if (so && E.observaciones?.[P.siNo.id]) so.value = E.observaciones[P.siNo.id];
+  if (E.firmaSupervisor) firmas["firma-supervisor"].cargar(E.firmaSupervisor);
+  if (E.firmaTecnico) firmas["firma-tecnico"].cargar(E.firmaTecnico);
 }
 
 // Pinta las partes que dependen del formulario elegido (P). Se puede repintar
@@ -216,6 +265,13 @@ function crearFirma(id) {
     limpiar: () => { ctx.clearRect(0, 0, canvas.width, canvas.height); vacio = true; },
     estaVacio: () => vacio,
     dataURL: () => (vacio ? null : canvas.toDataURL("image/png")),
+    // Carga una firma guardada (para editar): la dibuja y la marca como presente.
+    cargar: (durl) => {
+      const img = new Image();
+      img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      img.src = durl;
+      vacio = false;
+    },
   };
 }
 
@@ -312,11 +368,16 @@ async function guardar(e) {
   btn.disabled = true;
   btn.textContent = "Guardando…";
   try {
-    await addDoc(collection(db, "evaluaciones"), registro);
-    limpiarBorrador();
-    msg.innerHTML = `<div class="msg ok">✔ Evaluación guardada. Redirigiendo…</div>`;
-    toast("Evaluación guardada ✓");
-    setTimeout(() => (window.location.href = "panel.html"), 1200);
+    if (editId) {
+      const { createdAt, ...sinFecha } = registro; // no pisamos la fecha original
+      await updateDoc(doc(db, "evaluaciones", editId), { ...sinFecha, editadoEn: serverTimestamp() });
+    } else {
+      await addDoc(collection(db, "evaluaciones"), registro);
+      limpiarBorrador();
+    }
+    msg.innerHTML = `<div class="msg ok">✔ Evaluación ${editId ? "actualizada" : "guardada"}. Redirigiendo…</div>`;
+    toast(`Evaluación ${editId ? "actualizada" : "guardada"} ✓`);
+    setTimeout(() => (window.location.href = editId ? `detalle.html?id=${editId}` : "panel.html"), 1200);
   } catch (err) {
     console.error(err);
     msg.innerHTML = `<div class="msg error">No se pudo guardar: ${err.message}</div>`;

@@ -512,7 +512,16 @@ async function mostrarSupervisor(uid, nombre) {
     const tecnicos = tSnap.docs.map((d) => d.data()).sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
     const evals = eSnap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 
-    const activo = await leerActivo(uid);
+    const perfilSup = (await getDoc(doc(db, "usuarios", uid))).data() || {};
+    const activo = perfilSup.activo !== false;
+    let hermanos = [];
+    if (perfilSup.coordinadorUid) {
+      const hSnap = await getDocs(query(collection(db, "usuarios"), where("coordinadorUid", "==", perfilSup.coordinadorUid)));
+      hermanos = hSnap.docs
+        .map((d) => ({ uid: d.id, ...d.data() }))
+        .filter((u) => u.rol === "supervisor" && u.uid !== uid)
+        .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
+    }
     let html = `<div class="btn-row">
       <button class="btn secundario" id="btn-volver-sups">← Volver</button>
       ${htmlBotonEstado(activo, "supervisor")}
@@ -529,6 +538,16 @@ async function mostrarSupervisor(uid, nombre) {
           })
           .join("")
       : `<div class="lista-vacia">Sin técnicos.</div>`;
+
+    // Reasignar todos sus técnicos a otro supervisor del mismo coordinador.
+    if (tecnicos.length && hermanos.length) {
+      html += `<div class="add-row" style="margin-top:8px">
+        <select id="sel-reasignar"><option value="">Reasignar sus técnicos a…</option>
+          ${hermanos.map((h) => `<option value="${h.uid}" data-nombre="${esc(h.nombre)}">${esc(h.nombre)}</option>`).join("")}
+        </select>
+        <button class="btn secundario" id="btn-reasignar">Reasignar</button>
+      </div>`;
+    }
 
     html += `<h3 style="margin-top:16px">Planillas llenadas (${evals.length})</h3>`;
     html += evals.length
@@ -552,6 +571,24 @@ async function mostrarSupervisor(uid, nombre) {
     cont.querySelectorAll("[data-id]").forEach((el) =>
       el.addEventListener("click", () => (window.location.href = `detalle.html?id=${el.dataset.id}`))
     );
+    const btnR = document.getElementById("btn-reasignar");
+    if (btnR) btnR.addEventListener("click", async () => {
+      const sel = document.getElementById("sel-reasignar");
+      const destino = sel.value;
+      if (!destino) return;
+      const destinoNombre = sel.options[sel.selectedIndex].dataset.nombre;
+      if (!confirm(`¿Reasignar los ${tSnap.docs.length} técnicos de ${nombre} a ${destinoNombre}?`)) return;
+      try {
+        await Promise.all(
+          tSnap.docs.map((d) => updateDoc(doc(db, "tecnicos", d.id), { supervisorUid: destino, supervisorNombre: destinoNombre }))
+        );
+        logAudit("tecnicos_reasignados", { de: uid, a: destino, cantidad: tSnap.docs.length });
+        toast(`${tSnap.docs.length} técnicos reasignados ✓`);
+        mostrarSupervisor(uid, nombre);
+      } catch (err) {
+        toast("No se pudo reasignar: " + err.message, { ms: 5000 });
+      }
+    });
   } catch (err) {
     console.error(err);
     cont.innerHTML = `<div class="msg error">Error: ${err.message}</div>`;
