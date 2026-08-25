@@ -42,6 +42,11 @@ if (typeof document !== "undefined") {
   add("link", { rel: "manifest", href: "manifest.json" });
   add("meta", { name: "theme-color", content: "#0066ff" });
   add("link", { rel: "apple-touch-icon", href: "icons/apple-touch-icon.png" });
+  // iOS/Safari: abrir a pantalla completa como app
+  add("meta", { name: "apple-mobile-web-app-capable", content: "yes" });
+  add("meta", { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" });
+  add("meta", { name: "apple-mobile-web-app-title", content: "Airtek Eval" });
+  add("meta", { name: "mobile-web-app-capable", content: "yes" });
 
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
