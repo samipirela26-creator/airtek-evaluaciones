@@ -1,6 +1,10 @@
+/* Identidad visual basada en airtek.com.ve: azul eléctrico + negro + blanco */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+
 :root {
-  --azul: #0a4d8c;
-  --azul-osc: #073763;
+  --azul: #0066ff;       /* azul de marca Airtek */
+  --azul-osc: #0047b3;   /* azul para hover */
+  --negro: #111111;      /* barras/encabezados oscuros */
   --gris: #f4f6f9;
   --borde: #dfe3e8;
   --texto: #1f2933;
@@ -13,15 +17,15 @@
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   background: var(--gris);
   color: var(--texto);
   line-height: 1.5;
 }
 
-/* Barra superior */
+/* Barra superior (negra, estilo Airtek) */
 .topbar {
-  background: var(--azul);
+  background: var(--negro);
   color: #fff;
   padding: 12px 20px;
   display: flex;
