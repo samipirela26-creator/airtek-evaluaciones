@@ -511,15 +511,19 @@ async function cargarSupervisores() {
   document.getElementById("titulo-lista").textContent = "Mis supervisores";
   cont.innerHTML = "Cargando…";
   try {
-    const [uSnap, tSnap] = await Promise.all([
-      getDocs(query(collection(db, "usuarios"), where("coordinadorUid", "==", sesion.user.uid))),
-      getDocs(collection(db, "tecnicos")),
-    ]);
+    const uSnap = await getDocs(query(collection(db, "usuarios"), where("coordinadorUid", "==", sesion.user.uid)));
     const sups = uSnap.docs
       .map((d) => ({ uid: d.id, ...d.data() }))
       .filter((u) => u.rol === "supervisor")
       .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
-    const tecs = tSnap.docs.map((d) => d.data());
+    // Contar técnicos SOLO de mis supervisores (consulta acotada, por lotes de 10).
+    const tecs = [];
+    const supUids = sups.map((s) => s.uid);
+    for (let i = 0; i < supUids.length; i += 10) {
+      const chunk = supUids.slice(i, i + 10);
+      const t = await getDocs(query(collection(db, "tecnicos"), where("supervisorUid", "in", chunk)));
+      t.forEach((d) => tecs.push(d.data()));
+    }
     const countTec = (sid) => tecs.filter((t) => t.supervisorUid === sid).length;
 
     if (!sups.length) {
