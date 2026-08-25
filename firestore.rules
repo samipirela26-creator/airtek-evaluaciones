@@ -2,11 +2,18 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Perfil del usuario (nombre + rol). Se lee su propio perfil.
-    // La escritura se hace desde la consola de Firebase (no desde la app),
-    // por eso aquí no se permite escribir.
+    function perfil() {
+      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
+    }
+    function esCoordinador() {
+      return request.auth != null && perfil().rol == 'coordinador';
+    }
+
+    // Perfil del usuario (nombre + rol).
     match /usuarios/{uid} {
-      allow read: if request.auth != null && request.auth.uid == uid;
+      // El usuario lee su propio perfil; el coordinador lee los demás
+      // (para ver a sus supervisores).
+      allow read: if request.auth != null && (request.auth.uid == uid || esCoordinador());
       // Un supervisor invitado crea su propio perfil (rol supervisor) solo si
       // presenta una invitación existente y sin usar. Coordinadores se crean
       // desde la consola (que ignora estas reglas).
@@ -16,13 +23,6 @@ service cloud.firestore {
                     && exists(/databases/$(database)/documents/invitaciones/$(request.resource.data.inviteToken))
                     && get(/databases/$(database)/documents/invitaciones/$(request.resource.data.inviteToken)).data.usado == false;
       allow update, delete: if false;
-    }
-
-    function perfil() {
-      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
-    }
-    function esCoordinador() {
-      return request.auth != null && perfil().rol == 'coordinador';
     }
 
     // Plantilla del formulario: todos los usuarios autenticados la leen

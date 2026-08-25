@@ -48,6 +48,7 @@ protegerPagina(null, async ({ user, perfil }) => {
     document.getElementById("btn-add-tecnico").addEventListener("click", agregarTecnico);
     document.getElementById("nuevo-tecnico").addEventListener("input", actualizarHint);
     cargarTecnicos();
+    cargarLista(perfil, user.uid);
   } else {
     document.getElementById("acciones").innerHTML = `
       <h2>Hola, ${esc(perfil.nombre)} (Coordinador)</h2>
@@ -58,9 +59,8 @@ protegerPagina(null, async ({ user, perfil }) => {
     document.getElementById("titulo-lista").textContent = "Todas las evaluaciones";
 
     document.getElementById("btn-invitar").addEventListener("click", generarInvitacion);
+    cargarSupervisores();
   }
-
-  cargarLista(perfil, user.uid);
 });
 
 // ───────── Técnicos (solo supervisor) ─────────
@@ -206,6 +206,94 @@ async function generarInvitacion() {
     box.innerHTML = `<div class="msg error" style="margin-top:12px">No se pudo generar: ${err.message}</div>`;
   } finally {
     btn.disabled = false;
+  }
+}
+
+// ───────── Vista del coordinador: sus supervisores ─────────
+async function cargarSupervisores() {
+  const cont = document.getElementById("lista");
+  document.getElementById("titulo-lista").textContent = "Mis supervisores";
+  cont.innerHTML = "Cargando…";
+  try {
+    const snap = await getDocs(
+      query(collection(db, "usuarios"), where("coordinadorUid", "==", sesion.user.uid))
+    );
+    const sups = snap.docs
+      .map((d) => ({ uid: d.id, ...d.data() }))
+      .filter((u) => u.rol === "supervisor")
+      .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
+
+    if (!sups.length) {
+      cont.innerHTML = `<div class="lista-vacia">Aún no tienes supervisores. Genera un enlace con "🎟️ Invitar supervisor" y compártelo.</div>`;
+      return;
+    }
+    cont.innerHTML = sups
+      .map((s, i) => {
+        const bg = AVATAR_COLORS[i % AVATAR_COLORS.length];
+        return `
+        <div class="srow" data-sup="${s.uid}" data-nombre="${esc(s.nombre)}">
+          <div class="aa-avatar" style="background:${bg}">${initials(s.nombre)}</div>
+          <span class="srow-name">${esc(s.nombre)}</span>
+          <span class="badge">ver ›</span>
+        </div>`;
+      })
+      .join("");
+    cont.querySelectorAll("[data-sup]").forEach((el) =>
+      el.addEventListener("click", () => mostrarSupervisor(el.dataset.sup, el.dataset.nombre))
+    );
+  } catch (err) {
+    console.error(err);
+    cont.innerHTML = `<div class="msg error">No se pudieron cargar los supervisores: ${err.message}</div>`;
+  }
+}
+
+async function mostrarSupervisor(uid, nombre) {
+  const cont = document.getElementById("lista");
+  document.getElementById("titulo-lista").textContent = `Supervisor: ${nombre}`;
+  cont.innerHTML = "Cargando…";
+  try {
+    const [tSnap, eSnap] = await Promise.all([
+      getDocs(query(collection(db, "tecnicos"), where("supervisorUid", "==", uid))),
+      getDocs(query(collection(db, "evaluaciones"), where("supervisorUid", "==", uid))),
+    ]);
+    const tecnicos = tSnap.docs.map((d) => d.data()).sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
+    const evals = eSnap.docs.map((d) => d.data()).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
+    let html = `<button class="btn secundario" id="btn-volver-sups">← Volver a supervisores</button>`;
+
+    html += `<h3 style="margin-top:16px">Técnicos (${tecnicos.length})</h3>`;
+    html += tecnicos.length
+      ? tecnicos
+          .map((t, i) => {
+            const bg = AVATAR_COLORS[i % AVATAR_COLORS.length];
+            return `<div class="srow" style="cursor:default">
+              <div class="aa-avatar sm" style="background:${bg}">${initials(t.nombre)}</div>
+              <span class="srow-name">${esc(t.nombre)}</span></div>`;
+          })
+          .join("")
+      : `<div class="lista-vacia">Sin técnicos.</div>`;
+
+    html += `<h3 style="margin-top:16px">Planillas llenadas (${evals.length})</h3>`;
+    html += evals.length
+      ? evals
+          .map((e) => {
+            const fecha = e.createdAt?.toDate ? e.createdAt.toDate().toLocaleString("es-VE") : "";
+            const prom = e.puntajes?.promedioGeneral;
+            const badge = prom != null ? `${prom.toFixed(2)} / 4` : "—";
+            return `<div class="lista-item">
+              <div><strong>${esc(e.tecnicoNombre) || "(sin nombre)"}</strong>
+                <div class="meta">${esc(e.area) || ""} · ${esc(e.motivo) || "s/motivo"}<br>${fecha}</div>
+              </div>
+              <span class="badge">${badge}</span></div>`;
+          })
+          .join("")
+      : `<div class="lista-vacia">Aún no ha llenado planillas.</div>`;
+
+    cont.innerHTML = html;
+    document.getElementById("btn-volver-sups").addEventListener("click", cargarSupervisores);
+  } catch (err) {
+    console.error(err);
+    cont.innerHTML = `<div class="msg error">Error: ${err.message}</div>`;
   }
 }
 
