@@ -1,58 +1,101 @@
-// editor.js — el coordinador edita la plantilla del formulario y la publica.
-import { db } from "./firebase.js";
+// editor.js — el coordinador gestiona VARIOS formularios (crear/editar/eliminar).
+import { db, toast, logAudit } from "./firebase.js";
 import { protegerPagina } from "./session.js";
-import { cargarPlantillaActiva, opcionesDeSeccion, PLANTILLA_DEFAULT } from "./plantilla.js";
+import { cargarPlantillasDeCoordinador, opcionesDeSeccion, PLANTILLA_DEFAULT } from "./plantilla.js";
 import {
   doc,
   setDoc,
+  addDoc,
+  deleteDoc,
+  collection,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-let P = null; // plantilla en edición (copia mutable)
 let sesion = null;
+let P = null; // formulario en edición (null = viendo la lista)
 
-// Solo el coordinador entra aquí.
-protegerPagina("coordinador", async (s) => {
+protegerPagina("coordinador", (s) => {
   sesion = s;
-  const cargada = await cargarPlantillaActiva(db);
-  P = clonar(cargada);
-  normalizarColumnas(P); // asegura que cada sección tenga sec.opciones editables
-  render();
-  document.getElementById("btn-publicar").addEventListener("click", publicar);
-  document.getElementById("btn-restaurar").addEventListener("click", () => {
-    if (confirm("¿Restaurar el formulario original? Se perderán los cambios no publicados.")) {
-      P = clonar(PLANTILLA_DEFAULT);
-      normalizarColumnas(P);
-      render();
-    }
-  });
+  verLista();
 });
 
-function clonar(obj) {
-  return JSON.parse(JSON.stringify(obj));
+function clonar(o) { return JSON.parse(JSON.stringify(o)); }
+function escapar(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 }
-
-// Convierte el formato viejo (sec.escala) al nuevo (sec.opciones editable).
 function normalizarColumnas(p) {
   p.secciones.forEach((sec) => {
     sec.opciones = clonar(opcionesDeSeccion(sec));
     delete sec.escala;
   });
 }
-
-// Reasigna los valores numéricos 1..N a las columnas que sí cuentan (izq→der).
-// Las columnas marcadas "no cuenta" quedan en null (no afectan el puntaje).
 function renumerar(sec) {
   let n = 0;
-  sec.opciones.forEach((o) => {
-    o.valor = o.valor === null ? null : ++n;
-  });
+  sec.opciones.forEach((o) => (o.valor = o.valor === null ? null : ++n));
 }
 
-// ---- Render del editor ----
-function render() {
+// ══════════ LISTA DE FORMULARIOS ══════════
+async function verLista() {
+  P = null;
+  const cont = document.getElementById("editor");
+  cont.innerHTML = "Cargando…";
+  const forms = await cargarPlantillasDeCoordinador(db, sesion.user.uid);
+
+  let html = `<div class="card"><button class="btn" id="btn-nuevo">+ Crear formulario</button></div>`;
+  if (!forms.length) {
+    html += `<div class="card lista-vacia">Aún no tienes formularios. Crea el primero (parte de la plantilla oficial de Airtek y edítala a tu gusto).</div>`;
+  } else {
+    html += `<div class="card">` + forms
+      .map(
+        (f) => `<div class="srow" style="cursor:default">
+          <span class="srow-name">${escapar(f.nombre || "(sin nombre)")}</span>
+          <button class="btn secundario" data-editar="${f.id}">Editar</button>
+          <button class="srow-x" data-eliminar="${f.id}" title="Eliminar">✕</button>
+        </div>`
+      )
+      .join("") + `</div>`;
+  }
+  cont.innerHTML = html;
+
+  document.getElementById("btn-nuevo").addEventListener("click", () => {
+    P = clonar(PLANTILLA_DEFAULT);
+    P.id = null;
+    P.nombre = "Nuevo formulario";
+    normalizarColumnas(P);
+    verEditor();
+  });
+  cont.querySelectorAll("[data-editar]").forEach((b) =>
+    b.addEventListener("click", () => {
+      P = clonar(forms.find((x) => x.id === b.dataset.editar));
+      normalizarColumnas(P);
+      verEditor();
+    })
+  );
+  cont.querySelectorAll("[data-eliminar]").forEach((b) =>
+    b.addEventListener("click", async () => {
+      if (!confirm("¿Eliminar este formulario? Las evaluaciones ya hechas con él se conservan.")) return;
+      try {
+        await deleteDoc(doc(db, "plantillas", b.dataset.eliminar));
+        logAudit("formulario_eliminado", { plantillaId: b.dataset.eliminar });
+        toast("Formulario eliminado");
+        verLista();
+      } catch (err) {
+        toast("No se pudo eliminar: " + err.message, { ms: 5000 });
+      }
+    })
+  );
+}
+
+// ══════════ EDITOR DE UN FORMULARIO ══════════
+function verEditor() {
   const cont = document.getElementById("editor");
   cont.innerHTML = `
+    <div class="card">
+      <div class="btn-row">
+        <button class="btn secundario" id="btn-volver-lista">← Volver a la lista</button>
+        <button class="btn" id="btn-guardar">Guardar formulario</button>
+      </div>
+    </div>
     <div class="card">
       <div class="campo">
         <label>Nombre del formulario</label>
@@ -63,22 +106,20 @@ function render() {
         <input type="text" id="p-sino" value="${escapar(P.siNo.label)}">
       </div>
     </div>
-
     ${P.secciones.map(seccionEditor).join("")}
-
     <div class="card" style="text-align:center">
       <button type="button" class="btn secundario" id="btn-add-seccion">+ Agregar sección</button>
-    </div>
-  `;
+    </div>`;
 
+  document.getElementById("btn-volver-lista").addEventListener("click", verLista);
+  document.getElementById("btn-guardar").addEventListener("click", guardar);
   document.getElementById("p-nombre").addEventListener("input", (e) => (P.nombre = e.target.value));
   document.getElementById("p-sino").addEventListener("input", (e) => (P.siNo.label = e.target.value));
   document.getElementById("btn-add-seccion").addEventListener("click", agregarSeccion);
-
   cont.querySelectorAll("[data-accion]").forEach((el) => el.addEventListener("click", onAccion));
   cont.querySelectorAll("[data-edit]").forEach((el) => {
     el.addEventListener("input", onEdit);
-    el.addEventListener("change", onEdit); // para los checkbox
+    el.addEventListener("change", onEdit);
   });
 }
 
@@ -111,14 +152,10 @@ function seccionEditor(sec, si) {
       <label>Título de la sección ${si + 1}</label>
       <input type="text" data-edit="titulo" data-sec="${si}" value="${escapar(sec.titulo)}">
     </div>
-
     <label>Columnas de calificación (de peor a mejor)</label>
-    <p style="font-size:.85rem;color:#667;margin:4px 0 8px">
-      Marca <em>"no cuenta"</em> en columnas como "No Aplica" para que no afecten el promedio.
-    </p>
+    <p style="font-size:.85rem;color:#667;margin:4px 0 8px">Marca <em>"no cuenta"</em> en columnas como "No Aplica".</p>
     ${columnas}
     <button type="button" class="btn secundario" data-accion="add-col" data-sec="${si}" style="margin-bottom:14px">+ Agregar columna</button>
-
     <label>Preguntas</label>
     ${preguntas}
     <button type="button" class="btn secundario" data-accion="add-preg" data-sec="${si}">+ Agregar pregunta</button>
@@ -126,55 +163,36 @@ function seccionEditor(sec, si) {
   </div>`;
 }
 
-// ---- Ediciones de texto/checkbox (no re-renderizan, para no perder el foco) ----
 function onEdit(e) {
   const el = e.target;
   const si = +el.dataset.sec;
   const sec = P.secciones[si];
   switch (el.dataset.edit) {
-    case "titulo":
-      sec.titulo = el.value;
-      break;
-    case "preg":
-      sec.preguntas[+el.dataset.preg] = el.value;
-      break;
-    case "col":
-      sec.opciones[+el.dataset.col].label = el.value;
-      break;
+    case "titulo": sec.titulo = el.value; break;
+    case "preg": sec.preguntas[+el.dataset.preg] = el.value; break;
+    case "col": sec.opciones[+el.dataset.col].label = el.value; break;
     case "colnc":
-      // marcar/desmarcar "no cuenta"
       sec.opciones[+el.dataset.col].valor = el.checked ? null : 0;
       renumerar(sec);
       break;
   }
 }
 
-// ---- Acciones estructurales (sí re-renderizan) ----
 function onAccion(e) {
   const el = e.target;
   const si = +el.dataset.sec;
   const sec = P.secciones[si];
   switch (el.dataset.accion) {
-    case "add-preg":
-      sec.preguntas.push("Nueva pregunta");
-      break;
-    case "del-preg":
-      sec.preguntas.splice(+el.dataset.preg, 1);
-      break;
-    case "add-col":
-      sec.opciones.push({ label: "Nueva", valor: 0 });
-      renumerar(sec);
-      break;
-    case "del-col":
-      sec.opciones.splice(+el.dataset.col, 1);
-      renumerar(sec);
-      break;
+    case "add-preg": sec.preguntas.push("Nueva pregunta"); break;
+    case "del-preg": sec.preguntas.splice(+el.dataset.preg, 1); break;
+    case "add-col": sec.opciones.push({ label: "Nueva", valor: 0 }); renumerar(sec); break;
+    case "del-col": sec.opciones.splice(+el.dataset.col, 1); renumerar(sec); break;
     case "del-seccion":
       if (!confirm(`¿Eliminar la sección "${sec.titulo}"?`)) return;
       P.secciones.splice(si, 1);
       break;
   }
-  render();
+  verEditor();
 }
 
 function agregarSeccion() {
@@ -182,69 +200,60 @@ function agregarSeccion() {
     id: "seccion_" + P.secciones.length,
     titulo: "Nueva sección",
     opciones: [
-      { label: "Mala", valor: 1 },
-      { label: "Regular", valor: 2 },
-      { label: "Buena", valor: 3 },
-      { label: "Excelente", valor: 4 },
+      { label: "Mala", valor: 1 }, { label: "Regular", valor: 2 },
+      { label: "Buena", valor: 3 }, { label: "Excelente", valor: 4 },
     ],
     preguntas: ["Nueva pregunta"],
   });
-  render();
+  verEditor();
 }
 
-// ---- Publicar ----
-async function publicar() {
+async function guardar() {
   const msg = document.getElementById("mensaje");
   msg.innerHTML = "";
+  const error = (t) => (msg.innerHTML = `<div class="msg error">${t}</div>`);
 
   if (!P.nombre.trim()) return error("El formulario necesita un nombre.");
   if (!P.secciones.length) return error("El formulario necesita al menos una sección.");
-
   for (const sec of P.secciones) {
     if (!sec.titulo.trim()) return error("Hay una sección sin título.");
-    // Limpia columnas y preguntas vacías
     sec.opciones = sec.opciones.filter((o) => o.label.trim());
     sec.opciones.forEach((o) => (o.label = o.label.trim()));
     renumerar(sec);
-    if (sec.opciones.length < 2)
-      return error(`La sección "${sec.titulo}" necesita al menos 2 columnas.`);
-    if (!sec.opciones.some((o) => o.valor !== null))
-      return error(`La sección "${sec.titulo}" necesita al menos una columna que cuente en el puntaje.`);
+    if (sec.opciones.length < 2) return error(`La sección "${sec.titulo}" necesita al menos 2 columnas.`);
+    if (!sec.opciones.some((o) => o.valor !== null)) return error(`La sección "${sec.titulo}" necesita una columna que cuente en el puntaje.`);
     sec.preguntas = sec.preguntas.map((p) => p.trim()).filter((p) => p.length);
-    if (!sec.preguntas.length)
-      return error(`La sección "${sec.titulo}" no tiene preguntas.`);
+    if (!sec.preguntas.length) return error(`La sección "${sec.titulo}" no tiene preguntas.`);
   }
 
   const registro = {
-    ...P,
-    id: "activa",
+    nombre: P.nombre,
+    datos: P.datos,
+    secciones: P.secciones,
+    siNo: P.siNo,
+    coordinadorUid: sesion.user.uid,
     version: (P.version || 0) + 1,
     actualizadaPor: sesion.perfil.nombre,
     actualizadaEn: serverTimestamp(),
   };
 
-  const btn = document.getElementById("btn-publicar");
+  const btn = document.getElementById("btn-guardar");
   btn.disabled = true;
-  btn.textContent = "Publicando…";
+  btn.textContent = "Guardando…";
   try {
-    await setDoc(doc(db, "plantillas", "activa"), registro);
-    P.version = registro.version;
-    msg.innerHTML = `<div class="msg ok">✔ Formulario publicado (versión ${registro.version}). Los supervisores ya lo usarán.</div>`;
-    render(); // refresca por si se limpiaron campos vacíos
+    if (P.id) {
+      await setDoc(doc(db, "plantillas", P.id), registro);
+    } else {
+      const ref = await addDoc(collection(db, "plantillas"), { ...registro, createdAt: serverTimestamp() });
+      P.id = ref.id;
+    }
+    logAudit("formulario_guardado", { plantillaId: P.id, nombre: P.nombre });
+    toast("Formulario guardado ✓");
+    verLista();
   } catch (err) {
     console.error(err);
-    error("No se pudo publicar: " + err.message);
-  } finally {
+    error("No se pudo guardar: " + err.message);
     btn.disabled = false;
-    btn.textContent = "Guardar y publicar";
+    btn.textContent = "Guardar formulario";
   }
-}
-
-function error(texto) {
-  document.getElementById("mensaje").innerHTML = `<div class="msg error">${texto}</div>`;
-}
-
-// Evita romper el HTML si un texto trae comillas.
-function escapar(s) {
-  return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 }

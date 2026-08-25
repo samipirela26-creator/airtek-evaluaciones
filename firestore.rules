@@ -43,9 +43,14 @@ service cloud.firestore {
 
     // Plantilla del formulario: todos los usuarios autenticados la leen
     // (supervisores para evaluar); solo el coordinador la edita.
+    // Formularios: los lee cualquier autenticado (supervisores para evaluar);
+    // cada coordinador crea/edita/borra SOLO los suyos.
     match /plantillas/{id} {
       allow read: if request.auth != null;
-      allow write: if esCoordinador() && activo();
+      allow create: if esCoordinador() && activo()
+                    && request.resource.data.coordinadorUid == request.auth.uid;
+      allow update, delete: if esCoordinador() && activo()
+                            && resource.data.coordinadorUid == request.auth.uid;
     }
 
     // Invitaciones: el root invita coordinadores; el coordinador, supervisores.

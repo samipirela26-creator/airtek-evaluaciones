@@ -1,7 +1,7 @@
 // evaluacion.js — renderiza la plantilla, recoge respuestas, calcula puntajes y guarda.
 import { db } from "./firebase.js";
 import { protegerPagina } from "./session.js";
-import { cargarPlantillaActiva, opcionesDeSeccion } from "./plantilla.js";
+import { cargarPlantillasDeCoordinador, opcionesDeSeccion, PLANTILLA_DEFAULT } from "./plantilla.js";
 import {
   collection,
   addDoc,
@@ -10,7 +10,8 @@ import {
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-// La plantilla vigente se carga desde Firebase al abrir la página.
+// Los formularios disponibles (los del coordinador del supervisor) y el elegido.
+let plantillasDisponibles = [];
 let P = null;
 
 let sesion = null; // { user, perfil }
@@ -21,7 +22,9 @@ let tecnicoPre = null; // nombre pre-cargado de ese técnico
 // Solo supervisores evalúan.
 protegerPagina("supervisor", async (s) => {
   sesion = s;
-  P = await cargarPlantillaActiva(db);
+  plantillasDisponibles = await cargarPlantillasDeCoordinador(db, sesion.perfil.coordinadorUid);
+  if (!plantillasDisponibles.length) plantillasDisponibles = [PLANTILLA_DEFAULT];
+  P = plantillasDisponibles[0];
 
   // Si se abrió desde una tarjeta de técnico, pre-cargamos su nombre.
   tecnicoId = new URLSearchParams(location.search).get("tecnico");
@@ -36,9 +39,30 @@ protegerPagina("supervisor", async (s) => {
   render();
 });
 
+// Configuración fija (una sola vez): firmas y submit.
 function render() {
+  firmas["firma-supervisor"] = crearFirma("firma-supervisor");
+  firmas["firma-tecnico"] = crearFirma("firma-tecnico");
+  document.querySelectorAll("[data-limpiar]").forEach((b) =>
+    b.addEventListener("click", () => firmas[b.dataset.limpiar].limpiar())
+  );
+  document.getElementById("form-eval").addEventListener("submit", guardar);
+  pintarPlantilla();
+}
+
+// Pinta las partes que dependen del formulario elegido (P). Se puede repintar
+// al cambiar de formulario sin tocar las firmas ni el submit.
+function pintarPlantilla() {
   document.getElementById("titulo-form").textContent = P.nombre;
-  document.getElementById("datos-generales").innerHTML = P.datos.map(campoDato).join("");
+
+  const selector =
+    plantillasDisponibles.length > 1
+      ? `<div class="campo"><label>Formulario a usar</label>
+           <select id="sel-form">${plantillasDisponibles
+             .map((f, i) => `<option value="${i}" ${f === P ? "selected" : ""}>${String(f.nombre || "Formulario " + (i + 1)).replace(/</g, "&lt;")}</option>`)
+             .join("")}</select></div>`
+      : "";
+  document.getElementById("datos-generales").innerHTML = selector + P.datos.map(campoDato).join("");
 
   // Si venimos de una tarjeta de técnico, fijamos su nombre (no editable).
   if (tecnicoPre) {
@@ -60,14 +84,8 @@ function render() {
     </div>
     ${textareaObs(P.siNo.id + "_obs")}`;
 
-  // Firmas
-  firmas["firma-supervisor"] = crearFirma("firma-supervisor");
-  firmas["firma-tecnico"] = crearFirma("firma-tecnico");
-  document.querySelectorAll("[data-limpiar]").forEach((b) =>
-    b.addEventListener("click", () => firmas[b.dataset.limpiar].limpiar())
-  );
-
-  document.getElementById("form-eval").addEventListener("submit", guardar);
+  const sel = document.getElementById("sel-form");
+  if (sel) sel.addEventListener("change", () => { P = plantillasDisponibles[+sel.value]; pintarPlantilla(); });
 }
 
 // ---- Render de campos ----

@@ -6,6 +6,10 @@
 import {
   doc,
   getDoc,
+  getDocs,
+  collection,
+  query,
+  where,
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
 // Escalas reutilizables. Cada opción tiene una etiqueta y un valor numérico
@@ -144,4 +148,20 @@ export async function cargarPlantillaActiva(db) {
     console.warn("No se pudo leer la plantilla activa, usando la de por defecto:", err);
   }
   return PLANTILLA_DEFAULT;
+}
+
+// Todos los formularios que un coordinador creó.
+export async function cargarPlantillasDeCoordinador(db, coordinadorUid) {
+  if (!coordinadorUid) return [];
+  try {
+    const snap = await getDocs(
+      query(collection(db, "plantillas"), where("coordinadorUid", "==", coordinadorUid))
+    );
+    return snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
+  } catch (err) {
+    console.warn("No se pudieron cargar los formularios:", err);
+    return [];
+  }
 }
