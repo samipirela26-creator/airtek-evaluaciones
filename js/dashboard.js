@@ -56,12 +56,12 @@ protegerPagina("coordinador", async () => {
   document.getElementById("kpis").innerHTML =
     kpi(evals.length, "Evaluaciones") +
     kpi(Object.keys(bySup).length, "Supervisores") +
-    kpi(promGlobal + " / 4", "Promedio global");
+    kpi(promGlobal + " / 10", "Promedio global");
 
   // ── Gráfica 1: promedio por supervisor ──
   const supNombres = Object.keys(bySup);
   const supProm = supNombres.map((n) => (bySup[n].scored ? bySup[n].sum / bySup[n].scored : 0));
-  barChart("chart-sup", supNombres, supProm, "Promedio (0–4)", 4, supNombres.map((_, i) => PALETA[i % PALETA.length]));
+  barChart("chart-sup", supNombres, supProm, "Promedio (0–10)", 10, supNombres.map((_, i) => PALETA[i % PALETA.length]));
 
   // ── Gráfica 2: cantidad por supervisor ──
   const supCant = supNombres.map((n) => bySup[n].count);
@@ -70,7 +70,7 @@ protegerPagina("coordinador", async () => {
   // ── Gráfica 3: promedio por sección ──
   const secNombres = Object.keys(bySec);
   const secProm = secNombres.map((t) => bySec[t].sum / bySec[t].n);
-  barChart("chart-sec", secNombres, secProm, "Promedio (0–4)", 4, "#059669", true);
+  barChart("chart-sec", secNombres, secProm, "Promedio (0–10)", 10, "#059669", true);
 });
 
 function barChart(canvasId, labels, data, label, max, color, horizontal = false) {

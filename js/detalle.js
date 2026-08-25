@@ -72,7 +72,7 @@ function render(cont) {
         Supervisor: ${esc(E.supervisorNombre) || ""} · ${fechaLegible()}
       </div>
       <div style="margin-top:12px">
-        <span class="badge" style="font-size:1rem">Promedio general: ${prom != null ? prom.toFixed(2) + " / 4" : "—"}</span>
+        <span class="badge" style="font-size:1rem">Promedio general: ${prom != null ? prom.toFixed(2) + " / 10" : "—"}</span>
       </div>
     </div>`;
 
@@ -96,7 +96,7 @@ function render(cont) {
               <tbody>${filas}</tbody>
             </table>
           </div>
-          <div class="meta" style="margin-top:8px">Promedio de la sección: <strong>${promSec != null ? promSec.toFixed(2) + " / 4" : "—"}</strong></div>
+          <div class="meta" style="margin-top:8px">Promedio de la sección: <strong>${promSec != null ? promSec.toFixed(2) + " / 10" : "—"}</strong></div>
           ${obs ? `<p style="margin-top:8px"><strong>Observaciones:</strong> ${esc(obs)}</p>` : ""}
         </div>`;
     }
@@ -169,7 +169,7 @@ function generarPDF() {
     docp.setFillColor(...AZUL);
     docp.roundedRect(14, y, 70, 11, 2, 2, "F");
     docp.setTextColor(...BLANCO); docp.setFontSize(10); docp.setFont("helvetica", "bold");
-    docp.text(`Promedio general: ${prom != null ? prom.toFixed(2) + " / 4" : "—"}`, 18, y + 7);
+    docp.text(`Promedio general: ${prom != null ? prom.toFixed(2) + " / 10" : "—"}`, 18, y + 7);
     y += 16;
 
     if (P && P.secciones) {
@@ -177,7 +177,7 @@ function generarPDF() {
         const respuestas = E.respuestas?.[sec.id] || [];
         const body = sec.preguntas.map((preg, i) => [preg, respuestas[i] || "—"]);
         const promSec = E.puntajes?.porSeccion?.[sec.id];
-        const titulo = sec.titulo + (promSec != null ? `   (${promSec.toFixed(2)}/4)` : "");
+        const titulo = sec.titulo + (promSec != null ? `   (${promSec.toFixed(2)}/10)` : "");
         docp.autoTable({
           head: [[titulo, "Calificación"]],
           body,

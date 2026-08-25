@@ -558,7 +558,7 @@ async function mostrarSupervisor(uid, nombre) {
           .map((e) => {
             const fecha = e.createdAt?.toDate ? e.createdAt.toDate().toLocaleString("es-VE") : "";
             const prom = e.puntajes?.promedioGeneral;
-            const badge = prom != null ? `${prom.toFixed(2)} / 4` : "—";
+            const badge = prom != null ? `${prom.toFixed(2)} / 10` : "—";
             return `<div class="lista-item" data-id="${e.id}" style="cursor:pointer">
               <div><strong>${esc(e.tecnicoNombre) || "(sin nombre)"}</strong>
                 <div class="meta">${esc(e.area) || ""} · ${esc(e.motivo) || "s/motivo"}<br>${fecha}</div>
@@ -573,12 +573,12 @@ async function mostrarSupervisor(uid, nombre) {
     if (evalSup.length) {
       const proms = evalSup.map((e) => e.puntajes?.promedioGeneral).filter((p) => p != null);
       const avg = proms.length ? (proms.reduce((a, b) => a + b, 0) / proms.length).toFixed(2) : "—";
-      html += `<div class="meta" style="margin-bottom:8px">Promedio recibido: <strong>${avg} / 4</strong></div>`;
+      html += `<div class="meta" style="margin-bottom:8px">Promedio recibido: <strong>${avg} / 10</strong></div>`;
       html += evalSup
         .map((e) => {
           const fecha = e.createdAt?.toDate ? e.createdAt.toDate().toLocaleDateString("es-VE") : "";
           const prom = e.puntajes?.promedioGeneral;
-          const badge = prom != null ? `${prom.toFixed(2)} / 4` : "—";
+          const badge = prom != null ? `${prom.toFixed(2)} / 10` : "—";
           return `<div class="lista-item"><div><strong>${esc(e.tecnicoNombre) || "Anónimo"}</strong><div class="meta">${fecha}</div></div><span class="badge">${badge}</span></div>`;
         })
         .join("");
@@ -727,7 +727,7 @@ async function cargarLista(perfil, uid) {
     items.forEach((e) => {
       const fecha = e.createdAt?.toDate ? e.createdAt.toDate().toLocaleString("es-VE") : "";
       const prom = e.puntajes?.promedioGeneral;
-      const badge = prom != null ? `${prom.toFixed(2)} / 4` : "—";
+      const badge = prom != null ? `${prom.toFixed(2)} / 10` : "—";
       html += `
         <div class="lista-item" data-id="${e.id}" style="cursor:pointer">
           <div>

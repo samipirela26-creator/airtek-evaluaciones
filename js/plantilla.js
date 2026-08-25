@@ -17,21 +17,21 @@ import {
 export const ESCALAS = {
   calidad: [
     { label: "Mala", valor: 1 },
-    { label: "Regular", valor: 2 },
-    { label: "Buena", valor: 3 },
-    { label: "Excelente", valor: 4 },
+    { label: "Regular", valor: 4 },
+    { label: "Buena", valor: 7 },
+    { label: "Excelente", valor: 10 },
   ],
   nivel: [
     { label: "Ninguno", valor: 1 },
-    { label: "Basico", valor: 2 },
-    { label: "Intermedio", valor: 3 },
-    { label: "Avanzado", valor: 4 },
+    { label: "Basico", valor: 4 },
+    { label: "Intermedio", valor: 7 },
+    { label: "Avanzado", valor: 10 },
   ],
   calidadNA: [
     { label: "Mala", valor: 1 },
-    { label: "Regular", valor: 2 },
-    { label: "Buena", valor: 3 },
-    { label: "Excelente", valor: 4 },
+    { label: "Regular", valor: 4 },
+    { label: "Buena", valor: 7 },
+    { label: "Excelente", valor: 10 },
     { label: "No Aplica", valor: null },
   ],
 };

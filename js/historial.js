@@ -48,7 +48,7 @@ protegerPagina(null, async () => {
   const promProm = proms.length ? (proms.reduce((a, b) => a + b, 0) / proms.length).toFixed(2) : "—";
   const ultimo = proms.length ? proms[proms.length - 1].toFixed(2) : "—";
   document.getElementById("tec-resumen").innerHTML =
-    `${evals.length} evaluación${evals.length === 1 ? "" : "es"} · Promedio histórico <strong>${promProm}/4</strong> · Última <strong>${ultimo}/4</strong>`;
+    `${evals.length} evaluación${evals.length === 1 ? "" : "es"} · Promedio histórico <strong>${promProm}/10</strong> · Última <strong>${ultimo}/10</strong>`;
 
   // Gráfica de evolución
   const labels = evals.map((e) => (e.createdAt?.toDate ? e.createdAt.toDate().toLocaleDateString("es-VE") : ""));
@@ -70,7 +70,7 @@ protegerPagina(null, async () => {
     options: {
       responsive: true,
       plugins: { legend: { display: false } },
-      scales: { y: { beginAtZero: true, max: 4 } },
+      scales: { y: { beginAtZero: true, max: 10 } },
     },
   });
 
@@ -78,7 +78,7 @@ protegerPagina(null, async () => {
   const html = [...evals].reverse().map((e) => {
     const fecha = e.createdAt?.toDate ? e.createdAt.toDate().toLocaleString("es-VE") : "";
     const prom = e.puntajes?.promedioGeneral;
-    const badge = prom != null ? `${prom.toFixed(2)} / 4` : "—";
+    const badge = prom != null ? `${prom.toFixed(2)} / 10` : "—";
     return `<div class="lista-item">
       <div><strong>${esc(e.area) || ""}</strong>
         <div class="meta">${esc(e.motivo) || "s/motivo"} · Supervisor: ${esc(e.supervisorNombre) || ""}<br>${fecha}</div>

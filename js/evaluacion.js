@@ -277,26 +277,25 @@ function crearFirma(id) {
   };
 }
 
-// ---- Cálculo de puntajes ----
-// Convierte la respuesta elegida a su valor numérico y promedia por sección.
+// ---- Cálculo de puntajes (modelo rúbrica → NOTA de 0 a 10) ----
+// Nota = (puntos obtenidos / puntos máximos posibles) × 10. Así el coordinador
+// decide cuánto vale cada opción y la nota final siempre queda entre 0 y 10.
 function calcularPuntajes(respuestas) {
   const porSeccion = {};
-  const todos = [];
+  let totalObt = 0, totalMax = 0;
   for (const sec of P.secciones) {
     const escala = opcionesDeSeccion(sec);
-    const valores = [];
+    const maxVal = Math.max(0, ...escala.map((o) => (o.valor == null ? 0 : o.valor)));
+    let obt = 0, max = 0;
     sec.preguntas.forEach((_, i) => {
-      const elegido = respuestas[sec.id][i];
-      const op = escala.find((o) => o.label === elegido);
-      if (op && op.valor != null) valores.push(op.valor); // "No Aplica" no cuenta
+      const op = escala.find((o) => o.label === respuestas[sec.id][i]);
+      if (op && op.valor != null) { obt += op.valor; max += maxVal; } // "No Aplica" no cuenta
     });
-    const prom = valores.length ? valores.reduce((a, b) => a + b, 0) / valores.length : null;
-    porSeccion[sec.id] = prom;
-    todos.push(...valores);
+    porSeccion[sec.id] = max > 0 ? (obt / max) * 10 : null;
+    totalObt += obt;
+    totalMax += max;
   }
-  const promedioGeneral = todos.length
-    ? todos.reduce((a, b) => a + b, 0) / todos.length
-    : null;
+  const promedioGeneral = totalMax > 0 ? (totalObt / totalMax) * 10 : null;
   return { porSeccion, promedioGeneral };
 }
 

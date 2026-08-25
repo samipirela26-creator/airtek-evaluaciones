@@ -29,11 +29,6 @@ function normalizarColumnas(p) {
     delete sec.escala;
   });
 }
-function renumerar(sec) {
-  let n = 0;
-  sec.opciones.forEach((o) => (o.valor = o.valor === null ? null : ++n));
-}
-
 // ══════════ LISTA DE FORMULARIOS ══════════
 async function verLista() {
   P = null;
@@ -138,8 +133,9 @@ function seccionEditor(sec, si) {
   const columnas = sec.opciones
     .map(
       (op, ci) => `
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:5px">
-        <input type="text" data-edit="col" data-sec="${si}" data-col="${ci}" value="${escapar(op.label)}" style="max-width:240px">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:5px;flex-wrap:wrap">
+        <input type="text" data-edit="col" data-sec="${si}" data-col="${ci}" value="${escapar(op.label)}" placeholder="Opción" style="max-width:190px">
+        <input type="number" data-edit="col-val" data-sec="${si}" data-col="${ci}" value="${op.valor === null ? "" : op.valor}" min="0" step="1" placeholder="pts" title="Puntos" style="max-width:78px" ${op.valor === null ? "disabled" : ""}>
         <label style="font-weight:400;font-size:.85rem;display:flex;align-items:center;gap:4px;margin:0">
           <input type="checkbox" style="width:auto" data-edit="colnc" data-sec="${si}" data-col="${ci}" ${op.valor === null ? "checked" : ""}> no cuenta
         </label>
@@ -164,7 +160,10 @@ function seccionEditor(sec, si) {
       <input type="text" data-edit="titulo" data-sec="${si}" value="${escapar(sec.titulo)}">
     </div>
     <label>Columnas de calificación (de peor a mejor)</label>
-    <p style="font-size:.85rem;color:#667;margin:4px 0 8px">Marca <em>"no cuenta"</em> en columnas como "No Aplica".</p>
+    <p style="font-size:.85rem;color:#667;margin:4px 0 8px">
+      <strong>pts</strong> = cuántos puntos vale esa opción (tú decides). La nota final va de <strong>0 a 10</strong>
+      (proporción del máximo). Marca <em>"no cuenta"</em> en columnas como "No Aplica".
+    </p>
     ${columnas}
     <button type="button" class="btn secundario" data-accion="add-col" data-sec="${si}" style="margin-bottom:14px">+ Agregar columna</button>
     <label>Preguntas</label>
@@ -182,9 +181,14 @@ function onEdit(e) {
     case "titulo": sec.titulo = el.value; break;
     case "preg": sec.preguntas[+el.dataset.preg] = el.value; break;
     case "col": sec.opciones[+el.dataset.col].label = el.value; break;
+    case "col-val": {
+      const v = el.value.trim();
+      sec.opciones[+el.dataset.col].valor = v === "" ? 0 : Number(v);
+      break;
+    }
     case "colnc":
-      sec.opciones[+el.dataset.col].valor = el.checked ? null : 0;
-      renumerar(sec);
+      sec.opciones[+el.dataset.col].valor = el.checked ? null : 1;
+      verEditor(); // re-render para habilitar/deshabilitar el campo de puntos
       break;
   }
 }
@@ -196,8 +200,8 @@ function onAccion(e) {
   switch (el.dataset.accion) {
     case "add-preg": sec.preguntas.push("Nueva pregunta"); break;
     case "del-preg": sec.preguntas.splice(+el.dataset.preg, 1); break;
-    case "add-col": sec.opciones.push({ label: "Nueva", valor: 0 }); renumerar(sec); break;
-    case "del-col": sec.opciones.splice(+el.dataset.col, 1); renumerar(sec); break;
+    case "add-col": sec.opciones.push({ label: "Nueva", valor: 1 }); break;
+    case "del-col": sec.opciones.splice(+el.dataset.col, 1); break;
     case "del-seccion":
       if (!confirm(`¿Eliminar la sección "${sec.titulo}"?`)) return;
       P.secciones.splice(si, 1);
@@ -211,8 +215,8 @@ function agregarSeccion() {
     id: "seccion_" + P.secciones.length,
     titulo: "Nueva sección",
     opciones: [
-      { label: "Mala", valor: 1 }, { label: "Regular", valor: 2 },
-      { label: "Buena", valor: 3 }, { label: "Excelente", valor: 4 },
+      { label: "Mala", valor: 1 }, { label: "Regular", valor: 4 },
+      { label: "Buena", valor: 7 }, { label: "Excelente", valor: 10 },
     ],
     preguntas: ["Nueva pregunta"],
   });
@@ -230,9 +234,9 @@ async function guardar() {
     if (!sec.titulo.trim()) return error("Hay una sección sin título.");
     sec.opciones = sec.opciones.filter((o) => o.label.trim());
     sec.opciones.forEach((o) => (o.label = o.label.trim()));
-    renumerar(sec);
     if (sec.opciones.length < 2) return error(`La sección "${sec.titulo}" necesita al menos 2 columnas.`);
-    if (!sec.opciones.some((o) => o.valor !== null)) return error(`La sección "${sec.titulo}" necesita una columna que cuente en el puntaje.`);
+    if (!sec.opciones.some((o) => o.valor !== null && o.valor > 0))
+      return error(`La sección "${sec.titulo}" necesita al menos una columna con puntos mayores a 0.`);
     sec.preguntas = sec.preguntas.map((p) => p.trim()).filter((p) => p.length);
     if (!sec.preguntas.length) return error(`La sección "${sec.titulo}" no tiene preguntas.`);
   }
