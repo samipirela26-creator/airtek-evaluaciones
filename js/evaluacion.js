@@ -148,13 +148,11 @@ function prellenar() {
 function pintarPlantilla() {
   document.getElementById("titulo-form").textContent = P.nombre;
 
-  const selector =
-    plantillasDisponibles.length > 1
-      ? `<div class="campo"><label>Formulario a usar</label>
-           <select id="sel-form">${plantillasDisponibles
-             .map((f, i) => `<option value="${i}" ${f === P ? "selected" : ""}>${String(f.nombre || "Formulario " + (i + 1)).replace(/</g, "&lt;")}</option>`)
-             .join("")}</select></div>`
-      : "";
+  // Siempre mostramos el selector para que el supervisor vea y elija el formulario.
+  const selector = `<div class="campo"><label>Formulario a usar</label>
+      <select id="sel-form">${plantillasDisponibles
+        .map((f, i) => `<option value="${i}" ${f === P ? "selected" : ""}>${String(f.nombre || "Formulario " + (i + 1)).replace(/</g, "&lt;")}</option>`)
+        .join("")}</select></div>`;
   document.getElementById("datos-generales").innerHTML = selector + P.datos.map(campoDato).join("");
 
   // Si venimos de una tarjeta de técnico, fijamos su nombre (no editable).
