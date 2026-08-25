@@ -21,9 +21,10 @@ body {
   background: var(--gris);
   color: var(--texto);
   line-height: 1.5;
+  overflow-x: hidden; /* nada se desborda a los lados en móvil */
 }
 
-/* Barra superior (negra, estilo Airtek) */
+/* Barra superior (negra, estilo Airtek) — fija arriba como app móvil */
 .topbar {
   background: var(--negro);
   color: #fff;
@@ -31,7 +32,11 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
   box-shadow: var(--sombra);
+  position: sticky;
+  top: 0;
+  z-index: 20;
 }
 .topbar .marca { font-weight: 700; font-size: 1.1rem; letter-spacing: 0.5px; }
 .topbar .usuario { font-size: 0.9rem; opacity: 0.95; }
@@ -162,7 +167,32 @@ textarea { min-height: 70px; resize: vertical; }
 .add-row input { flex: 1; }
 .lista-vacia { text-align: center; color: #8a8a9a; padding: 18px; }
 
+/* Contenedor que permite deslizar la tabla de escala en pantallas angostas */
+.tabla-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 8px; }
+
 @media (max-width: 600px) {
-  .tabla-escala th, .tabla-escala td { font-size: .8rem; padding: 5px; }
-  .tabla-escala th:first-child, .tabla-escala td:first-child { width: 45%; }
+  .contenedor { padding: 12px; }
+  .card { padding: 15px; border-radius: 12px; }
+  h1 { font-size: 1.25rem; }
+
+  .topbar { padding: 10px 14px; }
+  .topbar .marca { font-size: 1rem; }
+  .topbar .usuario { font-size: .78rem; }
+
+  /* La tabla no se aplasta: mantiene un ancho mínimo y se desliza */
+  .tabla-scroll .tabla-escala { min-width: 480px; }
+  .tabla-escala th, .tabla-escala td { font-size: .82rem; padding: 6px 5px; }
+  .tabla-escala th:first-child, .tabla-escala td:first-child { width: auto; min-width: 200px; }
+
+  /* Agregar técnicos: campo y botón apilados y a lo ancho */
+  .add-row { flex-direction: column; }
+  .add-row .btn { width: 100%; }
+
+  /* Botones de acción cómodos al tacto */
+  .card > .btn, .card > a.btn { display: block; width: 100%; text-align: center; margin: 6px 0 0; }
+  .btn { padding: 12px 20px; }
+  input, select, textarea { font-size: 16px; } /* evita el zoom automático en iOS */
+
+  .firma canvas { height: 160px; }
+  .lista-item { flex-wrap: wrap; gap: 6px; }
 }

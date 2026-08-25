@@ -104,10 +104,12 @@ function seccionHTML(sec) {
 
   return `<div class="card">
     <h2 class="requerido">${sec.titulo}</h2>
-    <table class="tabla-escala">
-      <thead><tr><th></th>${cabeceras}</tr></thead>
-      <tbody>${filas}</tbody>
-    </table>
+    <div class="tabla-scroll">
+      <table class="tabla-escala">
+        <thead><tr><th></th>${cabeceras}</tr></thead>
+        <tbody>${filas}</tbody>
+      </table>
+    </div>
     ${textareaObs(sec.id + "_obs")}
   </div>`;
 }
