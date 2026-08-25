@@ -19,12 +19,19 @@ service cloud.firestore {
     function invit(token) {
       return get(/databases/$(database)/documents/invitaciones/$(token)).data;
     }
+    // ¿El supervisor sUid pertenece al coordinador que hace la petición?
+    function esMiSupervisor(sUid) {
+      return esCoordinador()
+             && get(/databases/$(database)/documents/usuarios/$(sUid)).data.coordinadorUid == request.auth.uid;
+    }
 
     // Perfil del usuario (nombre + rol).
     match /usuarios/{uid} {
-      // Lee su propio perfil; coordinador y root leen los demás.
+      // Lee su propio perfil; el coordinador lee SOLO a sus supervisores; el root, todos.
       allow read: if request.auth != null
-                  && (request.auth.uid == uid || esCoordinador() || esRoot());
+                  && (request.auth.uid == uid
+                      || (esCoordinador() && resource.data.coordinadorUid == request.auth.uid)
+                      || esRoot());
       // Un invitado crea su propio perfil (coordinador o supervisor) solo si
       // presenta una invitación existente, sin usar y con ese mismo rol.
       // El primer root se crea desde la consola (que ignora estas reglas).
@@ -74,10 +81,10 @@ service cloud.firestore {
                     && request.resource.data.supervisorUid == request.auth.uid
                     && activo();
       allow read: if request.auth != null
-                  && (resource.data.supervisorUid == request.auth.uid || esCoordinador() || esRoot());
+                  && (resource.data.supervisorUid == request.auth.uid || esMiSupervisor(resource.data.supervisorUid) || esRoot());
       // Editar/reasignar/borrar: el dueño, el coordinador o el root.
       allow update, delete: if request.auth != null
-                            && (resource.data.supervisorUid == request.auth.uid || esCoordinador() || esRoot());
+                            && (resource.data.supervisorUid == request.auth.uid || esMiSupervisor(resource.data.supervisorUid) || esRoot());
     }
 
     match /evaluaciones/{id} {
@@ -89,11 +96,11 @@ service cloud.firestore {
 
       // Leer: el supervisor dueño, el coordinador o el root.
       allow read: if request.auth != null
-                  && (resource.data.supervisorUid == request.auth.uid || esCoordinador() || esRoot());
+                  && (resource.data.supervisorUid == request.auth.uid || esMiSupervisor(resource.data.supervisorUid) || esRoot());
 
       // Editar o borrar (para corregir): el supervisor dueño, coordinador o root.
       allow update, delete: if request.auth != null
-                            && (resource.data.supervisorUid == request.auth.uid || esCoordinador() || esRoot());
+                            && (resource.data.supervisorUid == request.auth.uid || esMiSupervisor(resource.data.supervisorUid) || esRoot());
     }
 
     // Enlaces públicos: el coordinador crea uno para que los técnicos evalúen
@@ -111,7 +118,7 @@ service cloud.firestore {
       allow create: if exists(/databases/$(database)/documents/enlaces/$(request.resource.data.enlaceId))
                     && get(/databases/$(database)/documents/enlaces/$(request.resource.data.enlaceId)).data.activo == true
                     && request.resource.data.supervisorUid == get(/databases/$(database)/documents/enlaces/$(request.resource.data.enlaceId)).data.supervisorUid;
-      allow read: if esCoordinador() || esRoot();
+      allow read: if esMiSupervisor(resource.data.supervisorUid) || esRoot();
       allow update, delete: if false;
     }
 

@@ -3,17 +3,29 @@ import { db } from "./firebase.js";
 import { protegerPagina } from "./session.js";
 import {
   collection,
+  query,
+  where,
   getDocs,
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
 const AZUL = "#0066ff";
 const PALETA = ["#0066ff", "#059669", "#7c3aed", "#dc2626", "#d97706", "#0891b2", "#be185d", "#374151"];
 
-protegerPagina("coordinador", async () => {
+protegerPagina("coordinador", async ({ user }) => {
   let evals = [];
   try {
-    const snap = await getDocs(collection(db, "evaluaciones"));
-    evals = snap.docs.map((d) => d.data());
+    // Solo MIS supervisores (no los de otros coordinadores).
+    const supSnap = await getDocs(query(collection(db, "usuarios"), where("coordinadorUid", "==", user.uid)));
+    const supUids = supSnap.docs.map((d) => d.id);
+    if (supUids.length) {
+      // Firestore 'in' admite hasta 10 valores → lo hacemos por lotes.
+      const lotes = [];
+      for (let i = 0; i < supUids.length; i += 10) lotes.push(supUids.slice(i, i + 10));
+      const resultados = await Promise.all(
+        lotes.map((c) => getDocs(query(collection(db, "evaluaciones"), where("supervisorUid", "in", c))))
+      );
+      resultados.forEach((r) => r.forEach((d) => evals.push(d.data())));
+    }
   } catch (err) {
     document.getElementById("vacio").innerHTML = `<div class="msg error">No se pudieron cargar los datos: ${err.message}</div>`;
     return;
