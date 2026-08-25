@@ -7,7 +7,15 @@ service cloud.firestore {
     // por eso aquí no se permite escribir.
     match /usuarios/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
-      allow write: if false;
+      // Un supervisor invitado crea su propio perfil (rol supervisor) solo si
+      // presenta una invitación existente y sin usar. Coordinadores se crean
+      // desde la consola (que ignora estas reglas).
+      allow create: if request.auth != null
+                    && request.auth.uid == uid
+                    && request.resource.data.rol == 'supervisor'
+                    && exists(/databases/$(database)/documents/invitaciones/$(request.resource.data.inviteToken))
+                    && get(/databases/$(database)/documents/invitaciones/$(request.resource.data.inviteToken)).data.usado == false;
+      allow update, delete: if false;
     }
 
     function perfil() {
@@ -22,6 +30,14 @@ service cloud.firestore {
     match /plantillas/{id} {
       allow read: if request.auth != null;
       allow write: if esCoordinador();
+    }
+
+    // Invitaciones para registrar supervisores.
+    match /invitaciones/{token} {
+      allow read: if true;                 // se valida antes de tener sesión
+      allow create: if esCoordinador();    // solo el coordinador invita
+      allow update: if request.auth != null && request.resource.data.usado == true;
+      allow delete: if esCoordinador();
     }
 
     // Técnicos: cada supervisor gestiona los suyos; el coordinador los lee.

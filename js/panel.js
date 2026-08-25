@@ -52,8 +52,12 @@ protegerPagina(null, async ({ user, perfil }) => {
     document.getElementById("acciones").innerHTML = `
       <h2>Hola, ${esc(perfil.nombre)} (Coordinador)</h2>
       <p>Aquí ves todas las evaluaciones que hacen tus supervisores.</p>
-      <a class="btn" href="editor.html">✎ Editar formulario de evaluación</a>`;
+      <a class="btn" href="editor.html">✎ Editar formulario de evaluación</a>
+      <button class="btn secundario" id="btn-invitar" style="margin-left:8px">🎟️ Invitar supervisor</button>
+      <div id="invite-box"></div>`;
     document.getElementById("titulo-lista").textContent = "Todas las evaluaciones";
+
+    document.getElementById("btn-invitar").addEventListener("click", generarInvitacion);
   }
 
   cargarLista(perfil, user.uid);
@@ -161,6 +165,47 @@ async function eliminarTecnico(id) {
   } catch (err) {
     console.error(err);
     alert("No se pudo eliminar: " + err.message);
+  }
+}
+
+// ───────── Invitaciones (solo coordinador) ─────────
+async function generarInvitacion() {
+  const box = document.getElementById("invite-box");
+  const btn = document.getElementById("btn-invitar");
+  btn.disabled = true;
+  box.innerHTML = `<p class="meta" style="margin-top:12px">Generando enlace…</p>`;
+  try {
+    const ref = await addDoc(collection(db, "invitaciones"), {
+      coordinadorUid: sesion.user.uid,
+      coordinadorNombre: sesion.perfil.nombre,
+      usado: false,
+      createdAt: serverTimestamp(),
+    });
+    const link = new URL(`registro.html?invite=${ref.id}`, location.href).href;
+    box.innerHTML = `
+      <div class="msg ok" style="margin-top:12px">
+        Comparte este enlace con <strong>un</strong> supervisor (sirve una sola vez):
+      </div>
+      <div class="add-row">
+        <input id="invite-link" type="text" readonly value="${esc(link)}">
+        <button class="btn" id="btn-copiar">Copiar</button>
+      </div>`;
+    document.getElementById("btn-copiar").addEventListener("click", async () => {
+      const input = document.getElementById("invite-link");
+      input.select();
+      try {
+        await navigator.clipboard.writeText(input.value);
+        document.getElementById("btn-copiar").textContent = "¡Copiado!";
+      } catch {
+        document.execCommand("copy");
+        document.getElementById("btn-copiar").textContent = "¡Copiado!";
+      }
+    });
+  } catch (err) {
+    console.error(err);
+    box.innerHTML = `<div class="msg error" style="margin-top:12px">No se pudo generar: ${err.message}</div>`;
+  } finally {
+    btn.disabled = false;
   }
 }
 
