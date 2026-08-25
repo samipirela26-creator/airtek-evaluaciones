@@ -48,7 +48,10 @@ async function verLista() {
     html += `<div class="card">` + forms
       .map(
         (f) => `<div class="srow" style="cursor:default">
-          <span class="srow-name">${escapar(f.nombre || "(sin nombre)")}</span>
+          <div class="srow-main">
+            <span class="srow-name">${escapar(f.nombre || "(sin nombre)")}</span>
+            <span class="srow-sub">${f.tipo === "supervisor" ? "Evalúa supervisores (privado)" : "Evalúa técnicos"}</span>
+          </div>
           <button class="btn secundario" data-editar="${f.id}">Editar</button>
           <button class="srow-x" data-eliminar="${f.id}" title="Eliminar">✕</button>
         </div>`
@@ -102,6 +105,13 @@ function verEditor() {
         <input type="text" id="p-nombre" value="${escapar(P.nombre)}">
       </div>
       <div class="campo">
+        <label>¿Para qué es este formulario?</label>
+        <select id="p-tipo">
+          <option value="tecnico" ${(P.tipo || "tecnico") === "tecnico" ? "selected" : ""}>Para evaluar TÉCNICOS (lo usan tus supervisores)</option>
+          <option value="supervisor" ${P.tipo === "supervisor" ? "selected" : ""}>Para evaluar SUPERVISORES (privado — para el link a técnicos)</option>
+        </select>
+      </div>
+      <div class="campo">
         <label>Pregunta Sí / No (final del formulario)</label>
         <input type="text" id="p-sino" value="${escapar(P.siNo.label)}">
       </div>
@@ -114,6 +124,7 @@ function verEditor() {
   document.getElementById("btn-volver-lista").addEventListener("click", verLista);
   document.getElementById("btn-guardar").addEventListener("click", guardar);
   document.getElementById("p-nombre").addEventListener("input", (e) => (P.nombre = e.target.value));
+  document.getElementById("p-tipo").addEventListener("change", (e) => (P.tipo = e.target.value));
   document.getElementById("p-sino").addEventListener("input", (e) => (P.siNo.label = e.target.value));
   document.getElementById("btn-add-seccion").addEventListener("click", agregarSeccion);
   cont.querySelectorAll("[data-accion]").forEach((el) => el.addEventListener("click", onAccion));
@@ -228,6 +239,7 @@ async function guardar() {
 
   const registro = {
     nombre: P.nombre,
+    tipo: P.tipo || "tecnico",
     datos: P.datos,
     secciones: P.secciones,
     siNo: P.siNo,

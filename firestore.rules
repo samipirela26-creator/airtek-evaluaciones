@@ -96,6 +96,25 @@ service cloud.firestore {
                             && (resource.data.supervisorUid == request.auth.uid || esCoordinador() || esRoot());
     }
 
+    // Enlaces públicos: el coordinador crea uno para que los técnicos evalúen
+    // a un supervisor. Se leen sin sesión (la página pública carga el formulario).
+    match /enlaces/{token} {
+      allow read: if true;
+      allow create: if esCoordinador() && activo()
+                    && request.resource.data.creadorUid == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.creadorUid == request.auth.uid;
+    }
+
+    // Evaluaciones a supervisores enviadas por técnicos SIN cuenta: se permite el
+    // envío público solo si presenta un enlace existente, activo y coincidente.
+    match /evaluacionesSupervisor/{id} {
+      allow create: if exists(/databases/$(database)/documents/enlaces/$(request.resource.data.enlaceId))
+                    && get(/databases/$(database)/documents/enlaces/$(request.resource.data.enlaceId)).data.activo == true
+                    && request.resource.data.supervisorUid == get(/databases/$(database)/documents/enlaces/$(request.resource.data.enlaceId)).data.supervisorUid;
+      allow read: if esCoordinador() || esRoot();
+      allow update, delete: if false;
+    }
+
     // Auditoría: cualquiera autenticado deja registro; solo el root lo lee.
     match /auditoria/{id} {
       allow create: if request.auth != null;

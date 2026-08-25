@@ -23,6 +23,7 @@ const ACCIONES = {
   formulario_eliminado: "Formulario eliminado",
   evaluacion_eliminada: "Evaluación eliminada",
   tecnicos_reasignados: "Técnicos reasignados",
+  link_evaluacion_creado: "Link de evaluación creado",
 };
 
 protegerPagina("root", async () => {

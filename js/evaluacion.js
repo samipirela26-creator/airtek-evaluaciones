@@ -26,7 +26,9 @@ let evalCargada = null; // datos de la evaluación que se está editando
 // Solo supervisores evalúan.
 protegerPagina("supervisor", async (s) => {
   sesion = s;
-  plantillasDisponibles = await cargarPlantillasDeCoordinador(db, sesion.perfil.coordinadorUid);
+  const forms = await cargarPlantillasDeCoordinador(db, sesion.perfil.coordinadorUid);
+  // Los supervisores solo ven formularios para evaluar TÉCNICOS (no los privados).
+  plantillasDisponibles = forms.filter((f) => (f.tipo || "tecnico") === "tecnico");
   if (!plantillasDisponibles.length) plantillasDisponibles = [PLANTILLA_DEFAULT];
   P = plantillasDisponibles[0];
 

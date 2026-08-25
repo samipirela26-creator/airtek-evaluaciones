@@ -3,6 +3,7 @@
 //  - Coordinador: edita el formulario y ve todas las planillas.
 import { db, toast, logAudit } from "./firebase.js";
 import { protegerPagina, cerrarSesion } from "./session.js";
+import { cargarPlantillasDeCoordinador, opcionesDeSeccion } from "./plantilla.js";
 import {
   collection,
   query,
@@ -505,12 +506,14 @@ async function mostrarSupervisor(uid, nombre) {
   document.getElementById("titulo-lista").textContent = `Supervisor: ${nombre}`;
   cont.innerHTML = "Cargando…";
   try {
-    const [tSnap, eSnap] = await Promise.all([
+    const [tSnap, eSnap, sSnap] = await Promise.all([
       getDocs(query(collection(db, "tecnicos"), where("supervisorUid", "==", uid))),
       getDocs(query(collection(db, "evaluaciones"), where("supervisorUid", "==", uid))),
+      getDocs(query(collection(db, "evaluacionesSupervisor"), where("supervisorUid", "==", uid))),
     ]);
     const tecnicos = tSnap.docs.map((d) => d.data()).sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
     const evals = eSnap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+    const evalSup = sSnap.docs.map((d) => d.data()).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 
     const perfilSup = (await getDoc(doc(db, "usuarios", uid))).data() || {};
     const activo = perfilSup.activo !== false;
@@ -565,8 +568,35 @@ async function mostrarSupervisor(uid, nombre) {
           .join("")
       : `<div class="lista-vacia">Aún no ha llenado planillas.</div>`;
 
+    // Evaluaciones que los técnicos le hicieron a ESTE supervisor (link público).
+    html += `<h3 style="margin-top:16px">Evaluaciones recibidas de técnicos (${evalSup.length})</h3>`;
+    if (evalSup.length) {
+      const proms = evalSup.map((e) => e.puntajes?.promedioGeneral).filter((p) => p != null);
+      const avg = proms.length ? (proms.reduce((a, b) => a + b, 0) / proms.length).toFixed(2) : "—";
+      html += `<div class="meta" style="margin-bottom:8px">Promedio recibido: <strong>${avg} / 4</strong></div>`;
+      html += evalSup
+        .map((e) => {
+          const fecha = e.createdAt?.toDate ? e.createdAt.toDate().toLocaleDateString("es-VE") : "";
+          const prom = e.puntajes?.promedioGeneral;
+          const badge = prom != null ? `${prom.toFixed(2)} / 4` : "—";
+          return `<div class="lista-item"><div><strong>${esc(e.tecnicoNombre) || "Anónimo"}</strong><div class="meta">${fecha}</div></div><span class="badge">${badge}</span></div>`;
+        })
+        .join("");
+    } else {
+      html += `<div class="lista-vacia">Aún no hay evaluaciones de técnicos.</div>`;
+    }
+
+    // (Solo el coordinador) genera el link público para evaluar a este supervisor.
+    if (sesion.perfil.rol === "coordinador") {
+      html += `<div style="margin-top:16px">
+        <button class="btn" id="btn-link-sup">🔗 Link para que técnicos lo evalúen</button>
+        <div id="link-box"></div></div>`;
+    }
+
     cont.innerHTML = html;
     document.getElementById("btn-volver-sups").addEventListener("click", cargarSupervisores);
+    const btnLink = document.getElementById("btn-link-sup");
+    if (btnLink) btnLink.addEventListener("click", () => generarLinkSupervisor(uid, nombre));
     wireBotonEstado(uid, nombre, activo, "Supervisor", () => mostrarSupervisor(uid, nombre));
     cont.querySelectorAll("[data-id]").forEach((el) =>
       el.addEventListener("click", () => (window.location.href = `detalle.html?id=${el.dataset.id}`))
@@ -595,11 +625,62 @@ async function mostrarSupervisor(uid, nombre) {
   }
 }
 
+// ───────── Link público para evaluar a un supervisor (coordinador) ─────────
+async function generarLinkSupervisor(supUid, supNombre) {
+  const box = document.getElementById("link-box");
+  box.innerHTML = `<p class="meta" style="margin-top:8px">Cargando tus formularios…</p>`;
+  try {
+    const forms = (await cargarPlantillasDeCoordinador(db, sesion.user.uid)).filter((f) => f.tipo === "supervisor");
+    if (!forms.length) {
+      box.innerHTML = `<div class="msg error" style="margin-top:8px">Primero crea un formulario de tipo <strong>"Para evaluar supervisores"</strong> en "✎ Editar formulario".</div>`;
+      return;
+    }
+    box.innerHTML = `<div class="add-row" style="margin-top:8px">
+      <select id="sel-form-sup">${forms.map((f) => `<option value="${f.id}">${esc(f.nombre)}</option>`).join("")}</select>
+      <button class="btn" id="btn-gen-link">Generar</button>
+    </div><div id="link-result"></div>`;
+    document.getElementById("btn-gen-link").addEventListener("click", async () => {
+      const sel = document.getElementById("sel-form-sup");
+      const form = forms.find((f) => f.id === sel.value);
+      const snapshot = {
+        nombre: form.nombre,
+        siNo: form.siNo,
+        secciones: (form.secciones || []).map((s) => ({
+          id: s.id, titulo: s.titulo, preguntas: s.preguntas, opciones: opcionesDeSeccion(s),
+        })),
+      };
+      try {
+        const ref = await addDoc(collection(db, "enlaces"), {
+          tipo: "evalSupervisor",
+          supervisorUid: supUid,
+          supervisorNombre: supNombre,
+          creadorUid: sesion.user.uid,
+          activo: true,
+          plantillaSnapshot: snapshot,
+          createdAt: serverTimestamp(),
+        });
+        const link = new URL(`evaluar.html?e=${ref.id}`, location.href).href;
+        logAudit("link_evaluacion_creado", { supervisorUid: supUid });
+        document.getElementById("link-result").innerHTML = `
+          <div class="msg ok" style="margin-top:8px">Comparte este link con los técnicos (no necesitan cuenta ni iniciar sesión):</div>
+          <div class="add-row"><input id="link-sup" type="text" readonly value="${esc(link)}"><button class="btn" id="btn-copy-link">Copiar</button></div>`;
+        document.getElementById("btn-copy-link").addEventListener("click", async () => {
+          try { await navigator.clipboard.writeText(link); document.getElementById("btn-copy-link").textContent = "¡Copiado!"; } catch {}
+        });
+      } catch (err) {
+        document.getElementById("link-result").innerHTML = `<div class="msg error">No se pudo generar: ${err.message}</div>`;
+      }
+    });
+  } catch (err) {
+    box.innerHTML = `<div class="msg error">No se pudo: ${err.message}</div>`;
+  }
+}
+
 // ───────── Respaldo descargable (root) ─────────
 async function descargarRespaldo() {
   toast("Generando respaldo…");
   try {
-    const cols = ["usuarios", "tecnicos", "evaluaciones", "invitaciones", "plantillas"];
+    const cols = ["usuarios", "tecnicos", "evaluaciones", "evaluacionesSupervisor", "invitaciones", "plantillas", "enlaces"];
     const data = { generadoEn: new Date().toISOString() };
     for (const c of cols) {
       const snap = await getDocs(collection(db, c));
