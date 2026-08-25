@@ -58,12 +58,14 @@ protegerPagina(null, async ({ user, perfil }) => {
         <button class="btn" id="btn-invitar-coord">🎟️ Invitar coordinador</button>
         <a class="btn secundario" href="perfil.html">⚙️ Mi cuenta</a>
       </div>
-      <div id="invite-box"></div>`;
+      <div id="invite-box"></div>
+      <div id="invites-list"></div>`;
     document.getElementById("titulo-lista").textContent = "Coordinadores";
 
     document.getElementById("btn-invitar-coord")
       .addEventListener("click", (e) => generarInvitacion("coordinador", e.currentTarget));
     cargarCoordinadores();
+    cargarInvitaciones();
   } else {
     document.getElementById("acciones").innerHTML = `
       <h2>Hola, ${esc(perfil.nombre)} (Coordinador)</h2>
@@ -74,12 +76,14 @@ protegerPagina(null, async ({ user, perfil }) => {
         <button class="btn secundario" id="btn-invitar">🎟️ Invitar supervisor</button>
         <a class="btn secundario" href="perfil.html">⚙️ Mi cuenta</a>
       </div>
-      <div id="invite-box"></div>`;
+      <div id="invite-box"></div>
+      <div id="invites-list"></div>`;
     document.getElementById("titulo-lista").textContent = "Mis supervisores";
 
     document.getElementById("btn-invitar")
       .addEventListener("click", (e) => generarInvitacion("supervisor", e.currentTarget));
     cargarSupervisores();
+    cargarInvitaciones();
   }
 });
 
@@ -283,6 +287,7 @@ async function generarInvitacion(rol, btn) {
       creadorNombre: sesion.perfil.nombre,
       rol,
       usado: false,
+      expiraEnMs: Date.now() + 7 * 24 * 60 * 60 * 1000, // vence en 7 días
       createdAt: serverTimestamp(),
     });
     const link = new URL(`registro.html?invite=${ref.id}`, location.href).href;
@@ -309,11 +314,72 @@ async function generarInvitacion(rol, btn) {
         document.getElementById("btn-copiar").textContent = "¡Copiado!";
       }
     });
+    cargarInvitaciones(); // refresca la lista de invitaciones
   } catch (err) {
     console.error(err);
     box.innerHTML = `<div class="msg error" style="margin-top:12px">No se pudo generar: ${err.message}</div>`;
   } finally {
     if (btn) btn.disabled = false;
+  }
+}
+
+// ───────── Panel de invitaciones (root o coordinador) ─────────
+async function cargarInvitaciones() {
+  const cont = document.getElementById("invites-list");
+  if (!cont) return;
+  try {
+    const snap = await getDocs(
+      query(collection(db, "invitaciones"), where("creadorUid", "==", sesion.user.uid))
+    );
+    const items = snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+    if (!items.length) {
+      cont.innerHTML = "";
+      return;
+    }
+    const ahora = Date.now();
+    const rows = items
+      .map((inv) => {
+        let estado, color, bg;
+        if (inv.usado) { estado = "Usada"; color = "#6b7280"; bg = "#f3f4f6"; }
+        else if (inv.expiraEnMs && ahora > inv.expiraEnMs) { estado = "Vencida"; color = "#c0392b"; bg = "#fdecea"; }
+        else { estado = "Pendiente"; color = "#0047b3"; bg = "#eef2ff"; }
+        const link = new URL(`registro.html?invite=${inv.id}`, location.href).href;
+        const acciones =
+          estado === "Pendiente"
+            ? `<button class="srow-x" data-copiar="${esc(link)}" title="Copiar enlace" style="color:var(--azul)">⧉</button>
+               <button class="srow-x" data-revocar="${inv.id}" title="Revocar">✕</button>`
+            : `<button class="srow-x" data-revocar="${inv.id}" title="Eliminar">✕</button>`;
+        const quien = inv.rol === "coordinador" ? "Coordinador" : "Supervisor";
+        const badge = `<span style="background:${bg};color:${color};border-radius:20px;padding:3px 10px;font-size:.78rem;font-weight:700">${estado}</span>`;
+        return `<div class="srow" style="cursor:default">
+          <span class="srow-name" style="font-weight:500">${quien}</span>
+          ${badge}
+          ${acciones}
+        </div>`;
+      })
+      .join("");
+    cont.innerHTML = `<h3 style="margin:16px 0 8px">Invitaciones generadas</h3>${rows}`;
+
+    cont.querySelectorAll("[data-copiar]").forEach((b) =>
+      b.addEventListener("click", async () => {
+        try { await navigator.clipboard.writeText(b.dataset.copiar); b.textContent = "✓"; } catch {}
+      })
+    );
+    cont.querySelectorAll("[data-revocar]").forEach((b) =>
+      b.addEventListener("click", async () => {
+        if (!confirm("¿Revocar esta invitación? El enlace dejará de funcionar.")) return;
+        try {
+          await deleteDoc(doc(db, "invitaciones", b.dataset.revocar));
+          cargarInvitaciones();
+        } catch (err) {
+          alert("No se pudo revocar: " + err.message);
+        }
+      })
+    );
+  } catch (err) {
+    console.error(err);
   }
 }
 

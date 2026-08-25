@@ -36,6 +36,10 @@ let invitacion = null;
       estado.innerHTML = `<div class="msg error">Esta invitación ya fue usada. Pide un nuevo enlace.</div>`;
       return;
     }
+    if (invitacion.expiraEnMs && Date.now() > invitacion.expiraEnMs) {
+      estado.innerHTML = `<div class="msg error">Este enlace venció (dura 7 días). Pide uno nuevo.</div>`;
+      return;
+    }
     // Invitación válida → mostrar formulario, con el rol que corresponde.
     const rol = invitacion.rol || "supervisor";
     const rolTexto = rol === "coordinador" ? "Coordinador" : "Supervisor";

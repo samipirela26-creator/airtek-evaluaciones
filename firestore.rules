@@ -54,7 +54,7 @@ service cloud.firestore {
                     && resource.data.usado == false
                     && request.resource.data.usado == true
                     && request.resource.data.usadoPor == request.auth.uid;
-      allow delete: if esRoot() || esCoordinador();
+      allow delete: if request.auth != null && resource.data.creadorUid == request.auth.uid;
     }
 
     // Técnicos: cada supervisor gestiona los suyos; el coordinador los lee.
