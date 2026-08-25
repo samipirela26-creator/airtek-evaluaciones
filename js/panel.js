@@ -194,13 +194,13 @@ async function cargarCoordinadores() {
   document.getElementById("titulo-lista").textContent = "Coordinadores";
   cont.innerHTML = "Cargando…";
   try {
-    const snap = await getDocs(
-      query(collection(db, "usuarios"), where("creadorUid", "==", sesion.user.uid))
-    );
-    const coords = snap.docs
-      .map((d) => ({ uid: d.id, ...d.data() }))
-      .filter((u) => u.rol === "coordinador")
+    // El root puede leer todos los usuarios: los traemos una vez y armamos el árbol.
+    const snap = await getDocs(collection(db, "usuarios"));
+    const all = snap.docs.map((d) => ({ uid: d.id, ...d.data() }));
+    const coords = all
+      .filter((u) => u.rol === "coordinador" && u.creadorUid === sesion.user.uid)
       .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
+    const countSup = (cid) => all.filter((u) => u.rol === "supervisor" && u.coordinadorUid === cid).length;
     if (!coords.length) {
       cont.innerHTML = `<div class="lista-vacia">Aún no tienes coordinadores. Genera un enlace con "🎟️ Invitar coordinador".</div>`;
       return;
@@ -208,10 +208,14 @@ async function cargarCoordinadores() {
     cont.innerHTML = coords
       .map((c, i) => {
         const bg = AVATAR_COLORS[i % AVATAR_COLORS.length];
+        const n = countSup(c.uid);
         return `
         <div class="srow" data-coord="${c.uid}" data-nombre="${esc(c.nombre)}">
           <div class="aa-avatar" style="background:${bg}">${initials(c.nombre)}</div>
-          <span class="srow-name">${esc(c.nombre)}</span>
+          <div class="srow-main">
+            <span class="srow-name">${esc(c.nombre)}</span>
+            <span class="srow-sub">Coordinador · ${n} supervisor${n === 1 ? "" : "es"}</span>
+          </div>
           <span class="badge">ver ›</span>
         </div>`;
       })
@@ -230,20 +234,29 @@ async function mostrarCoordinador(uid, nombre) {
   document.getElementById("titulo-lista").textContent = `Coordinador: ${nombre}`;
   cont.innerHTML = "Cargando…";
   try {
-    const snap = await getDocs(query(collection(db, "usuarios"), where("coordinadorUid", "==", uid)));
-    const sups = snap.docs
+    const [uSnap, tSnap] = await Promise.all([
+      getDocs(query(collection(db, "usuarios"), where("coordinadorUid", "==", uid))),
+      getDocs(collection(db, "tecnicos")),
+    ]);
+    const sups = uSnap.docs
       .map((d) => ({ uid: d.id, ...d.data() }))
       .filter((u) => u.rol === "supervisor")
       .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
+    const tecs = tSnap.docs.map((d) => d.data());
+    const countTec = (sid) => tecs.filter((t) => t.supervisorUid === sid).length;
     let html = `<button class="btn secundario" id="btn-volver-coords">← Volver a coordinadores</button>`;
     html += `<h3 style="margin-top:16px">Supervisores (${sups.length})</h3>`;
     html += sups.length
       ? sups
           .map((s, i) => {
             const bg = AVATAR_COLORS[i % AVATAR_COLORS.length];
+            const n = countTec(s.uid);
             return `<div class="srow" data-sup="${s.uid}" data-nombre="${esc(s.nombre)}">
               <div class="aa-avatar" style="background:${bg}">${initials(s.nombre)}</div>
-              <span class="srow-name">${esc(s.nombre)}</span><span class="badge">ver ›</span></div>`;
+              <div class="srow-main">
+                <span class="srow-name">${esc(s.nombre)}</span>
+                <span class="srow-sub">Supervisor · ${n} técnico${n === 1 ? "" : "s"}</span>
+              </div><span class="badge">ver ›</span></div>`;
           })
           .join("")
       : `<div class="lista-vacia">Sin supervisores.</div>`;
@@ -306,13 +319,16 @@ async function cargarSupervisores() {
   document.getElementById("titulo-lista").textContent = "Mis supervisores";
   cont.innerHTML = "Cargando…";
   try {
-    const snap = await getDocs(
-      query(collection(db, "usuarios"), where("coordinadorUid", "==", sesion.user.uid))
-    );
-    const sups = snap.docs
+    const [uSnap, tSnap] = await Promise.all([
+      getDocs(query(collection(db, "usuarios"), where("coordinadorUid", "==", sesion.user.uid))),
+      getDocs(collection(db, "tecnicos")),
+    ]);
+    const sups = uSnap.docs
       .map((d) => ({ uid: d.id, ...d.data() }))
       .filter((u) => u.rol === "supervisor")
       .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
+    const tecs = tSnap.docs.map((d) => d.data());
+    const countTec = (sid) => tecs.filter((t) => t.supervisorUid === sid).length;
 
     if (!sups.length) {
       cont.innerHTML = `<div class="lista-vacia">Aún no tienes supervisores. Genera un enlace con "🎟️ Invitar supervisor" y compártelo.</div>`;
@@ -321,10 +337,14 @@ async function cargarSupervisores() {
     cont.innerHTML = sups
       .map((s, i) => {
         const bg = AVATAR_COLORS[i % AVATAR_COLORS.length];
+        const n = countTec(s.uid);
         return `
         <div class="srow" data-sup="${s.uid}" data-nombre="${esc(s.nombre)}">
           <div class="aa-avatar" style="background:${bg}">${initials(s.nombre)}</div>
-          <span class="srow-name">${esc(s.nombre)}</span>
+          <div class="srow-main">
+            <span class="srow-name">${esc(s.nombre)}</span>
+            <span class="srow-sub">Supervisor · ${n} técnico${n === 1 ? "" : "s"}</span>
+          </div>
           <span class="badge">ver ›</span>
         </div>`;
       })
