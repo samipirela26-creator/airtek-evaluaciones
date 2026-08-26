@@ -14,23 +14,26 @@ import {
 
 // Escalas reutilizables. Cada opción tiene una etiqueta y un valor numérico
 // (para poder calcular puntajes). "No Aplica" usa valor null: no cuenta.
+// Puntajes 0/6/8/10 → Mala=0%, Regular=60%, Buena=80%, Excelente=100%.
+// (Antes eran 1/4/7/10, que hacía que "Buena" valiera solo 70% y las notas
+//  salieran muy bajas; Carlos pidió que "Buena" pesara alto.)
 export const ESCALAS = {
   calidad: [
-    { label: "Mala", valor: 1 },
-    { label: "Regular", valor: 4 },
-    { label: "Buena", valor: 7 },
+    { label: "Mala", valor: 0 },
+    { label: "Regular", valor: 6 },
+    { label: "Buena", valor: 8 },
     { label: "Excelente", valor: 10 },
   ],
   nivel: [
-    { label: "Ninguno", valor: 1 },
-    { label: "Basico", valor: 4 },
-    { label: "Intermedio", valor: 7 },
+    { label: "Ninguno", valor: 0 },
+    { label: "Basico", valor: 6 },
+    { label: "Intermedio", valor: 8 },
     { label: "Avanzado", valor: 10 },
   ],
   calidadNA: [
-    { label: "Mala", valor: 1 },
-    { label: "Regular", valor: 4 },
-    { label: "Buena", valor: 7 },
+    { label: "Mala", valor: 0 },
+    { label: "Regular", valor: 6 },
+    { label: "Buena", valor: 8 },
     { label: "Excelente", valor: 10 },
     { label: "No Aplica", valor: null },
   ],
