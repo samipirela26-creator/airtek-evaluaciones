@@ -87,11 +87,21 @@ async function verLista() {
   cont.innerHTML = html;
 
   document.getElementById("btn-nuevo").addEventListener("click", () => {
-    P = clonar(PLANTILLA_DEFAULT);
-    P.id = null;
-    P.oficial = false;
-    P.nombre = "Nuevo formulario";
-    normalizarColumnas(P);
+    // Formulario EN BLANCO: el usuario lo llena desde cero (una sección vacía).
+    // Los datos del encabezado (técnico, fecha, orden, área…) se conservan porque
+    // la evaluación los necesita, pero no aparecen en el editor.
+    P = {
+      id: null,
+      oficial: false,
+      version: 0,
+      nombre: "Nuevo formulario",
+      tipo: "tecnico",
+      datos: clonar(PLANTILLA_DEFAULT.datos),
+      secciones: [
+        { id: "seccion_" + Date.now(), titulo: "", opciones: clonar(ESCALAS.calidad), preguntas: [""] },
+      ],
+      siNo: { id: "conoceCanales", label: "" },
+    };
     verEditor();
   });
   document.getElementById("btn-duplicar-oficial").addEventListener("click", () => {
@@ -161,8 +171,8 @@ function verEditor() {
         </select>
       </div>
       <div class="campo">
-        <label>Pregunta final de Sí / No</label>
-        <input type="text" id="p-sino" value="${escapar(P.siNo.label)}" placeholder="Ej: ¿Conoce los canales de atención?">
+        <label>Pregunta final de Sí / No <span style="font-weight:400;text-transform:none;color:var(--texto2)">(opcional — déjala vacía si no la quieres)</span></label>
+        <input type="text" id="p-sino" value="${escapar(P.siNo?.label || "")}" placeholder="Ej: ¿Conoce los canales de atención?">
       </div>
     </div>
 

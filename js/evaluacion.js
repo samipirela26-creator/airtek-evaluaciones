@@ -165,7 +165,10 @@ function pintarPlantilla() {
     }
   }
   document.getElementById("secciones").innerHTML = P.secciones.map(seccionHTML).join("");
-  document.getElementById("bloque-sino").innerHTML = `
+  // La pregunta Sí/No es opcional: solo se muestra si el formulario la tiene con texto.
+  const bloqueSino = document.getElementById("bloque-sino");
+  if (P.siNo && P.siNo.label && P.siNo.label.trim()) {
+    bloqueSino.innerHTML = `
     <label class="requerido">${P.siNo.label}</label>
     <div style="margin-top:6px">
       <label style="display:inline;font-weight:400;margin-right:20px">
@@ -174,6 +177,9 @@ function pintarPlantilla() {
         <input type="radio" name="${P.siNo.id}" value="No"> No</label>
     </div>
     ${textareaObs(P.siNo.id + "_obs")}`;
+  } else {
+    bloqueSino.innerHTML = "";
+  }
 
   const sel = document.getElementById("sel-form");
   if (sel) sel.addEventListener("change", () => { P = plantillasDisponibles[+sel.value]; pintarPlantilla(); });
@@ -321,9 +327,13 @@ async function guardar(e) {
     observaciones[sec.id] = document.getElementById(sec.id + "_obs").value.trim();
   }
 
-  // Sí/No + su observación
-  const sino = document.querySelector(`input[name="${P.siNo.id}"]:checked`);
-  observaciones[P.siNo.id] = document.getElementById(P.siNo.id + "_obs").value.trim();
+  // Sí/No + su observación (opcional: puede que el formulario no la tenga)
+  const tieneSino = P.siNo && P.siNo.label && P.siNo.label.trim();
+  const sino = tieneSino ? document.querySelector(`input[name="${P.siNo.id}"]:checked`) : null;
+  if (tieneSino) {
+    const obsSino = document.getElementById(P.siNo.id + "_obs");
+    if (obsSino) observaciones[P.siNo.id] = obsSino.value.trim();
+  }
 
   // Firma del supervisor obligatoria
   if (firmas["firma-supervisor"].estaVacio()) {
