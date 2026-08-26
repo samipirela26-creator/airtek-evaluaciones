@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <script type="importmap">
+  { "imports": {
+    "/js/firebase.js": "/preview/mock-firebase.js",
+    "/js/session.js": "/preview/mock-session.js",
+    "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js": "/preview/mock-firestore.js",
+    "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js": "/preview/mock-auth.js"
+  }}
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Editor de formulario · Airtek</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <div class="topbar">
+    <div class="marca">AIRTEK · Editor de formulario</div>
+    <div><a class="btn link" href="/preview/panel.html">← Volver</a></div>
+  </div>
+
+  <div class="contenedor">
+    <div class="card">
+      <h1>Formularios de evaluación</h1>
+      <p>Crea y administra tus formularios. Tus supervisores elegirán cuál usar al evaluar.</p>
+      <div id="mensaje"></div>
+    </div>
+
+    <!-- El JS inserta aquí la lista o el editor -->
+    <div id="editor">Cargando…</div>
+  </div>
+
+  <script type="module" src="/js/editor.js"></script>
+</body>
+</html>

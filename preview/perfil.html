@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <script type="importmap">
+  { "imports": {
+    "/js/firebase.js": "/preview/mock-firebase.js",
+    "/js/session.js": "/preview/mock-session.js",
+    "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js": "/preview/mock-firestore.js",
+    "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js": "/preview/mock-auth.js"
+  }}
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mi cuenta · Airtek</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <div class="topbar">
+    <div class="marca">AIRTEK · Mi cuenta</div>
+    <div><a class="btn link" href="/preview/panel.html">← Volver</a></div>
+  </div>
+
+  <div class="contenedor">
+    <div class="card">
+      <h2>Mi perfil</h2>
+      <div class="campo">
+        <label for="mi-nombre">Nombre</label>
+        <input type="text" id="mi-nombre" />
+      </div>
+      <button class="btn" id="btn-nombre">Guardar nombre</button>
+      <div id="msg-nombre"></div>
+
+      <hr style="border:none;border-top:1px solid var(--borde);margin:20px 0">
+
+      <div class="campo">
+        <label for="mi-correo">Correo</label>
+        <input type="email" id="mi-correo" />
+      </div>
+      <button class="btn secundario" id="btn-correo">Cambiar correo</button>
+      <div id="msg-correo"></div>
+
+      <hr style="border:none;border-top:1px solid var(--borde);margin:20px 0">
+
+      <div class="campo">
+        <label for="mi-pass">Nueva contraseña (mínimo 6 caracteres)</label>
+        <input type="password" id="mi-pass" minlength="6" autocomplete="new-password" />
+      </div>
+      <button class="btn secundario" id="btn-pass">Cambiar contraseña</button>
+      <div id="msg-pass"></div>
+
+      <hr style="border:none;border-top:1px solid var(--borde);margin:20px 0">
+
+      <button class="btn secundario" id="btn-verificar">Enviar verificación de correo</button>
+      <div id="msg-verificar"></div>
+    </div>
+
+    <!-- Solo coordinador: editar nombre de supervisores -->
+    <div class="card" id="card-sups" style="display:none">
+      <h2>Nombres de mis supervisores</h2>
+      <div id="sups-editar">Cargando…</div>
+    </div>
+  </div>
+
+  <script type="module" src="/js/perfil.js"></script>
+</body>
+</html>

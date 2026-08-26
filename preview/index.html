@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Previsualización · Airtek</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <div class="topbar">
+    <div class="marca">AIRTEK · Previsualización local</div>
+  </div>
+  <div class="contenedor">
+    <div class="card">
+      <h1>Modo previsualización 👀</h1>
+      <p>Abre cualquier pantalla con <strong>datos de ejemplo</strong>, sin login ni Firebase.
+      Sirve para ver y ajustar el diseño. Lo que guardes aquí <strong>no se persiste</strong>
+      (al recargar vuelve al ejemplo) y <strong>no toca tu Firebase real</strong>.</p>
+    </div>
+
+    <div class="card">
+      <h2>Como Coordinador (Carlos)</h2>
+      <a class="btn" href="/preview/panel.html?u=coordinador">Panel del coordinador</a>
+      <a class="btn" href="/preview/editor.html?u=coordinador">Editor de formularios</a>
+      <a class="btn" href="/preview/dashboard.html?u=coordinador">Tablero de eficiencia</a>
+      <a class="btn" href="/preview/perfil.html?u=coordinador">Mi cuenta / perfil</a>
+    </div>
+
+    <div class="card">
+      <h2>Como Supervisor</h2>
+      <a class="btn" href="/preview/panel.html?u=supervisor">Panel del supervisor</a>
+      <a class="btn" href="/preview/evaluacion.html?u=supervisor">Crear evaluación</a>
+    </div>
+
+    <div class="card">
+      <h2>Como Root (Samuel)</h2>
+      <a class="btn" href="/preview/panel.html?u=root">Panel root</a>
+      <a class="btn" href="/preview/auditoria.html?u=root">Auditoría</a>
+    </div>
+
+    <div class="card">
+      <h2>Ver una evaluación / historial</h2>
+      <a class="btn secundario" href="/preview/detalle.html?u=coordinador&id=e_3">Detalle de evaluación (e_3)</a>
+      <a class="btn secundario" href="/preview/historial.html?u=coordinador&tecnico=t_1">Historial de Juan Pérez</a>
+    </div>
+
+    <div class="card lista-vacia">
+      Datos de ejemplo definidos en <code>preview/seed.js</code>.
+      Para regenerar las páginas tras cambiar un HTML real: <code>bash preview/generar.sh</code>.
+    </div>
+  </div>
+</body>
+</html>

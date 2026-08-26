@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <script type="importmap">
+  { "imports": {
+    "/js/firebase.js": "/preview/mock-firebase.js",
+    "/js/session.js": "/preview/mock-session.js",
+    "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js": "/preview/mock-firestore.js",
+    "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js": "/preview/mock-auth.js"
+  }}
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Detalle de evaluación · Airtek</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+  <!-- Motor de PDF (mismo que usa AsistApp) -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+  <div class="topbar">
+    <div class="marca">AIRTEK · Detalle</div>
+    <div>
+      <button class="btn link" id="btn-pdf">⬇ PDF</button>
+      <button class="btn link" id="btn-editar" style="display:none">✏️ Editar</button>
+      <button class="btn link" id="btn-eliminar">🗑 Eliminar</button>
+      <a class="btn link" href="/preview/panel.html">← Volver</a>
+    </div>
+  </div>
+
+  <div class="contenedor">
+    <div id="detalle">Cargando…</div>
+  </div>
+
+  <script type="module" src="/js/detalle.js"></script>
+</body>
+</html>

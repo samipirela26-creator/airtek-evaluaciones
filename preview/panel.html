@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <script type="importmap">
+  { "imports": {
+    "/js/firebase.js": "/preview/mock-firebase.js",
+    "/js/session.js": "/preview/mock-session.js",
+    "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js": "/preview/mock-firestore.js",
+    "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js": "/preview/mock-auth.js"
+  }}
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel · Airtek Evaluaciones</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <div class="topbar">
+    <div class="marca">AIRTEK · Evaluaciones</div>
+    <div>
+      <span class="usuario" id="usuario-info"></span>
+      <button class="btn link" id="btn-salir">Salir</button>
+    </div>
+  </div>
+
+  <div class="contenedor">
+    <!-- Acciones según rol -->
+    <div class="card" id="acciones"></div>
+
+    <!-- Lista de evaluaciones -->
+    <div class="card">
+      <h2 id="titulo-lista">Evaluaciones</h2>
+      <div id="lista">Cargando…</div>
+    </div>
+  </div>
+
+  <script type="module" src="/js/panel.js"></script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <script type="importmap">
+  { "imports": {
+    "/js/firebase.js": "/preview/mock-firebase.js",
+    "/js/session.js": "/preview/mock-session.js",
+    "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js": "/preview/mock-firestore.js",
+    "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js": "/preview/mock-auth.js"
+  }}
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Evaluar supervisor · Airtek</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <div class="topbar">
+    <div class="marca">AIRTEK · Evaluación</div>
+  </div>
+
+  <div class="contenedor">
+    <div id="estado" class="card">Cargando…</div>
+
+    <form id="form-eval" style="display:none">
+      <div class="card">
+        <h1 id="titulo">Evaluación</h1>
+        <p class="meta" id="subtitulo"></p>
+        <div class="campo" style="margin-top:12px">
+          <label for="tu-nombre">Tu nombre (opcional)</label>
+          <input type="text" id="tu-nombre" placeholder="Puedes dejarlo en blanco" />
+        </div>
+      </div>
+
+      <div id="secciones"></div>
+      <div class="card" id="bloque-sino"></div>
+
+      <div class="card">
+        <div id="mensaje"></div>
+        <button class="btn" type="submit" id="btn-enviar" style="width:100%">Enviar evaluación</button>
+      </div>
+    </form>
+  </div>
+
+  <script type="module" src="/js/evaluar.js"></script>
+</body>
+</html>
