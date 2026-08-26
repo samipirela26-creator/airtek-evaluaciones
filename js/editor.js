@@ -60,6 +60,15 @@ async function verLista() {
   const forms = await cargarPlantillasDeCoordinador(db, sesion.user.uid);
 
   let html = `<div class="card"><button class="btn" id="btn-nuevo">+ Crear formulario</button></div>`;
+  // Herramienta: actualizar los puntajes viejos (1/4/7/10) a la nueva escala (0/6/8/10).
+  html += `<div class="card" style="background:#fff8e6;border-color:#ffe2a8">
+      <div style="font-size:.9rem;line-height:1.5;margin-bottom:10px">
+        <strong>¿Notas muy bajas en formularios antiguos?</strong> Actualiza los puntajes de tus
+        formularios a la nueva escala (Mala 0 · Regular 6 · Buena 8 · Excelente 10).
+        Solo cambia columnas con los valores viejos; respeta lo que hayas personalizado.
+      </div>
+      <button class="btn secundario" id="btn-migrar">🔄 Revisar y actualizar puntajes</button>
+    </div>`;
   // Formulario oficial de Airtek (precargado para todos, disponible a los supervisores).
   html += `<div class="card"><div class="srow" style="cursor:default">
       <div class="srow-main">
@@ -104,6 +113,7 @@ async function verLista() {
     };
     verEditor();
   });
+  document.getElementById("btn-migrar").addEventListener("click", () => migrarPuntajes(forms));
   document.getElementById("btn-duplicar-oficial").addEventListener("click", () => {
     P = clonar(PLANTILLA_DEFAULT);
     P.id = null;
@@ -132,6 +142,73 @@ async function verLista() {
       }
     })
   );
+}
+
+// ══════════ MIGRACIÓN DE PUNTAJES (escala vieja 1/4/7/10 → nueva 0/6/8/10) ══════════
+// Por etiqueta: solo se actualiza una columna si tiene EXACTAMENTE el valor viejo,
+// para no pisar puntajes que el coordinador haya personalizado.
+const REMAP_PUNTAJES = {
+  "Mala": [1, 0], "Regular": [4, 6], "Buena": [7, 8], "Excelente": [10, 10],
+  "Ninguno": [1, 0], "Basico": [4, 6], "Intermedio": [7, 8], "Avanzado": [10, 10],
+};
+
+async function migrarPuntajes(forms) {
+  const msg = document.getElementById("mensaje");
+  if (!forms.length) {
+    msg.innerHTML = `<div class="msg ok">No tienes formularios personalizados guardados. El formulario oficial de Airtek ya usa la escala nueva. ✓</div>`;
+    return;
+  }
+  const btn = document.getElementById("btn-migrar");
+  btn.disabled = true; btn.textContent = "Revisando…";
+
+  const porActualizar = [];
+  for (const f of forms) {
+    let cambio = false;
+    (f.secciones || []).forEach((sec) => {
+      const ops = opcionesDeSeccion(sec);
+      ops.forEach((op) => {
+        const r = REMAP_PUNTAJES[op.label];
+        if (r && op.valor === r[0] && op.valor !== r[1]) { op.valor = r[1]; cambio = true; }
+      });
+      sec.opciones = ops; // asegura formato nuevo
+      delete sec.escala;
+    });
+    if (cambio) porActualizar.push(f);
+  }
+
+  if (!porActualizar.length) {
+    btn.disabled = false; btn.textContent = "🔄 Revisar y actualizar puntajes";
+    msg.innerHTML = `<div class="msg ok">Revisados ${forms.length} formulario(s): ninguno tenía la escala vieja. Nada que actualizar. ✓</div>`;
+    return;
+  }
+  if (!confirm(`Se actualizarán ${porActualizar.length} formulario(s) a la nueva escala (Buena=8, Regular=6, Mala=0). Las evaluaciones ya guardadas no cambian. ¿Continuar?`)) {
+    btn.disabled = false; btn.textContent = "🔄 Revisar y actualizar puntajes";
+    return;
+  }
+
+  let ok = 0;
+  for (const f of porActualizar) {
+    try {
+      await setDoc(doc(db, "plantillas", f.id), {
+        nombre: f.nombre,
+        tipo: f.tipo || "tecnico",
+        datos: f.datos || [],
+        secciones: f.secciones,
+        siNo: f.siNo || { id: "conoceCanales", label: "" },
+        coordinadorUid: sesion.user.uid,
+        version: (f.version || 0) + 1,
+        actualizadaPor: sesion.perfil.nombre,
+        actualizadaEn: serverTimestamp(),
+      });
+      ok++;
+    } catch (err) {
+      console.error("No se pudo migrar", f.id, err);
+    }
+  }
+  logAudit("puntajes_migrados", { cantidad: ok });
+  btn.disabled = false; btn.textContent = "🔄 Revisar y actualizar puntajes";
+  msg.innerHTML = `<div class="msg ok">Listo: ${ok} de ${porActualizar.length} formulario(s) actualizados a la nueva escala. ✓</div>`;
+  toast("Puntajes actualizados ✓");
 }
 
 // ══════════ EDITOR DE UN FORMULARIO ══════════
