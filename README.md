@@ -67,3 +67,22 @@ Cada respuesta tiene un valor (Mala=1 … Excelente=4; Ninguno=1 … Avanzado=4)
 - Pantalla de gestión de usuarios.
 - Reportes/estadísticas por supervisor y por técnico.
 - Exportar evaluación a PDF.
+
+## Desarrollo y pruebas
+
+No hay paso de build: es HTML/CSS/JS servido tal cual. Para probar en local:
+
+```bash
+npm run serve   # sirve el sitio en http://localhost:8080 (python3 -m http.server)
+npm test        # pruebas de humo (no usan red ni Firebase)
+```
+
+Las pruebas (`tests/`, runner integrado de Node, sin dependencias) verifican que:
+
+- todos los `.js` compilan (`node --check`),
+- los `.json` de configuración (`manifest.json`, `firebase.json`, `.firebaserc`) parsean,
+- cada `<script src>` local del HTML apunta a un archivo que existe.
+
+Se ejecutan también en CI (GitHub Actions) en cada push/PR — ver
+[.github/workflows/ci.yml](.github/workflows/ci.yml). Para probar sin Firebase con
+datos de ejemplo, existe además el modo `preview/` (ver [preview/README.md](preview/README.md)).
