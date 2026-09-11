@@ -10,8 +10,16 @@ import {
 
 const AZUL = "#0066ff";
 const PALETA = ["#0066ff", "#059669", "#7c3aed", "#dc2626", "#d97706", "#0891b2", "#be185d", "#374151"];
+const SIN_DATOS = "#9ca3af"; // gris para supervisores sin puntaje registrado
+
+// Registro de instancias → permite destruirlas antes de recrear (evita warning "canvas already in use").
+const chartInstances = {};
 
 protegerPagina("coordinador", async ({ user }) => {
+  // ── Estado de carga ──
+  const vacio = document.getElementById("vacio");
+  vacio.innerHTML = `<div class="card lista-vacia">Cargando datos…</div>`;
+
   let evals = [];
   try {
     // Solo MIS supervisores (no los de otros coordinadores).
@@ -27,12 +35,15 @@ protegerPagina("coordinador", async ({ user }) => {
       resultados.forEach((r) => r.forEach((d) => evals.push(d.data())));
     }
   } catch (err) {
-    document.getElementById("vacio").innerHTML = `<div class="msg error">No se pudieron cargar los datos: ${err.message}</div>`;
+    vacio.innerHTML = `<div class="msg error">No se pudieron cargar los datos: ${err.message}</div>`;
     return;
   }
 
+  // Carga terminada → limpiar indicador
+  vacio.innerHTML = "";
+
   if (!evals.length) {
-    document.getElementById("vacio").innerHTML = `<div class="card lista-vacia">Todavía no hay evaluaciones para analizar.</div>`;
+    vacio.innerHTML = `<div class="card lista-vacia">Todavía no hay evaluaciones para analizar.</div>`;
     return;
   }
 
@@ -70,14 +81,16 @@ protegerPagina("coordinador", async ({ user }) => {
     kpi(Object.keys(bySup).length, "Supervisores") +
     kpi(promGlobal + " / 10", "Promedio global");
 
-  // ── Gráfica 1: promedio por supervisor ──
+  // ── Gráfica 1: promedio por supervisor (horizontal, con gris si sin puntaje) ──
   const supNombres = Object.keys(bySup);
   const supProm = supNombres.map((n) => (bySup[n].scored ? bySup[n].sum / bySup[n].scored : 0));
-  barChart("chart-sup", supNombres, supProm, "Promedio (0–10)", 10, supNombres.map((_, i) => PALETA[i % PALETA.length]));
+  // Gris cuando el supervisor no tiene ninguna evaluación puntuada (evita confundir 0 real con sin datos).
+  const supColors = supNombres.map((n, i) => bySup[n].scored === 0 ? SIN_DATOS : PALETA[i % PALETA.length]);
+  barChart("chart-sup", supNombres, supProm, "Promedio (0–10)", 10, supColors, true);
 
-  // ── Gráfica 2: cantidad por supervisor ──
+  // ── Gráfica 2: cantidad por supervisor (horizontal) ──
   const supCant = supNombres.map((n) => bySup[n].count);
-  barChart("chart-cant", supNombres, supCant, "Evaluaciones", null, AZUL);
+  barChart("chart-cant", supNombres, supCant, "Evaluaciones", null, AZUL, true);
 
   // ── Gráfica 3: promedio por sección ──
   const secNombres = Object.keys(bySec);
@@ -86,8 +99,11 @@ protegerPagina("coordinador", async ({ user }) => {
 });
 
 function barChart(canvasId, labels, data, label, max, color, horizontal = false) {
+  // Destruir instancia previa para evitar el warning "canvas already in use".
+  if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
+
   const colors = Array.isArray(color) ? color : labels.map(() => color);
-  new Chart(document.getElementById(canvasId), {
+  chartInstances[canvasId] = new Chart(document.getElementById(canvasId), {
     type: "bar",
     data: {
       labels,

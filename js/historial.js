@@ -51,9 +51,11 @@ protegerPagina(null, async () => {
     `${evals.length} evaluación${evals.length === 1 ? "" : "es"} · Promedio histórico <strong>${promProm}/10</strong> · Última <strong>${ultimo}/10</strong>`;
 
   // Gráfica de evolución
-  const labels = evals.map((e) => (e.createdAt?.toDate ? e.createdAt.toDate().toLocaleDateString("es-VE") : ""));
+  const labels = evals.map((e) => (e.createdAt?.toDate ? e.createdAt.toDate().toLocaleDateString("es-VE") : "s/fecha"));
   const data = evals.map((e) => e.puntajes?.promedioGeneral ?? null);
-  new Chart(document.getElementById("chart-evol"), {
+  let chartEvol = null;
+  if (chartEvol) chartEvol.destroy();
+  chartEvol = new Chart(document.getElementById("chart-evol"), {
     type: "line",
     data: {
       labels,
