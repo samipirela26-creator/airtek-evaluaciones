@@ -111,6 +111,22 @@ service cloud.firestore {
                             && (resource.data.supervisorUid == request.auth.uid || esMiSupervisor(resource.data.supervisorUid) || esRoot());
     }
 
+    // Bitácoras de supervisión (registro de actividades diarias).
+    match /bitacoras/{id} {
+      // Crear: solo el supervisor autenticado, a su propio nombre y activo.
+      allow create: if request.auth != null
+                    && request.resource.data.supervisorUid == request.auth.uid
+                    && activo();
+
+      // Leer: el supervisor dueño, su coordinador asignado o el root.
+      allow read: if request.auth != null
+                  && (resource.data.supervisorUid == request.auth.uid || esMiSupervisor(resource.data.supervisorUid) || esRoot());
+
+      // Editar o borrar: el supervisor dueño, su coordinador o el root.
+      allow update, delete: if request.auth != null
+                            && (resource.data.supervisorUid == request.auth.uid || esMiSupervisor(resource.data.supervisorUid) || esRoot());
+    }
+
     // Enlaces públicos: el coordinador crea uno para que los técnicos evalúen
     // a un supervisor. Se leen sin sesión (la página pública carga el formulario).
     match /enlaces/{token} {

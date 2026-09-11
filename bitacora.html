@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bitácora de Supervisión · Airtek</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="topbar">
+    <div class="marca">AIRTEK · Bitácora</div>
+    <div><a class="btn link" href="panel.html">← Volver</a></div>
+  </div>
+
+  <div class="contenedor">
+    <!-- Encabezado de la Bitácora -->
+    <div class="card">
+      <h1 style="margin:0 0 6px">Bitácora de Supervisión</h1>
+      <div id="sup-info" class="meta">Cargando datos de sesión…</div>
+      <div id="paso-indicador" style="margin-top:10px;font-size:0.85rem;font-weight:600;color:var(--azul)">
+        Paso 1 de 2: Ubicación y Clasificación Macro
+      </div>
+    </div>
+
+    <!-- Formulario principal -->
+    <form id="form-bitacora">
+      <!-- ══════════ PASO 1 ══════════ -->
+      <div id="paso-1">
+        <div class="card">
+          <div class="campo">
+            <label class="requerido">Supervisor de Campo</label>
+            <input type="text" id="campo-supervisor" disabled style="background:#f0f2f5;cursor:not-allowed;font-weight:600" />
+          </div>
+
+          <div class="campo" style="margin-top:16px">
+            <label class="requerido">¿A qué zona perteneces?</label>
+            <div id="zona-opciones" style="display:flex;flex-direction:column;gap:8px;margin-top:6px">
+              <!-- Se pueblan dinámicamente o por defecto -->
+            </div>
+          </div>
+
+          <div class="campo" style="margin-top:16px">
+            <label class="requerido" for="tipo-macro">Tipo de Actividad</label>
+            <select id="tipo-macro" required>
+              <option value="">-- Selecciona el tipo de actividad --</option>
+            </select>
+          </div>
+
+          <div class="campo" style="margin-top:16px">
+            <label class="requerido" for="area-trabajo">Área de Trabajo (Centro donde desempeña sus labores)</label>
+            <select id="area-trabajo" required>
+              <option value="">-- Selecciona el nodo / centro --</option>
+            </select>
+          </div>
+
+          <div id="msg-paso-1" style="margin-top:14px"></div>
+
+          <div style="margin-top:18px;display:flex;justify-content:flex-end">
+            <button type="button" id="btn-siguiente" class="btn" style="width:100%;max-width:200px">
+              Siguiente →
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════ PASO 2 ══════════ -->
+      <div id="paso-2" style="display:none">
+        <div class="card">
+          <h2 id="titulo-paso-2" style="margin-top:0">Detalle de Actividad</h2>
+
+          <div class="campo">
+            <label class="requerido" for="actividad-especifica">Actividad Específica</label>
+            <select id="actividad-especifica" required>
+              <option value="">-- Selecciona la actividad específica --</option>
+            </select>
+          </div>
+
+          <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap">
+            <div class="campo" style="flex:1;min-width:130px">
+              <label class="requerido" for="hora-inicio">Inicio</label>
+              <input type="time" id="hora-inicio" required />
+            </div>
+            <div class="campo" style="flex:1;min-width:130px">
+              <label class="requerido" for="hora-fin">Fin</label>
+              <input type="time" id="hora-fin" required />
+            </div>
+          </div>
+
+          <div style="margin-top:10px">
+            <label style="display:inline-flex;align-items:center;gap:8px;font-size:0.9rem;cursor:pointer">
+              <input type="checkbox" id="dia-siguiente" />
+              <span>Culminó al día siguiente (cruce de medianoche)</span>
+            </label>
+            <div id="duracion-hint" class="meta" style="margin-top:4px;color:var(--azul)"></div>
+          </div>
+
+          <div class="campo" style="margin-top:16px">
+            <label class="requerido" for="descripcion">Describa la actividad realizada</label>
+            <textarea id="descripcion" rows="4" placeholder="Detalles relevantes de la jornada o labor ejecutada..." required></textarea>
+          </div>
+
+          <div class="campo" style="margin-top:16px">
+            <label for="fotos">Suba imágenes de la actividad realizada (Opcional, máx. 5 fotos)</label>
+            <input type="file" id="fotos" accept="image/*" multiple style="margin-top:6px" />
+            <div class="meta" style="margin-top:4px">Formatos JPG, PNG o WebP. Se optimizan automáticamente.</div>
+            <div id="preview-fotos" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"></div>
+          </div>
+
+          <div id="msg-paso-2" style="margin-top:14px"></div>
+
+          <div style="margin-top:20px;display:flex;gap:12px;justify-content:space-between">
+            <button type="button" id="btn-atras" class="btn secundario" style="flex:1">
+              ← Atrás
+            </button>
+            <button type="submit" id="btn-enviar" class="btn" style="flex:2">
+              Enviar bitácora ✓
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <!-- ══════════ ESTADO DE ÉXITO ══════════ -->
+    <div id="box-exito" class="card" style="display:none;text-align:center;padding:30px 20px">
+      <div style="font-size:3rem">✅</div>
+      <h2 style="margin:10px 0 6px;color:var(--ok)">¡Bitácora registrada con éxito!</h2>
+      <p class="meta" style="margin-bottom:24px">La actividad ha quedado persistida en el sistema para revisión del coordinador.</p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <button type="button" id="btn-otra" class="btn">📝 Registrar otra actividad</button>
+        <a href="panel.html" class="btn secundario">🏠 Volver al panel</a>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/bitacora.js"></script>
+</body>
+</html>

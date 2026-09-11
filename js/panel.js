@@ -111,11 +111,30 @@ protegerPagina(null, async ({ user, perfil }) => {
       <div id="tecnicos-list">Cargando…</div>`;
     document.getElementById("titulo-lista").textContent = "Mis evaluaciones realizadas";
 
+    const modBit = document.getElementById("modulo-bitacora");
+    if (modBit) {
+      modBit.style.display = "block";
+      modBit.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div>
+            <h2 style="margin:0 0 4px">📝 Bitácora de Supervisión</h2>
+            <p class="meta" style="margin:0">Registra tus actividades diarias (administrativas, operativas o certificación).</p>
+          </div>
+          <a class="btn" href="bitacora.html" style="text-decoration:none;padding:10px 18px;font-size:0.95rem">
+            + Registrar actividad
+          </a>
+        </div>
+        <div id="bitacoras-supervisor-recientes" style="margin-top:14px"></div>`;
+      cargarBitacorasSupervisorRecientes(user.uid);
+    }
+
     document.getElementById("btn-add-tecnico").addEventListener("click", agregarTecnico);
     document.getElementById("nuevo-tecnico").addEventListener("input", actualizarHint);
     cargarTecnicos();
     cargarLista(perfil, user.uid);
   } else if (perfil.rol === "root") {
+    const modBit = document.getElementById("modulo-bitacora");
+    if (modBit) modBit.style.display = "none";
     document.getElementById("acciones").innerHTML = `
       <h2>Hola, ${esc(perfil.nombre)} (Administrador)</h2>
       <p>Crea y administra a los coordinadores de Airtek.</p>
@@ -138,6 +157,8 @@ protegerPagina(null, async ({ user, perfil }) => {
     cargarCoordinadores();
     cargarInvitaciones();
   } else {
+    const modBit = document.getElementById("modulo-bitacora");
+    if (modBit) modBit.style.display = "none";
     document.getElementById("acciones").innerHTML = `
       <h2>Hola, ${esc(perfil.nombre)} (Coordinador)</h2>
       <p>Aquí ves a tus supervisores y sus planillas.</p>
@@ -295,6 +316,45 @@ async function eliminarTecnico(id) {
   } catch (err) {
     console.error(err);
     toast("No se pudo eliminar: " + err.message, { ms: 5000 });
+  }
+}
+
+// ───────── Bitácoras recientes del supervisor ─────────
+async function cargarBitacorasSupervisorRecientes(uid) {
+  const cont = document.getElementById("bitacoras-supervisor-recientes");
+  if (!cont) return;
+  try {
+    const snap = await getDocs(
+      query(collection(db, "bitacoras"), where("supervisorUid", "==", uid))
+    );
+    const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    items.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+    const recientes = items.slice(0, 3);
+
+    if (!recientes.length) {
+      cont.innerHTML = `<div class="lista-vacia" style="padding:10px;font-size:0.85rem">Aún no has registrado actividades de bitácora.</div>`;
+      return;
+    }
+
+    cont.innerHTML = `
+      <div style="font-size:0.85rem;font-weight:600;color:var(--texto2);margin-bottom:8px">Últimas actividades registradas:</div>
+      ${recientes
+        .map((b) => {
+          const fecha = b.createdAt?.toDate ? b.createdAt.toDate().toLocaleDateString("es-VE") : "";
+          const duracion = b.duracionMinutos ? `${Math.floor(b.duracionMinutos / 60)}h ${b.duracionMinutos % 60}m` : "";
+          return `
+          <div class="lista-item" style="padding:10px 12px;margin-bottom:6px">
+            <div>
+              <strong>${esc(b.actividadEspecifica || b.tipoMacro)}</strong>
+              <div class="meta">${esc(b.zona)} · ${esc(b.areaTrabajo)}<br>${esc(b.horaInicio)} – ${esc(b.horaFin)} ${duracion ? `(${duracion})` : ""}${fecha ? ` · ${fecha}` : ""}</div>
+            </div>
+            <span class="badge" style="font-size:0.75rem">${esc(b.tipoMacro)}</span>
+          </div>`;
+        })
+        .join("")}`;
+  } catch (err) {
+    console.error("Error al cargar bitácoras recientes:", err);
+    cont.innerHTML = `<div class="meta" style="color:var(--error)">No se pudieron cargar las bitácoras recientes.</div>`;
   }
 }
 
@@ -561,14 +621,16 @@ async function mostrarSupervisor(uid, nombre, volverFn) {
   document.getElementById("titulo-lista").textContent = `Supervisor: ${nombre}`;
   cont.innerHTML = "Cargando…";
   try {
-    const [tSnap, eSnap, sSnap] = await Promise.all([
+    const [tSnap, eSnap, sSnap, bSnap] = await Promise.all([
       getDocs(query(collection(db, "tecnicos"), where("supervisorUid", "==", uid))),
       getDocs(query(collection(db, "evaluaciones"), where("supervisorUid", "==", uid))),
       getDocs(query(collection(db, "evaluacionesSupervisor"), where("supervisorUid", "==", uid))),
+      getDocs(query(collection(db, "bitacoras"), where("supervisorUid", "==", uid))),
     ]);
     const tecnicos = tSnap.docs.map((d) => d.data()).sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
     const evals = eSnap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
     const evalSup = sSnap.docs.map((d) => d.data()).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+    const bitacoras = bSnap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 
     const perfilSup = (await getDoc(doc(db, "usuarios", uid))).data() || {};
     const activo = perfilSup.activo !== false;
@@ -624,6 +686,29 @@ async function mostrarSupervisor(uid, nombre, volverFn) {
           })
           .join("")
       : `<div class="lista-vacia">Aún no ha llenado planillas.</div>`;
+
+    // Registro de actividades / Bitácoras del supervisor
+    html += `<h3 style="margin-top:16px">Registro de actividades / Bitácoras (${bitacoras.length})</h3>`;
+    html += bitacoras.length
+      ? bitacoras
+          .map((b) => {
+            const fecha = b.createdAt?.toDate ? b.createdAt.toDate().toLocaleDateString("es-VE") : "";
+            const duracion = b.duracionMinutos ? `${Math.floor(b.duracionMinutos / 60)}h ${b.duracionMinutos % 60}m` : "";
+            const tieneFotos = b.imagenes && b.imagenes.length ? ` · 📷 ${b.imagenes.length} foto${b.imagenes.length > 1 ? "s" : ""}` : "";
+            return `<div class="lista-item" style="display:block;margin-bottom:8px">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+                <strong>${esc(b.actividadEspecifica || b.tipoMacro)}</strong>
+                <span class="badge" style="font-size:0.75rem">${esc(b.tipoMacro)}</span>
+              </div>
+              <div class="meta" style="margin-top:4px">
+                ${esc(b.zona)} · ${esc(b.areaTrabajo)}<br>
+                🕒 ${esc(b.horaInicio)} – ${esc(b.horaFin)} ${duracion ? `(${duracion})` : ""}${fecha ? ` · 📅 ${fecha}` : ""}${tieneFotos}
+              </div>
+              ${b.descripcion ? `<div style="margin-top:6px;font-size:0.85rem;background:var(--gris);padding:8px;border-radius:6px">${esc(b.descripcion)}</div>` : ""}
+            </div>`;
+          })
+          .join("")
+      : `<div class="lista-vacia">Aún no ha registrado actividades en su bitácora.</div>`;
 
     // Evaluaciones que los técnicos le hicieron a ESTE supervisor (link público).
     html += `<h3 style="margin-top:16px">Evaluaciones recibidas de técnicos (${evalSup.length})</h3>`;
