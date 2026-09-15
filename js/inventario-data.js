@@ -91,10 +91,13 @@ export const HERRAMIENTAS = [
   { id: "herramientas-y-fac--bombona-de-gas-y-pico", nombre: "Bombona de Gas y Pico", categoria: "HERRAMIENTAS Y FACILIDADES DE FIBRA OPTICA", serial: false },
   { id: "herramientas-y-fac--mesa", nombre: "Mesa", categoria: "HERRAMIENTAS Y FACILIDADES DE FIBRA OPTICA", serial: false },
   { id: "herramientas-y-fac--pinza-para-instalacion-y-desinstalacion-de-conec", nombre: "Pinza para instalación y desinstalación de conectores SC y LC", categoria: "HERRAMIENTAS Y FACILIDADES DE FIBRA OPTICA", serial: false },
-  { id: "herramientas-y-fac--sangrador-de-buffer-de-fibra-optica-silla", nombre: "Sangrador de buffer de fibra óptica Silla", categoria: "HERRAMIENTAS Y FACILIDADES DE FIBRA OPTICA", serial: false },
+  { id: "herramientas-y-fac--sangrador-de-buffer-de-fibra-optica", nombre: "Sangrador de buffer de fibra óptica", categoria: "HERRAMIENTAS Y FACILIDADES DE FIBRA OPTICA", serial: false },
+  { id: "herramientas-y-fac--silla", nombre: "Silla", categoria: "HERRAMIENTAS Y FACILIDADES DE FIBRA OPTICA", serial: false },
 
   // ── HERRAMIENTAS EVENTUALES / INTERURBANAS ──
-  { id: "herramientas-event--barreton-cizalla-machete", nombre: "Barretón Cizalla Machete", categoria: "HERRAMIENTAS EVENTUALES / INTERURBANAS", serial: false },
+  { id: "herramientas-event--barreton", nombre: "Barretón", categoria: "HERRAMIENTAS EVENTUALES / INTERURBANAS", serial: false },
+  { id: "herramientas-event--cizalla", nombre: "Cizalla", categoria: "HERRAMIENTAS EVENTUALES / INTERURBANAS", serial: false },
+  { id: "herramientas-event--machete", nombre: "Machete", categoria: "HERRAMIENTAS EVENTUALES / INTERURBANAS", serial: false },
   { id: "herramientas-event--mariota-de-fibra-de-vidrio-150m-diametro-11mm-5", nombre: "Mariota de fibra de vidrio 150m, diámetro 11mm 5", categoria: "HERRAMIENTAS EVENTUALES / INTERURBANAS", serial: false },
   { id: "herramientas-event--mini-motosierra-6-bl-inalambrico-20v", nombre: "Mini Motosierra 6\" BL Inalámbrico 20V", categoria: "HERRAMIENTAS EVENTUALES / INTERURBANAS", serial: false },
   { id: "herramientas-event--motosierra-de-cadena-a-gasolina-24", nombre: "Motosierra de cadena a gasolina 24\"", categoria: "HERRAMIENTAS EVENTUALES / INTERURBANAS", serial: false },
@@ -108,7 +111,8 @@ export const HERRAMIENTAS = [
   // ── EQUIPOS DE PROTECCION PERSONAL ──
   { id: "equipos-de-protecc--arnes-corporal-de-seguridad-con-soporte-lumbar", nombre: "Arnés corporal de seguridad, con soporte lumbar", categoria: "EQUIPOS DE PROTECCION PERSONAL", serial: false },
   { id: "equipos-de-protecc--botas-de-caucho-cana-alta", nombre: "Botas de caucho caña alta", categoria: "EQUIPOS DE PROTECCION PERSONAL", serial: false },
-  { id: "equipos-de-protecc--botas-de-seguridad-botiquin-de-primeros-auxilios", nombre: "Botas de seguridad Botiquín de primeros auxilios", categoria: "EQUIPOS DE PROTECCION PERSONAL", serial: false },
+  { id: "equipos-de-protecc--botas-de-seguridad", nombre: "Botas de seguridad", categoria: "EQUIPOS DE PROTECCION PERSONAL", serial: false },
+  { id: "equipos-de-protecc--botiquin-de-primeros-auxilios", nombre: "Botiquín de primeros auxilios", categoria: "EQUIPOS DE PROTECCION PERSONAL", serial: false },
   { id: "equipos-de-protecc--casco-de-seguridad-con-barbiquejo", nombre: "Casco de seguridad con barbiquejo", categoria: "EQUIPOS DE PROTECCION PERSONAL", serial: false },
   { id: "equipos-de-protecc--casco-de-seguridad-anticaida", nombre: "Casco de seguridad anticaida", categoria: "EQUIPOS DE PROTECCION PERSONAL", serial: false },
   { id: "equipos-de-protecc--cono-de-seguridad-vial", nombre: "Cono de seguridad vial", categoria: "EQUIPOS DE PROTECCION PERSONAL", serial: false },
