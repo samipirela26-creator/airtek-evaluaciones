@@ -21,8 +21,13 @@ export async function cargarPerfil(uid) {
 
 // Protege una página: si no hay sesión, redirige al login.
 // Devuelve { user, perfil } cuando hay sesión válida.
-// Si se pasa rolRequerido y no coincide, redirige al panel.
+// `rolRequerido` admite un rol ("supervisor"), una lista de roles
+// (["supervisor", "coordinador"]) o null para cualquiera con sesión.
+// Si el rol no coincide, redirige al panel.
 export function protegerPagina(rolRequerido, callback) {
+  const rolesPermitidos = rolRequerido == null
+    ? null
+    : (Array.isArray(rolRequerido) ? rolRequerido : [rolRequerido]);
   onAuthStateChanged(auth, async (user) => {
     if (!user) {
       window.location.href = "index.html";
@@ -43,7 +48,7 @@ export function protegerPagina(rolRequerido, callback) {
       window.location.href = "index.html";
       return;
     }
-    if (rolRequerido && perfil.rol !== rolRequerido) {
+    if (rolesPermitidos && !rolesPermitidos.includes(perfil.rol)) {
       window.location.href = "panel.html";
       return;
     }

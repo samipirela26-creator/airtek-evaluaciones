@@ -1,15 +1,23 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <script type="importmap">
+  { "imports": {
+    "/js/firebase.js": "/preview/mock-firebase.js",
+    "/js/session.js": "/preview/mock-session.js",
+    "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js": "/preview/mock-firestore.js",
+    "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js": "/preview/mock-auth.js"
+  }}
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bitácora de Supervisión · Airtek</title>
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="/css/styles.css" />
 </head>
 <body>
   <div class="topbar">
     <div class="marca">AIRTEK · Bitácora</div>
-    <div><a class="btn link" href="panel.html">← Volver</a></div>
+    <div><a class="btn link" href="/preview/panel.html">← Volver</a></div>
   </div>
 
   <div class="contenedor">
@@ -133,11 +141,11 @@
       <p class="meta" style="margin-bottom:24px">La actividad ha quedado persistida en el sistema para revisión del coordinador.</p>
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
         <button type="button" id="btn-otra" class="btn">📝 Registrar otra actividad</button>
-        <a href="panel.html" class="btn secundario">🏠 Volver al panel</a>
+        <a href="/preview/panel.html" class="btn secundario">🏠 Volver al panel</a>
       </div>
     </div>
   </div>
 
-  <script type="module" src="js/bitacora.js"></script>
+  <script type="module" src="/js/bitacora.js"></script>
 </body>
 </html>

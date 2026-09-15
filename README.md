@@ -14,6 +14,10 @@ propio: Firebase es el backend. Se publica en **GitHub Pages**.
 index.html          Login
 panel.html          Panel según rol (lista de evaluaciones)
 evaluacion.html     Formulario de evaluación
+bitacora.html       Registro de actividades del supervisor
+bitacora-tablero.html  Tablero de bitácora de campo (coordinador)
+inventario.html     Inventario de herramientas y materiales por técnico
+reporte-herramientas.html  Consolidado para pedir reposiciones (coordinador)
 js/firebase.js      Config de Firebase  ← AQUÍ pegas tus claves
 js/plantilla.js     El formulario definido como datos (editable a futuro)
 js/session.js       Sesión y roles
@@ -61,6 +65,29 @@ directo**: ábrelo, crea el índice y listo.
 Cada respuesta tiene un valor (Mala=1 … Excelente=4; Ninguno=1 … Avanzado=4).
 "No Aplica" no cuenta. Se guarda el promedio por sección y el **promedio general**
 (sobre 4), que se muestra en el panel — base para medir la eficiencia.
+
+## Bitácora, métricas e inventarios
+
+Además de las evaluaciones, la app registra la **actividad de campo** y el
+**inventario de los técnicos** (ver `specs/002-metricas-e-inventarios/`).
+
+- Los supervisores registran actividades en `bitacora.html`, indicando el día en
+  que las hicieron. Las bitácoras anteriores a esa versión no traen fecha
+  propia: se les muestra la de carga marcada con `~` porque es aproximada.
+- El coordinador ve el **Tablero de Bitácora**, filtra por fecha, supervisor y
+  zona, y exporta todo a un CSV que abre en Excel (lleva BOM UTF-8, por eso los
+  acentos salen bien).
+- El **inventario de herramientas** guarda, por técnico y herramienta, cuántas
+  unidades hay en estado bueno, regular y malo. Con eso el
+  **Requerimiento de Herramientas** responde cuántas unidades hay que reponer.
+- El **material de uso diario** se registra como entregas con fecha, para ver el
+  consumo en el tiempo.
+
+Los catálogos (79 herramientas y 47 materiales) están en `js/inventario-data.js`
+y salen de la planilla del cliente. Para cambiarlos hay que editar ese archivo.
+
+> Al agregar las colecciones de inventario hay que **publicar de nuevo
+> `firestore.rules`**, o las escrituras fallarán por permisos insuficientes.
 
 ## Próximos pasos (fase 2)
 - Editor de formulario para el coordinador (leer la plantilla desde Firestore).

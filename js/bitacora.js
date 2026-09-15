@@ -7,6 +7,7 @@ import {
   ACTIVIDADES_MACRO,
   SUBACTIVIDADES,
   validarHorario,
+  hoyISO,
 } from "./bitacora-data.js";
 import {
   collection,
@@ -38,8 +39,18 @@ protegerPagina("supervisor", (s) => {
   document.getElementById("campo-supervisor").value = sesion.perfil.nombre || sesion.user.email;
 
   poblarSelectores();
+  inicializarFecha();
   vincularEventos();
 });
+
+// ── Fecha de la actividad: hoy por defecto, sin permitir futuro ──
+function inicializarFecha() {
+  const campo = document.getElementById("fecha-actividad");
+  if (!campo) return;
+  const hoy = hoyISO();
+  campo.value = hoy;
+  campo.max = hoy;
+}
 
 // ── Poblar catálogos en el DOM ──
 function poblarSelectores() {
@@ -257,7 +268,18 @@ function vincularEventos() {
     const horaFin = document.getElementById("hora-fin").value;
     const diaSiguiente = document.getElementById("dia-siguiente").checked;
     const descripcion = document.getElementById("descripcion").value.trim();
+    const fecha = document.getElementById("fecha-actividad").value;
 
+    if (!fecha) {
+      setMsg("msg-paso-2", "error", "Debes indicar la fecha de la actividad.");
+      document.getElementById("fecha-actividad").focus();
+      return;
+    }
+    if (fecha > hoyISO()) {
+      setMsg("msg-paso-2", "error", "La fecha de la actividad no puede ser futura.");
+      document.getElementById("fecha-actividad").focus();
+      return;
+    }
     if (!subActividad) {
       setMsg("msg-paso-2", "error", "Debes seleccionar la actividad específica.");
       document.getElementById("actividad-especifica").focus();
@@ -284,6 +306,7 @@ function vincularEventos() {
         supervisorUid: sesion.user.uid,
         supervisorNombre: sesion.perfil.nombre || sesion.user.email,
         coordinadorUid: sesion.perfil.coordinadorUid || null,
+        fecha,
         zona: zonaChecked ? zonaChecked.value : "",
         tipoMacro,
         areaTrabajo: area,
@@ -294,6 +317,7 @@ function vincularEventos() {
         duracionMinutos: valHorario.minutos,
         descripcion,
         imagenes: fotosBase64,
+        numFotos: fotosBase64.length,
         createdAt: serverTimestamp(),
       };
 
@@ -328,6 +352,7 @@ function vincularEventos() {
     document.getElementById("dia-siguiente").checked = false;
     document.getElementById("duracion-hint").textContent = "";
     document.getElementById("descripcion").value = "";
+    inicializarFecha();
     fotosBase64 = [];
     renderPreviewFotos();
 

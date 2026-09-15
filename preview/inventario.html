@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <script type="importmap">
+  { "imports": {
+    "/js/firebase.js": "/preview/mock-firebase.js",
+    "/js/session.js": "/preview/mock-session.js",
+    "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js": "/preview/mock-firestore.js",
+    "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js": "/preview/mock-auth.js"
+  }}
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inventario de Técnicos · Airtek</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <div class="topbar">
+    <div class="marca">AIRTEK · Inventario</div>
+    <div><a class="btn link" href="/preview/panel.html">← Volver</a></div>
+  </div>
+
+  <div class="contenedor">
+    <div class="card">
+      <h1 style="margin-top:0">Inventario de Técnicos</h1>
+      <p class="meta" id="sup-info">Cargando…</p>
+
+      <div class="campo" style="margin-top:14px">
+        <label class="requerido" for="sel-tecnico">Técnico</label>
+        <select id="sel-tecnico"><option value="">-- Selecciona un técnico --</option></select>
+      </div>
+
+      <div class="btn-row" id="pestanas" style="margin-top:14px;display:none">
+        <button class="btn" id="tab-herramientas">🧰 Herramientas y equipos</button>
+        <button class="btn secundario" id="tab-materiales">📦 Material de uso diario</button>
+      </div>
+    </div>
+
+    <!-- ══════════ HERRAMIENTAS ══════════ -->
+    <div id="panel-herramientas" style="display:none">
+      <div class="card">
+        <h2 style="margin-top:0">Herramientas y equipos</h2>
+        <p class="meta">
+          Indica cuántas unidades tiene el técnico en cada estado. La cantidad total
+          se calcula sola. Deja en blanco lo que no tenga.
+        </p>
+        <div id="ultima-actualizacion" class="meta" style="margin-top:6px"></div>
+        <div id="resumen-herramientas" style="margin-top:12px"></div>
+      </div>
+
+      <div id="lista-herramientas"></div>
+
+      <div class="card">
+        <div id="msg-herramientas"></div>
+        <button class="btn" id="btn-guardar-herramientas" style="width:100%">Guardar inventario de herramientas ✓</button>
+      </div>
+    </div>
+
+    <!-- ══════════ MATERIALES ══════════ -->
+    <div id="panel-materiales" style="display:none">
+      <div class="card">
+        <h2 style="margin-top:0">Material de uso diario</h2>
+        <p class="meta">
+          Registra la cantidad entregada hoy. Cada guardado queda como una entrega
+          nueva con su fecha, para poder ver el consumo en el tiempo.
+        </p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px">
+          <div class="campo" style="flex:1;min-width:160px;margin:0">
+            <label class="requerido" for="fecha-entrega">Fecha de entrega</label>
+            <input type="date" id="fecha-entrega" />
+          </div>
+          <div class="campo" style="flex:2;min-width:220px;margin:0">
+            <label for="nota-entrega">Nota (opcional)</label>
+            <input type="text" id="nota-entrega" placeholder="Ej.: reposición semanal" />
+          </div>
+        </div>
+      </div>
+
+      <div id="lista-materiales"></div>
+
+      <div class="card">
+        <div id="msg-materiales"></div>
+        <button class="btn" id="btn-guardar-materiales" style="width:100%">Registrar entrega ✓</button>
+      </div>
+
+      <div class="card">
+        <h2 style="margin-top:0">Últimas entregas</h2>
+        <div id="historial-entregas">—</div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/js/inventario.js"></script>
+</body>
+</html>

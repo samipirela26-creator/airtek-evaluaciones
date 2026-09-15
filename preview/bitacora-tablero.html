@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <script type="importmap">
+  { "imports": {
+    "/js/firebase.js": "/preview/mock-firebase.js",
+    "/js/session.js": "/preview/mock-session.js",
+    "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js": "/preview/mock-firestore.js",
+    "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js": "/preview/mock-auth.js"
+  }}
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tablero de Bitácora · Airtek</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="topbar">
+    <div class="marca">AIRTEK · Bitácora</div>
+    <div><a class="btn link" href="/preview/panel.html">← Volver</a></div>
+  </div>
+
+  <div class="contenedor">
+    <div class="card">
+      <h1>Tablero de Bitácora de Campo</h1>
+      <p class="meta">Actividades registradas por tus supervisores: en qué se va el tiempo, dónde y quién.</p>
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:14px;align-items:flex-end">
+        <div class="campo" style="flex:1;min-width:150px;margin:0">
+          <label for="f-desde">Desde</label>
+          <input type="date" id="f-desde" />
+        </div>
+        <div class="campo" style="flex:1;min-width:150px;margin:0">
+          <label for="f-hasta">Hasta</label>
+          <input type="date" id="f-hasta" />
+        </div>
+        <div class="campo" style="flex:1;min-width:180px;margin:0">
+          <label for="f-supervisor">Supervisor</label>
+          <select id="f-supervisor"><option value="">Todos</option></select>
+        </div>
+        <div class="campo" style="flex:1;min-width:150px;margin:0">
+          <label for="f-zona">Zona</label>
+          <select id="f-zona"><option value="">Todas</option></select>
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-top:14px">
+        <button class="btn" id="btn-exportar">📥 Exportar a Excel (CSV)</button>
+        <button class="btn secundario" id="btn-mes-actual">Mes actual</button>
+        <button class="btn secundario" id="btn-todo">Todo el histórico</button>
+      </div>
+
+      <div id="kpis" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:16px"></div>
+      <div id="aviso" style="margin-top:12px"></div>
+    </div>
+
+    <div class="card">
+      <h2>Distribución por tipo de actividad</h2>
+      <p class="meta">Cuánto tiempo se va en gestión administrativa, campo o certificación.</p>
+      <canvas id="chart-macro" height="240"></canvas>
+    </div>
+
+    <div class="card">
+      <h2>Actividades específicas con más horas</h2>
+      <canvas id="chart-actividad" height="300"></canvas>
+    </div>
+
+    <div class="card">
+      <h2>Horas por supervisor</h2>
+      <canvas id="chart-supervisor" height="240"></canvas>
+    </div>
+
+    <div class="card">
+      <h2>Horas por centro de trabajo (nodo)</h2>
+      <canvas id="chart-nodo" height="300"></canvas>
+    </div>
+
+    <div id="vacio"></div>
+  </div>
+
+  <script type="module" src="/js/bitacora-tablero.js"></script>
+</body>
+</html>
