@@ -52,15 +52,41 @@ test('normalizarRenglon calcula la cantidad como la suma de los estados', async 
     assert.strictEqual(normalizarRenglon({ id: 'y' }).cantidad, 0);
 });
 
-test('renglonesConDatos descarta los renglones vacíos', async () => {
+test('renglonesConDatos guarda lo que el supervisor escribió, incluido el cero', async () => {
     const { renglonesConDatos } = await carga();
     const filas = renglonesConDatos([
         { id: 'a', bueno: 1 },
-        { id: 'b' },
-        { id: 'c', malo: '0' },
+        { id: 'b' },                        // en blanco: no se revisó
+        { id: 'c', malo: '0' },             // cero escrito: SÍ se revisó, no tiene
         { id: 'd', regular: 2 },
+        { id: 'e', observacion: 'prestada' }, // solo observación: también cuenta
+        { id: 'f', bueno: '  ' },           // espacios en blanco: no cuenta
     ]);
-    assert.deepStrictEqual(filas.map((f) => f.id), ['a', 'd']);
+    assert.deepStrictEqual(filas.map((f) => f.id), ['a', 'c', 'd', 'e']);
+
+    // El cero escrito queda como cantidad 0, no desaparece.
+    const c = filas.find((f) => f.id === 'c');
+    assert.strictEqual(c.cantidad, 0);
+});
+
+test('fueEscrito distingue el cero del campo en blanco', async () => {
+    const { fueEscrito } = await carga();
+    assert.strictEqual(fueEscrito({ bueno: 0 }), true, 'un cero es un dato');
+    assert.strictEqual(fueEscrito({ bueno: '0' }), true);
+    assert.strictEqual(fueEscrito({ bueno: '' }), false);
+    assert.strictEqual(fueEscrito({ bueno: null }), false);
+    assert.strictEqual(fueEscrito({}), false);
+    assert.strictEqual(fueEscrito({ serial: 'ABC-1' }), true, 'un serial sin cantidades también');
+});
+
+test('valorParaCampo devuelve el cero guardado, no un campo vacío', async () => {
+    const { valorParaCampo } = await carga();
+    assert.strictEqual(valorParaCampo(0), 0, 'un 0 guardado debe volver a verse como 0');
+    assert.strictEqual(valorParaCampo('0'), 0);
+    assert.strictEqual(valorParaCampo(3), 3);
+    assert.strictEqual(valorParaCampo(undefined), '');
+    assert.strictEqual(valorParaCampo(null), '');
+    assert.strictEqual(valorParaCampo(''), '');
 });
 
 test('resumirHerramientas suma unidades de varios técnicos', async () => {
@@ -89,8 +115,32 @@ test('resumirHerramientas aguanta entradas vacías y ruidosas', async () => {
     assert.deepStrictEqual(resumirHerramientas([]), []);
     assert.deepStrictEqual(resumirHerramientas(null), []);
     assert.deepStrictEqual(resumirHerramientas([{ items: [] }, {}, { items: null }]), []);
-    // Renglones sin id o en cero no entran al reporte.
-    assert.deepStrictEqual(resumirHerramientas([{ items: [{ bueno: 5 }, { id: 'z', bueno: 0 }] }]), []);
+    // Un renglón sin id no se puede atribuir a ninguna herramienta: se descarta.
+    assert.deepStrictEqual(resumirHerramientas([{ items: [{ bueno: 5 }] }]), []);
+});
+
+test('una herramienta auditada en cero aparece en el reporte, con total cero', async () => {
+    const { resumirHerramientas, HERRAMIENTAS } = await carga();
+    const [h1] = HERRAMIENTAS;
+    // Dos técnicos revisados: uno tiene 2, el otro confirmó que no tiene ninguna.
+    const resumen = resumirHerramientas([
+        { items: [{ id: h1.id, bueno: 2 }] },
+        { items: [{ id: h1.id, bueno: 0, regular: 0, malo: 0 }] },
+    ]);
+    assert.strictEqual(resumen.length, 1);
+    assert.strictEqual(resumen[0].total, 2);
+    assert.strictEqual(resumen[0].tecnicos, 1, 'solo uno la tiene');
+    assert.strictEqual(resumen[0].auditados, 2, 'pero a los dos se les revisó');
+
+    // Nadie la tiene, pero a todos se les revisó: la fila NO desaparece.
+    const enCero = resumirHerramientas([
+        { items: [{ id: h1.id, bueno: 0 }] },
+        { items: [{ id: h1.id, bueno: 0 }] },
+    ]);
+    assert.strictEqual(enCero.length, 1, 'el coordinador debe poder ver que se revisó y no hay');
+    assert.strictEqual(enCero[0].total, 0);
+    assert.strictEqual(enCero[0].tecnicos, 0);
+    assert.strictEqual(enCero[0].auditados, 2);
 });
 
 test('una herramienta que ya no está en el catálogo no se pierde del reporte', async () => {

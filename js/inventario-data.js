@@ -9,6 +9,15 @@
 
 export const ESTADOS_HERRAMIENTA = ["bueno", "regular", "malo"];
 
+/**
+ * Unidad de medida de cada material. El cliente todavía no las definió, así que
+ * el catálogo las trae vacías: la interfaz solo las muestra cuando existen.
+ * Para llenarlas basta agregar `unidad: "metros"` al ítem correspondiente.
+ */
+export function unidadDe(material) {
+  return String(material?.unidad ?? "").trim();
+}
+
 export const ETIQUETA_ESTADO = {
   bueno: "Bueno",
   regular: "Regular",
@@ -225,9 +234,32 @@ export function normalizarRenglon(renglon = {}) {
   };
 }
 
-/** Se guardan solo los renglones con al menos una unidad: el resto es ruido. */
+/**
+ * ¿El supervisor escribió algo en este renglón?
+ * Un "0" tecleado ES un dato: significa "revisé y no tiene ninguna". Un campo
+ * en blanco significa "no lo revisé". Distinguirlos es lo que permite que el
+ * coordinador sepa si un faltante está confirmado o simplemente sin auditar.
+ */
+export function fueEscrito(renglon = {}) {
+  return ["bueno", "regular", "malo", "serial", "observacion"].some((k) => {
+    const v = renglon[k];
+    return v !== null && v !== undefined && String(v).trim() !== "";
+  });
+}
+
+/** Se guardan los renglones que el supervisor tocó, incluidos los que puso en cero. */
 export function renglonesConDatos(renglones) {
-  return (renglones || []).map(normalizarRenglon).filter((r) => r.cantidad > 0);
+  return (renglones || []).filter(fueEscrito).map(normalizarRenglon);
+}
+
+/**
+ * Valor para pintar en un input: "" si nunca se escribió, el número si sí.
+ * Sin esto un 0 guardado volvería a la pantalla como campo vacío y el
+ * supervisor no sabría si su auditoría quedó registrada.
+ */
+export function valorParaCampo(v) {
+  if (v === null || v === undefined || String(v).trim() === "") return "";
+  return aEntero(v);
 }
 
 /**
@@ -241,7 +273,7 @@ export function resumirHerramientas(inventarios) {
   (inventarios || []).forEach((inv) => {
     (inv?.items || []).forEach((renglon) => {
       const r = normalizarRenglon(renglon);
-      if (!r.id || r.cantidad === 0) return;
+      if (!r.id) return;
 
       const cat = buscarHerramienta(r.id);
       if (!acc.has(r.id)) {
@@ -255,7 +287,8 @@ export function resumirHerramientas(inventarios) {
           bueno: 0,
           regular: 0,
           malo: 0,
-          tecnicos: 0,
+          tecnicos: 0,   // cuántos tienen al menos una unidad
+          auditados: 0,  // cuántos fueron revisados, tengan o no
         });
       }
       const fila = acc.get(r.id);
@@ -263,7 +296,8 @@ export function resumirHerramientas(inventarios) {
       fila.bueno += r.bueno;
       fila.regular += r.regular;
       fila.malo += r.malo;
-      fila.tecnicos += 1;
+      fila.auditados += 1;
+      if (r.cantidad > 0) fila.tecnicos += 1;
     });
   });
 
@@ -298,6 +332,7 @@ export const COLUMNAS_CSV_REQUERIMIENTOS = [
   { clave: "regular", titulo: "Regulares (vigilar)" },
   { clave: "malo", titulo: "Malas (reponer)" },
   { clave: "tecnicos", titulo: "Técnicos que la tienen" },
+  { clave: "auditados", titulo: "Técnicos revisados" },
 ];
 
 export const COLUMNAS_CSV_MATERIALES = [

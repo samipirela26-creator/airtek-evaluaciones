@@ -124,19 +124,26 @@ function pintar() {
     document.getElementById("vacio").innerHTML = "";
   }
 
-  const horas = (m) => +(m / 60).toFixed(2);
+  // Las gráficas van al final y entre try/catch a propósito: los KPIs, los
+  // filtros y la exportación ya están pintados, y un fallo aquí (CDN caído,
+  // datos raros) no debe tumbar lo que sí sirve.
+  try {
+    const horas = (m) => +(m / 60).toFixed(2);
 
-  const macro = ordenarPorMinutos(r.porTipoMacro);
-  donaChart("chart-macro", macro.map((x) => acortar(x.clave, 30)), macro.map((x) => horas(x.minutos)), "Horas");
+    const macro = ordenarPorMinutos(r.porTipoMacro);
+    donaChart("chart-macro", macro.map((x) => acortar(x.clave, 30)), macro.map((x) => horas(x.minutos)), "Horas");
 
-  const act = ordenarPorMinutos(r.porActividad).slice(0, 12);
-  barChart("chart-actividad", act.map((x) => acortar(x.clave, 44)), act.map((x) => horas(x.minutos)), "Horas", null, "#059669", true);
+    const act = ordenarPorMinutos(r.porActividad).slice(0, 12);
+    barChart("chart-actividad", act.map((x) => acortar(x.clave, 44)), act.map((x) => horas(x.minutos)), "Horas", null, "#059669", true);
 
-  const sup = ordenarPorMinutos(r.porSupervisor);
-  barChart("chart-supervisor", sup.map((x) => acortar(x.clave, 28)), sup.map((x) => horas(x.minutos)), "Horas", null, AZUL, true);
+    const sup = ordenarPorMinutos(r.porSupervisor);
+    barChart("chart-supervisor", sup.map((x) => acortar(x.clave, 28)), sup.map((x) => horas(x.minutos)), "Horas", null, AZUL, true);
 
-  const nodo = ordenarPorMinutos(r.porNodo).slice(0, 15);
-  barChart("chart-nodo", nodo.map((x) => acortar(x.clave, 34)), nodo.map((x) => horas(x.minutos)), "Horas", null, "#7c3aed", true);
+    const nodo = ordenarPorMinutos(r.porNodo).slice(0, 15);
+    barChart("chart-nodo", nodo.map((x) => acortar(x.clave, 34)), nodo.map((x) => horas(x.minutos)), "Horas", null, "#7c3aed", true);
+  } catch (err) {
+    console.error("[Tablero] No se pudieron dibujar las gráficas:", err);
+  }
 }
 
 function exportar() {

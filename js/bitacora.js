@@ -52,6 +52,15 @@ function inicializarFecha() {
   campo.max = hoy;
 }
 
+// El tope se fija al cargar la página. Si el supervisor deja la pestaña abierta
+// y cruza la medianoche, "hoy" cambia y el tope queda viejo: se recalcula cada
+// vez que vuelve a la pestaña.
+function refrescarTopeFecha() {
+  const campo = document.getElementById("fecha-actividad");
+  if (!campo) return;
+  campo.max = hoyISO();
+}
+
 // ── Poblar catálogos en el DOM ──
 function poblarSelectores() {
   // 1. Zonas (Radio inputs)
@@ -219,6 +228,10 @@ function vincularEventos() {
     document.getElementById("paso-1").style.display = "block";
     document.getElementById("paso-indicador").textContent = "Paso 1 de 2: Ubicación y Clasificación Macro";
     window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) refrescarTopeFecha();
   });
 
   // Monitoreo de horarios para cálculo reactivo

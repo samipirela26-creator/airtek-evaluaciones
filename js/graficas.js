@@ -9,9 +9,32 @@ export const SIN_DATOS = "#9ca3af";
 // si no Chart.js avisa "canvas is already in use".
 const instancias = {};
 
+/** ¿Chart.js llegó? Viene por CDN, así que sin internet no está. */
+export function hayChart() {
+  return typeof Chart !== "undefined";
+}
+
+// Si la librería no cargó, se avisa en el sitio de la gráfica en vez de dejar
+// un rectángulo blanco. Los números y la exportación no dependen de Chart.js,
+// así que la página sigue sirviendo.
+function avisarSinGraficas(canvas) {
+  if (!canvas || canvas.dataset.avisoPuesto) return;
+  canvas.dataset.avisoPuesto = "1";
+  canvas.style.display = "none";
+  const aviso = document.createElement("div");
+  aviso.className = "meta";
+  aviso.style.cssText = "padding:18px;text-align:center;border:1px dashed var(--borde);border-radius:10px";
+  aviso.textContent = "📶 Las gráficas necesitan internet para cargarse. Los totales y la exportación sí funcionan.";
+  canvas.insertAdjacentElement("afterend", aviso);
+}
+
 function crear(canvasId, config) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return null;
+  if (!hayChart()) {
+    avisarSinGraficas(canvas);
+    return null;
+  }
   if (instancias[canvasId]) instancias[canvasId].destroy();
   instancias[canvasId] = new Chart(canvas, config);
   return instancias[canvasId];
