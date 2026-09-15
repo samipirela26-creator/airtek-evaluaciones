@@ -58,7 +58,8 @@ export const HERRAMIENTAS = [
   { id: "herramientas-basic--piqueta-alicate-de-corte-diagonal-de-6", nombre: "Piqueta/ Alicate de corte diagonal de 6", categoria: "HERRAMIENTAS BÁSICAS", serial: false },
   { id: "herramientas-basic--reflector-led-recargable-portatil-de-10w", nombre: "Reflector LED recargable portátil de 10W", categoria: "HERRAMIENTAS BÁSICAS", serial: false },
   { id: "herramientas-basic--taladro-atornillador-recargable-inalambrica", nombre: "Taladro / Atornillador recargable/ Inalámbrica", categoria: "HERRAMIENTAS BÁSICAS", serial: false },
-  { id: "herramientas-basic--connector-clear-pen-sc-y-lc-b-equipos-de-prueba", nombre: "CONNECTOR CLEAR PEN SC Y LC B EQUIPOS DE PRUEBA", categoria: "HERRAMIENTAS BÁSICAS", serial: false },
+  { id: "herramientas-basic--connector-clear-pen-sc", nombre: "Connector Clear Pen SC", categoria: "HERRAMIENTAS BÁSICAS", serial: false },
+  { id: "herramientas-basic--connector-clear-pen-lc", nombre: "Connector Clear Pen LC", categoria: "HERRAMIENTAS BÁSICAS", serial: false },
 
   // ── EQUIPOS DE PRUEBA ──
   { id: "equipos-de-prueba--laptop-dell-vostro-3520-bolso-para-laptop", nombre: "Laptop/ DELL/ Vostro 3520 + Bolso para Laptop", categoria: "EQUIPOS DE PRUEBA", serial: true },

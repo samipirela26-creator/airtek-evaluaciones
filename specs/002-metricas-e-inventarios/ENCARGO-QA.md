@@ -145,10 +145,12 @@ especulación suya.
 No son hallazgos: son deudas conocidas. No hace falta que las verifiques, pero
 si te tropiezas con consecuencias de ellas, dilo.
 
-- Un ítem del Excel original sigue sin separar por falta de respuesta del
-  cliente: `CONNECTOR CLEAR PEN SC Y LC B EQUIPOS DE PRUEBA`, que parece ser un
-  ítem pegado al encabezado de la categoría siguiente. Quedó como último renglón
-  de HERRAMIENTAS BÁSICAS.
+- Los ítems que venían fusionados en la planilla ya se separaron con el cliente.
+  El último, `CONNECTOR CLEAR PEN SC Y LC B EQUIPOS DE PRUEBA`, se interpretó
+  como dos lápices limpiadores (SC y LC) más el encabezado de la categoría
+  siguiente colado en la celda. **Vale la pena que lo confirmes con la planilla
+  original**: es la única separación que se hizo por interpretación y no por
+  instrucción literal del cliente.
 - Hay tres nombres más que vienen raros de la planilla y se cargaron literales:
   `Mariota de fibra de vidrio 150m, diámetro 11mm 5` (ese "5" del final),
   `Bolso cilindrico de empalme (Tipo liniero` y
