@@ -31,6 +31,35 @@ sale CIERTO, desconfía de ti mismo antes de entregar.
 
 ---
 
+## Estado al momento de escribir esto
+
+**Las reglas de `firestore.rules` YA SE PUBLICARON en el proyecto real** (15 de
+septiembre de 2026). El código todavía NO está en `master`, así que la app
+publicada en GitHub Pages sigue siendo la versión anterior: en producción
+conviven **reglas nuevas con código viejo**.
+
+Eso deja dos cosas ya resueltas, que **no hace falta que verifiques**:
+
+- La sintaxis de las reglas es válida. La consola de Firebase la valida antes
+  de publicar; si estuviera mal, el publicado habría fallado.
+- La lectura de bitácoras no se rompió. El único cambio sobre una colección en
+  uso fue agregar un `||` a la regla de lectura, y agregar un "o" solo amplía
+  el acceso, nunca lo quita.
+
+Lo que sigue abierto es si las reglas **hacen lo que deben** cuando el código
+nuevo las ejerza. Eso es el Bloque A.
+
+## ⚠ Regla innegociable sobre los datos
+
+El proyecto de Firebase es el **real**, con datos del personal de la empresa.
+
+- **No escribas nada** en `usuarios`, `tecnicos`, `evaluaciones` ni `bitacoras`.
+- Para probar las reglas usa el **emulador**:
+  `firebase emulators:start --only firestore`, cargándole el mismo
+  `firestore.rules`. Ahí puedes simular cualquier usuario y rol sin tocar nada.
+- Si algo solo se puede comprobar contra el proyecto real, **no lo hagas**:
+  anótalo como NO CONCLUYENTE y explica qué haría falta.
+
 ## Contexto mínimo
 
 Rama: `feature/metricas-e-inventarios`. Ruta:
@@ -63,9 +92,9 @@ proyecto real: ahí hay datos de personal de la empresa.
 
 ### Bloque A — Reglas de Firestore (lo más importante)
 
-Las reglas de `firestore.rules` **nunca se ejecutaron**: no hay emulador
-configurado en este repo y el autor no pudo probarlas. Todo este bloque es
-especulación suya.
+Las reglas están publicadas, pero **nunca se ejecutaron contra el código
+nuevo**: no hay emulador configurado en este repo y el autor no pudo probarlas.
+Todo este bloque es especulación suya. Móntalo en el emulador.
 
 1. **La consulta del coordinador al reporte de herramientas es rechazada por las
    reglas.** `js/reporte-herramientas.js` consulta
@@ -75,11 +104,13 @@ especulación suya.
    *(Pista: `js/dashboard.js` ya usa ese patrón contra `evaluaciones` y funciona
    en producción. Confírmalo o desmiéntelo, no lo des por hecho.)*
 
-2. **`resource.data.get('coordinadorUid', '')` no es sintaxis válida** en el
-   bloque de lectura de `bitacoras`. El autor lo copió de `perfil().get(...)`,
-   que sí existe en el archivo, pero nunca lo probó sobre `resource.data`. Si
-   está mal, **rompe la lectura de bitácoras que hoy funciona**, no solo lo
-   nuevo.
+2. **La condición `coordinadorUid` de `bitacoras` no sirve de nada.** Se
+   agregó `resource.data.get('coordinadorUid', '') == request.auth.uid` para
+   que el tablero consulte por ese campo sin un `get()` por documento. Pero
+   `js/bitacora-tablero.js` **no consulta por `coordinadorUid`**: consulta por
+   `supervisorUid in [...]` a través de `traerPorLotes`. Verifica si esa
+   condición está haciendo algo o si es código muerto que solo amplía la
+   superficie de permisos sin beneficio.
 
 3. **Se excede el límite de lecturas de documentos de las reglas.**
    `puedeTocarInventario` llama a `activo()` y a `esMiSupervisor()`, y cada una
@@ -182,7 +213,9 @@ tienes dudas sobre nada, no miraste lo suficiente.
 Agrega también una recomendación final de una línea: **¿se publica o no se
 publica?**
 
-Rama: `qa/spec-002`, salida de `feature/metricas-e-inventarios`.
+Rama: `qa/spec-002`, salida de `feature/metricas-e-inventarios`. Como este
+encargo es de verificación y no de arreglo, lo único que debería commitear ahí
+es tu informe.
 **No commitees en `master`**: en este repo `master` es GitHub Pages, o sea que
 mergear ahí es publicar.
 
