@@ -82,10 +82,6 @@ Lo que más se olvida:
   Los datos de ejemplo están en `preview/seed.js`. El rol se elige con
   `?u=coordinador|supervisor|root`.
 
-**No pruebes contra el Firebase de producción.** Si necesitas probar reglas,
-usa el emulador (`firebase emulators:start --only firestore`), nunca el
-proyecto real: ahí hay datos de personal de la empresa.
-
 ---
 
 ## Las hipótesis
@@ -125,7 +121,7 @@ Todo este bloque es especulación suya. Móntalo en el emulador.
 ### Bloque B — Interfaz
 
 5. **La pantalla de inventario es impracticable en un teléfono o tablet de
-   gama baja.** `inventario.html` dibuja 81 herramientas × 5 campos = más de
+   gama baja.** `inventario.html` dibuja 84 herramientas × 5 campos = más de
    400 inputs de golpe, y cada tecleo recalcula el resumen recorriendo todo.
    El autor solo la probó en un navegador de escritorio. Pruébala en un
    dispositivo real o con throttling de CPU.
