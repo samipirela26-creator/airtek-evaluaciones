@@ -6,6 +6,14 @@ import { protegerPagina, cerrarSesion } from "./session.js";
 import { cargarPlantillasDeCoordinador, opcionesDeSeccion } from "./plantilla.js";
 import { fechaDeBitacora, fechaEsInferida } from "./bitacora-data.js";
 import { mostrarNovedades } from "./novedades.js";
+import { renombrarSupervisor, renombrarTecnico, contarAfectados } from "./renombrar.js";
+import {
+  describirResumen,
+  totalDeResumen,
+  validarNombre,
+  COPIAS_DE_SUPERVISOR,
+  COPIAS_DE_TECNICO,
+} from "./renombrar-data.js";
 import { sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 import {
   collection,
@@ -20,6 +28,7 @@ import {
   updateDoc,
   doc,
   serverTimestamp,
+  writeBatch,
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
 const AVATAR_COLORS = ["#0066ff", "#059669", "#7c3aed", "#dc2626", "#d97706", "#0891b2", "#be185d", "#374151"];
@@ -322,16 +331,63 @@ async function agregarTecnico() {
 }
 
 async function editarTecnico(id, nombreActual) {
-  const nuevo = prompt("Nuevo nombre del técnico:", nombreActual);
-  if (nuevo === null) return;
-  const nombre = nuevo.trim();
-  if (!nombre || nombre === nombreActual) return;
+  await corregirNombre({
+    titulo: "Nuevo nombre del técnico:",
+    nombreActual,
+    copias: COPIAS_DE_TECNICO,
+    valorUid: id,
+    // La ficha del técnico y su inventario de herramientas no salen del conteo
+    // por consulta: el inventario se identifica por el id del propio técnico.
+    extra: 1,
+    ejecutar: (nombre) => renombrarTecnico(db, id, nombre),
+    alTerminar: cargarTecnicos,
+  });
+}
+
+/**
+ * Flujo compartido para corregir un nombre: valida, dice cuántos registros va
+ * a tocar, pide confirmación y al final informa qué se corrigió.
+ *
+ * Se avisa antes porque esto no es un cambio de una línea: reescribe el nombre
+ * dentro de evaluaciones, bitácoras e inventarios ya guardados. Hacerlo en
+ * silencio no inspira confianza.
+ */
+async function corregirNombre({ titulo, nombreActual, copias, valorUid, extra = 1, ejecutar, alTerminar }) {
+  const escrito = prompt(titulo, nombreActual);
+  if (escrito === null) return;
+
+  const val = validarNombre(escrito, nombreActual);
+  if (!val.valido) {
+    if (val.error !== "El nombre es el mismo.") toast(val.error, { ms: 4000 });
+    return;
+  }
+
+  let cuantos;
   try {
-    await updateDoc(doc(db, "tecnicos", id), { nombre });
-    toast("Nombre actualizado ✓");
-    await cargarTecnicos();
+    const previo = await contarAfectados(db, copias, valorUid);
+    cuantos = totalDeResumen(previo) + extra;
   } catch (err) {
-    toast("No se pudo: " + err.message, { ms: 5000 });
+    console.error(err);
+    toast("No se pudo revisar qué cambiaría: " + err.message, { ms: 5000 });
+    return;
+  }
+
+  const ok = confirm(
+    `Se corregirá el nombre a "${val.nombre}".\n\n` +
+    `Esto actualiza ${cuantos} ${cuantos === 1 ? "registro" : "registros"}, ` +
+    `incluyendo los que ya estaban guardados, para que el nombre viejo no ` +
+    `siga apareciendo en los tableros ni en los reportes.\n\n¿Continuar?`
+  );
+  if (!ok) return;
+
+  try {
+    const { nombre, resumen } = await ejecutar(val.nombre);
+    logAudit("nombre_corregido", { de: nombreActual, a: nombre, registros: totalDeResumen(resumen) });
+    toast(`Nombre corregido ✓ — ${describirResumen(resumen)}`, { ms: 6000 });
+    if (alTerminar) await alTerminar();
+  } catch (err) {
+    console.error(err);
+    toast("No se pudo corregir: " + err.message, { ms: 6000 });
   }
 }
 
@@ -688,6 +744,7 @@ async function mostrarSupervisor(uid, nombre, volverFn) {
     }
     let html = `<div class="btn-row">
       <button class="btn secundario" id="btn-volver-sups">← Volver</button>
+      <button class="btn secundario" id="btn-renombrar-sup">✏️ Corregir nombre</button>
       ${htmlBotonEstado(activo, "supervisor")}
       <button class="btn secundario" id="btn-reset">🔑 Restablecer contraseña</button>
       <button class="btn secundario" id="btn-eliminar-sup" style="color:#c0392b;border-color:#c0392b">🗑 Eliminar</button>
@@ -785,6 +842,22 @@ async function mostrarSupervisor(uid, nombre, volverFn) {
 
     cont.innerHTML = html;
     document.getElementById("btn-volver-sups").addEventListener("click", volver);
+    document.getElementById("btn-renombrar-sup").addEventListener("click", () =>
+      corregirNombre({
+        titulo: "Nombre correcto del supervisor:",
+        nombreActual: nombre,
+        copias: COPIAS_DE_SUPERVISOR,
+        valorUid: uid,
+        extra: 1, // su propio perfil, que no sale de las consultas por supervisorUid
+        ejecutar: (nuevo) => renombrarSupervisor(db, uid, nuevo),
+        // Se recarga la vista con el nombre nuevo, si no el encabezado
+        // seguiría mostrando el viejo y parecería que no pasó nada.
+        alTerminar: async () => {
+          const actualizado = (await getDoc(doc(db, "usuarios", uid))).data();
+          mostrarSupervisor(uid, actualizado?.nombre || nombre, volverFn);
+        },
+      })
+    );
     const btnLink = document.getElementById("btn-link-sup");
     if (btnLink) btnLink.addEventListener("click", () => generarLinkSupervisor(uid, nombre));
     wireBotonEstado(uid, nombre, activo, "Supervisor", () => mostrarSupervisor(uid, nombre, volverFn));

@@ -104,6 +104,34 @@ período cruzaron la medianoche, para que el cierre de mes se entienda.
 > Al agregar las colecciones de inventario hay que **publicar de nuevo
 > `firestore.rules`**, o las escrituras fallarán por permisos insuficientes.
 
+### Corregir un nombre mal escrito
+
+El coordinador corrige el nombre de un supervisor desde su ficha; el supervisor
+corrige el de un técnico con el lápiz ✏️.
+
+**No es un `updateDoc`.** El nombre está copiado dentro de siete colecciones
+—cada evaluación, bitácora, técnico, enlace e inventario guarda su propia
+copia— y los dos tableros **agrupan por nombre, no por identificador**. Si solo
+se corrigiera el perfil, el coordinador vería dos supervisores: el mal escrito
+con todo lo viejo y el corregido con lo nuevo.
+
+Por eso [js/renombrar-data.js](js/renombrar-data.js) lleva el catálogo de dónde
+está copiado cada nombre, y [js/renombrar.js](js/renombrar.js) lo propaga
+buscando siempre **por identificador**, nunca por nombre, que es justo el dato
+que está mal.
+
+**Si agregas una colección que copie `supervisorNombre` o `tecnicoNombre`,
+declárala en el catálogo.** Hay una prueba que lee el código y falla si te
+olvidas, diciéndote cuál falta.
+
+Dos cosas se quedan con el nombre viejo, a propósito:
+
+- **La auditoría.** Es el registro de lo que pasó; reescribirlo sería mentir
+  sobre el pasado.
+- **Las evaluaciones que los técnicos hacen a su supervisor.** Su regla de
+  Firestore es `allow update: if false`, y además ahí el nombre del supervisor
+  nunca se muestra.
+
 ### Respaldo
 
 El root tiene un botón **⬇️ Respaldo** que descarga un JSON con todas las

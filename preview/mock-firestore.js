@@ -24,7 +24,15 @@ export function orderBy(field, dir = "asc") { return { __c: "orderBy", field, di
 export function limit(n) { return { __c: "limit", n }; }
 
 function snap(coll, id, data) {
-  return { id, exists: () => data !== undefined, data: () => data, get: (f) => data && data[f] };
+  return {
+    id,
+    // `ref` existe en Firestore real y se usa para escribir sobre un documento
+    // que acabas de leer (updateDoc(d.ref, ...), lote.update(d.ref, ...)).
+    ref: { __t: "doc", coll, id },
+    exists: () => data !== undefined,
+    data: () => data,
+    get: (f) => data && data[f],
+  };
 }
 
 export async function getDoc(ref) { return snap(ref.coll, ref.id, col(ref.coll)[ref.id]); }
@@ -68,6 +76,22 @@ export async function setDoc(ref, data) { col(ref.coll)[ref.id] = data; }
 export async function updateDoc(ref, data) { col(ref.coll)[ref.id] = Object.assign(col(ref.coll)[ref.id] || {}, data); }
 export async function deleteDoc(ref) { delete col(ref.coll)[ref.id]; }
 export function serverTimestamp() { const d = new Date(); return { toDate: () => d, seconds: Math.floor(d / 1000) }; }
+
+// Lote de escrituras. En Firestore real es atómico y tiene tope de 500
+// operaciones; aquí se acumulan y se aplican al hacer commit(), que es lo que
+// importa para ejercitar la interfaz.
+export function writeBatch(_db) {
+  const ops = [];
+  return {
+    set(ref, data) { ops.push(() => { col(ref.coll)[ref.id] = data; }); return this; },
+    update(ref, data) {
+      ops.push(() => { col(ref.coll)[ref.id] = Object.assign(col(ref.coll)[ref.id] || {}, data); });
+      return this;
+    },
+    delete(ref) { ops.push(() => { delete col(ref.coll)[ref.id]; }); return this; },
+    async commit() { ops.forEach((f) => f()); ops.length = 0; },
+  };
+}
 
 export async function runTransaction(_db, fn) {
   return fn({
