@@ -14,6 +14,8 @@ import {
   MATERIALES_USO_DIARIO,
   CATEGORIAS_MATERIALES,
   renglonesConDatos,
+  valorParaCampo,
+  unidadDe,
   aEntero,
 } from "./inventario-data.js";
 import { hoyISO } from "./bitacora-data.js";
@@ -32,6 +34,12 @@ import {
 let sesion = null;
 let tecnicos = [];
 let tecnicoActual = null;
+
+// Referencias a los campos de cada herramienta, resueltas UNA vez tras dibujar.
+// Antes cada lectura hacía `document.querySelector`, y como el resumen relee las
+// 84 herramientas, cargar un técnico costaba ~36.000 recorridos del árbol y
+// bloqueaba el hilo medio segundo en escritorio (varios en un teléfono).
+let campos = new Map();
 
 function esc(s) {
   return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -103,7 +111,7 @@ function renderHerramientas(guardado) {
       const campo = (estado, valor) => `
         <input type="number" min="0" step="1" inputmode="numeric"
                data-herr="${esc(h.id)}" data-campo="${estado}"
-               value="${aEntero(valor) || ""}" placeholder="0"
+               value="${valorParaCampo(valor)}" placeholder="0"
                style="width:100%;min-width:56px;text-align:center" />`;
       return `
         <div class="lista-item" style="display:block">
@@ -133,9 +141,15 @@ function renderHerramientas(guardado) {
     </div>`;
   }).join("");
 
+  indexarCampos(cont);
+
   cont.querySelectorAll("input[type=number]").forEach((inp) =>
-    inp.addEventListener("input", () => actualizarTotal(inp.dataset.herr))
+    inp.addEventListener("input", () => {
+      actualizarTotal(inp.dataset.herr);
+      actualizarResumen();
+    })
   );
+  // Totales iniciales: una pasada, y el resumen una sola vez al final.
   HERRAMIENTAS.forEach((h) => actualizarTotal(h.id));
 
   document.getElementById("ultima-actualizacion").textContent = guardado?.actualizadoEn?.toDate
@@ -144,32 +158,43 @@ function renderHerramientas(guardado) {
   actualizarResumen();
 }
 
-function leerRenglonesHerramientas() {
-  return HERRAMIENTAS.map((h) => {
-    const val = (campo) => {
-      const el = document.querySelector(`[data-herr="${CSS.escape(h.id)}"][data-campo="${campo}"]`);
-      return el ? el.value : "";
-    };
-    return {
-      id: h.id,
-      bueno: val("bueno"),
-      regular: val("regular"),
-      malo: val("malo"),
-      serial: val("serial"),
-      observacion: val("observacion"),
-    };
+// Recorre el contenedor UNA vez y guarda los elementos de cada herramienta.
+function indexarCampos(cont) {
+  campos = new Map();
+  cont.querySelectorAll("[data-herr]").forEach((el) => {
+    const id = el.dataset.herr;
+    if (!campos.has(id)) campos.set(id, {});
+    campos.get(id)[el.dataset.campo] = el;
+  });
+  cont.querySelectorAll("[data-total]").forEach((el) => {
+    const id = el.dataset.total;
+    if (!campos.has(id)) campos.set(id, {});
+    campos.get(id).total = el;
   });
 }
 
+function valorDe(id, campo) {
+  const el = campos.get(id)?.[campo];
+  return el ? el.value : "";
+}
+
+function leerRenglonesHerramientas() {
+  return HERRAMIENTAS.map((h) => ({
+    id: h.id,
+    bueno: valorDe(h.id, "bueno"),
+    regular: valorDe(h.id, "regular"),
+    malo: valorDe(h.id, "malo"),
+    serial: valorDe(h.id, "serial"),
+    observacion: valorDe(h.id, "observacion"),
+  }));
+}
+
+// Actualiza SOLO el total de esa fila. El resumen general se recalcula aparte,
+// para no rehacerlo 84 veces durante la carga.
 function actualizarTotal(id) {
-  const leer = (campo) => {
-    const el = document.querySelector(`[data-herr="${CSS.escape(id)}"][data-campo="${campo}"]`);
-    return aEntero(el?.value);
-  };
-  const total = leer("bueno") + leer("regular") + leer("malo");
-  const destino = document.querySelector(`[data-total="${CSS.escape(id)}"]`);
+  const total = aEntero(valorDe(id, "bueno")) + aEntero(valorDe(id, "regular")) + aEntero(valorDe(id, "malo"));
+  const destino = campos.get(id)?.total;
   if (destino) destino.textContent = total;
-  actualizarResumen();
 }
 
 function actualizarResumen() {
@@ -201,9 +226,12 @@ function renderMateriales() {
           <div style="font-weight:600;font-size:.88rem">${esc(m.nombre)}</div>
           <div class="meta" style="font-size:.72rem">${esc(m.id)}</div>
         </div>
-        <input type="number" min="0" step="1" inputmode="numeric"
-               data-mat="${esc(m.id)}" placeholder="0"
-               style="width:86px;text-align:center" />
+        <div style="display:flex;align-items:center;gap:6px">
+          <input type="number" min="0" step="1" inputmode="numeric"
+                 data-mat="${esc(m.id)}" placeholder="0"
+                 style="width:86px;text-align:center" />
+          ${unidadDe(m) ? `<span class="meta" style="font-size:.75rem;white-space:nowrap">${esc(unidadDe(m))}</span>` : ""}
+        </div>
       </div>`).join("");
     return `<div class="card"><h3 style="margin-top:0">${esc(cat)}</h3>${filas}</div>`;
   }).join("");
@@ -331,7 +359,7 @@ async function guardarMateriales() {
   const items = MATERIALES_USO_DIARIO
     .map((m) => {
       const el = document.querySelector(`[data-mat="${CSS.escape(m.id)}"]`);
-      return { id: m.id, nombre: m.nombre, categoria: m.categoria, cantidad: aEntero(el?.value) };
+      return { id: m.id, nombre: m.nombre, categoria: m.categoria, unidad: unidadDe(m), cantidad: aEntero(el?.value) };
     })
     .filter((i) => i.cantidad > 0);
 

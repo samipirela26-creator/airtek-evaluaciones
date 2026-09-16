@@ -90,9 +90,21 @@ function pintarTabla() {
     }
     const critica = f.malo > 0;
     const num = (v, color) => `<td style="padding:8px 6px;text-align:center;${color ? `color:${color};font-weight:700` : ""}">${v || "—"}</td>`;
+
+    // Sin los encabezados de categoría, dos herramientas homónimas de kits
+    // distintos (pasa con "Cleaver") quedan indistinguibles. Se rotula la fila.
+    const rotulo = soloReponer
+      ? `<div class="meta" style="font-size:.72rem">${esc(f.categoria)}</div>`
+      : "";
+
+    // Auditada y sin existencias: es un dato, no un vacío. Se dice explícito.
+    const sinExistencias = f.total === 0 && f.auditados > 0
+      ? `<div class="meta" style="font-size:.72rem;color:#d97706">Revisada en ${f.auditados} ${f.auditados === 1 ? "técnico" : "técnicos"}: ninguno la tiene</div>`
+      : "";
+
     return `${encabezado}
       <tr style="border-bottom:1px solid var(--borde);${critica ? "background:#fef2f2" : ""}">
-        <td style="padding:8px 6px">${esc(f.nombre)}</td>
+        <td style="padding:8px 6px">${esc(f.nombre)}${rotulo}${sinExistencias}</td>
         ${num(f.total)}
         ${num(f.bueno, "#059669")}
         ${num(f.regular, "#d97706")}

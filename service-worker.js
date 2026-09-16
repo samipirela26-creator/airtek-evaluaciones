@@ -3,7 +3,7 @@
 // trae lo más nuevo (adiós al problema del caché / Ctrl+Shift+R); si no hay
 // señal, responde desde la copia guardada.
 // Sube este número en cada despliegue para avisar "nueva versión" a los usuarios.
-const CACHE = "airtek-v2";
+const CACHE = "airtek-v3";
 const CORE = [
   "./",
   "./index.html",

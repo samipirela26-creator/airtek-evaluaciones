@@ -159,7 +159,9 @@ export const SEED = {
       tecnicoId: "t_3", tecnicoNombre: "Luis Rodríguez", supervisorUid: "u_sup2", supervisorNombre: "Supervisor Dos",
       coordinadorUid: "u_coord", actualizadoEn: ts(2),
       items: [
-        { id: "kit-de-fusion-de-f--cleaver", bueno: 1, regular: 0, malo: 0, cantidad: 1, serial: "", observacion: "" },
+        { id: "kit-de-fusion-de-f--cleaver", bueno: 1, regular: 0, malo: 2, cantidad: 3, serial: "", observacion: "Dos con la cuchilla vencida" },
+        { id: "kit-de-empalme-gpo--cleaver", bueno: 0, regular: 0, malo: 1, cantidad: 1, serial: "", observacion: "" },
+        { id: "herramientas-basic--exacto-para-cortar", bueno: 0, regular: 0, malo: 0, cantidad: 0, serial: "", observacion: "Revisado: no tiene" },
         { id: "herramientas-basic--alicate-de-5-posiciones", bueno: 0, regular: 2, malo: 0, cantidad: 2, serial: "", observacion: "Desgaste normal" },
       ],
     },

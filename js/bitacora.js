@@ -16,7 +16,9 @@ import {
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
 let sesion = null;
-let fotosBase64 = []; // Guarda las imágenes comprimidas en Base64
+// Cada foto: { dataUrl, formato, bytes }. Guardar formato y peso permite
+// comprobar después, con fotos reales, si la compresión rinde en campo.
+let fotos = [];
 
 function esc(s) {
   return String(s ?? "")
@@ -50,6 +52,15 @@ function inicializarFecha() {
   const hoy = hoyISO();
   campo.value = hoy;
   campo.max = hoy;
+}
+
+// El tope se fija al cargar la página. Si el supervisor deja la pestaña abierta
+// y cruza la medianoche, "hoy" cambia y el tope queda viejo: se recalcula cada
+// vez que vuelve a la pestaña.
+function refrescarTopeFecha() {
+  const campo = document.getElementById("fecha-actividad");
+  if (!campo) return;
+  campo.max = hoyISO();
 }
 
 // ── Poblar catálogos en el DOM ──
@@ -98,7 +109,20 @@ function actualizarSubactividades(tipoMacro) {
 }
 
 // ── Compresión de imágenes en el cliente mediante Canvas nativo ──
-async function comprimirImagen(file, maxDimension = 1200, calidad = 0.75) {
+//
+// WebP pesa entre un 25% y un 35% menos que JPEG a calidad equivalente, y para
+// evidencia de un nodo o un tendido 1024px sobra. Entre ambas cosas, una foto
+// pesa aproximadamente la mitad que antes.
+//
+// OJO con el respaldo: toDataURL de un formato que el navegador no soporta
+// devuelve PNG en silencio, y un PNG de 1024px pesa muchísimo más que el JPEG
+// que reemplazaría. Por eso se comprueba el prefijo de la cadena.
+function exportar(canvas, formato, calidad) {
+  const url = canvas.toDataURL(formato, calidad);
+  return url.startsWith(`data:${formato}`) ? url : null;
+}
+
+async function comprimirImagen(file, maxDimension = 1024, calidad = 0.7) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = reject;
@@ -121,9 +145,15 @@ async function comprimirImagen(file, maxDimension = 1200, calidad = 0.75) {
         canvas.height = height;
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, width, height);
-        // Formato JPEG optimizado
-        const dataUrl = canvas.toDataURL("image/jpeg", calidad);
-        resolve(dataUrl);
+
+        const webp = exportar(canvas, "image/webp", calidad);
+        const dataUrl = webp || canvas.toDataURL("image/jpeg", calidad);
+        resolve({
+          dataUrl,
+          formato: webp ? "webp" : "jpeg",
+          // Bytes reales del binario, no de la cadena Base64 (que infla un 37%).
+          bytes: Math.round((dataUrl.length - dataUrl.indexOf(",") - 1) * 0.75),
+        });
       };
       img.src = e.target.result;
     };
@@ -134,9 +164,9 @@ async function comprimirImagen(file, maxDimension = 1200, calidad = 0.75) {
 function renderPreviewFotos() {
   const cont = document.getElementById("preview-fotos");
   if (!cont) return;
-  cont.innerHTML = fotosBase64
+  cont.innerHTML = fotos
     .map(
-      (src, index) => `
+      ({ dataUrl: src }, index) => `
         <div style="position:relative;width:80px;height:80px;border-radius:8px;overflow:hidden;border:1px solid var(--borde);box-shadow:var(--sombra)">
           <img src="${src}" style="width:100%;height:100%;object-fit:cover" alt="Evidencia ${index + 1}" />
           <button type="button" data-del-foto="${index}" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.65);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center">✕</button>
@@ -147,7 +177,7 @@ function renderPreviewFotos() {
   cont.querySelectorAll("[data-del-foto]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const idx = parseInt(btn.dataset.delFoto, 10);
-      fotosBase64.splice(idx, 1);
+      fotos.splice(idx, 1);
       renderPreviewFotos();
     });
   });
@@ -173,6 +203,28 @@ function actualizarDuracionHint() {
     hint.textContent = `⚠ ${res.error}`;
     hint.style.color = "var(--error)";
   }
+}
+
+// Sube cada foto como documento aparte de la subcolección.
+// Devuelve cuántas fallaron (0 si todo bien).
+async function guardarFotos(bitacoraId) {
+  let fallidas = 0;
+  for (let i = 0; i < fotos.length; i++) {
+    const f = fotos[i];
+    try {
+      await addDoc(collection(db, "bitacoras", bitacoraId, "fotos"), {
+        orden: i,
+        dataUrl: f.dataUrl,
+        formato: f.formato,
+        bytes: f.bytes,
+        createdAt: serverTimestamp(),
+      });
+    } catch (err) {
+      console.error(`[Bitácora] No se pudo subir la foto ${i + 1}:`, err);
+      fallidas++;
+    }
+  }
+  return fallidas;
 }
 
 // ── Manejo de eventos del formulario ──
@@ -221,6 +273,10 @@ function vincularEventos() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
 
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) refrescarTopeFecha();
+  });
+
   // Monitoreo de horarios para cálculo reactivo
   document.getElementById("hora-inicio").addEventListener("input", actualizarDuracionHint);
   document.getElementById("hora-fin").addEventListener("input", actualizarDuracionHint);
@@ -231,7 +287,7 @@ function vincularEventos() {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
 
-    if (fotosBase64.length + files.length > 5) {
+    if (fotos.length + files.length > 5) {
       toast("Solo puedes adjuntar hasta 5 imágenes en total.", { ms: 4000 });
       e.target.value = "";
       return;
@@ -244,8 +300,7 @@ function vincularEventos() {
         continue;
       }
       try {
-        const base64 = await comprimirImagen(f);
-        fotosBase64.push(base64);
+        fotos.push(await comprimirImagen(f));
       } catch (err) {
         console.error("Error al comprimir foto:", err);
         toast(`No se pudo procesar ${f.name}`, { ms: 4000 });
@@ -316,19 +371,29 @@ function vincularEventos() {
         diaSiguiente,
         duracionMinutos: valHorario.minutos,
         descripcion,
-        imagenes: fotosBase64,
-        numFotos: fotosBase64.length,
+        // Las fotos NO van aquí. Un documento de Firestore no puede pasar de
+        // 1 MiB, y en Base64 cinco fotos rozaban ese techo; además el tablero
+        // se las descargaba enteras solo para graficar horas. Van aparte, en
+        // la subcolección "fotos", y el padre solo guarda cuántas son.
+        numFotos: fotos.length,
         createdAt: serverTimestamp(),
       };
 
-      await addDoc(collection(db, "bitacoras"), docData);
+      const ref = await addDoc(collection(db, "bitacoras"), docData);
+      const fotosFallidas = await guardarFotos(ref.id);
       logAudit("bitacora_creada", {
         tipoMacro,
         actividadEspecifica: subActividad,
         supervisor: sesion.perfil.nombre,
       });
 
-      toast("Bitácora guardada con éxito ✓");
+      // La bitácora ya está guardada: si alguna foto falló se dice, pero no se
+      // finge un error general ni se pierde el registro, que es lo que importa.
+      if (fotosFallidas) {
+        toast(`Bitácora guardada ✓ — pero ${fotosFallidas} ${fotosFallidas === 1 ? "foto no se pudo subir" : "fotos no se pudieron subir"}`, { ms: 6000 });
+      } else {
+        toast("Bitácora guardada con éxito ✓");
+      }
 
       // Mostrar pantalla de éxito
       document.getElementById("form-bitacora").style.display = "none";
@@ -353,7 +418,7 @@ function vincularEventos() {
     document.getElementById("duracion-hint").textContent = "";
     document.getElementById("descripcion").value = "";
     inicializarFecha();
-    fotosBase64 = [];
+    fotos = [];
     renderPreviewFotos();
 
     const btnEnviar = document.getElementById("btn-enviar");
