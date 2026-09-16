@@ -21,6 +21,23 @@ const CLAVE = "airtek_novedades_vistas";
  */
 export const VERSIONES = [
   {
+    version: "2.2.0",
+    fecha: "2026-09-16",
+    titulo: "Ficha del supervisor más ordenada",
+    cambios: {
+      coordinador: [
+        "La ficha de un supervisor ahora se organiza en <strong>pestañas</strong> (Técnicos, Planillas, Bitácora, Evaluaciones) en vez de una lista larga que había que scrollear entera.",
+        "En la pestaña Bitácora, cada actividad se ve resumida y <strong>se despliega al tocarla</strong>, en vez de mostrar toda la descripción de una vez.",
+        "Cuando hay muchas planillas, bitácoras o evaluaciones, se muestran las primeras y un botón <strong>\"Ver más\"</strong> para el resto.",
+        "El menú de acciones del panel ahora separa las <strong>herramientas de gestión</strong> (métricas, tablero, inventario) de las <strong>acciones administrativas</strong> (crear supervisor, invitar, editar formulario).",
+        "En pantallas grandes el panel aprovecha mejor el ancho, en vez de quedar angosto en el centro.",
+      ],
+      supervisor: [
+        "\"Mis evaluaciones realizadas\" ahora muestra las más recientes con un botón <strong>\"Ver más\"</strong> en vez de toda la lista de una vez.",
+      ],
+    },
+  },
+  {
     version: "2.1.0",
     fecha: "2026-09-16",
     titulo: "Corregir nombres mal escritos",

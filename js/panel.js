@@ -67,6 +67,53 @@ function wireBotonEstado(uid, nombre, activo, quienLabel, recargar) {
   });
 }
 
+// ── Pestañas (tabs) para vistas de detalle con varias secciones ──
+function htmlTabs(tabs) {
+  const botones = tabs
+    .map(
+      (t, i) =>
+        `<button class="tab-btn${i === 0 ? " active" : ""}" data-tab-target="${t.id}">${t.label} (${t.count})</button>`
+    )
+    .join("");
+  const paneles = tabs
+    .map(
+      (t, i) =>
+        `<div class="tab-panel" id="tab-${t.id}"${i === 0 ? "" : " hidden"}>${t.contentHtml}</div>`
+    )
+    .join("");
+  return `<div class="tab-row">${botones}</div>${paneles}`;
+}
+function wireTabs(container) {
+  const botones = container.querySelectorAll(".tab-btn");
+  botones.forEach((btn) =>
+    btn.addEventListener("click", () => {
+      botones.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      container.querySelectorAll(".tab-panel").forEach((p) => (p.hidden = p.id !== `tab-${btn.dataset.tabTarget}`));
+    })
+  );
+}
+
+// ── Listas largas: mostrar solo los primeros N con botón "Ver más" ──
+function htmlListaConVerMas(items, renderItem, { limite = 5 } = {}) {
+  if (!items.length) return "";
+  const visibles = items.slice(0, limite).map(renderItem).join("");
+  const resto = items.slice(limite);
+  if (!resto.length) return visibles;
+  const ocultos = resto.map(renderItem).join("");
+  return `${visibles}<div class="ver-mas-resto" hidden>${ocultos}</div>
+    <button class="btn secundario btn-ver-mas" type="button">Ver más (+${resto.length})</button>`;
+}
+function wireVerMas(container) {
+  container.querySelectorAll(".btn-ver-mas").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      const resto = btn.previousElementSibling;
+      resto.hidden = false;
+      btn.remove();
+    })
+  );
+}
+
 // Enviar a un usuario un correo para que restablezca su contraseña.
 async function enviarReset(correo, nombre) {
   if (!correo) {
@@ -196,13 +243,16 @@ protegerPagina(null, async ({ user, perfil }) => {
     document.getElementById("acciones").innerHTML = `
       <h2>Hola, ${esc(perfil.nombre)} (Coordinador)</h2>
       <p>Aquí ves a tus supervisores y sus planillas.</p>
-      <div class="btn-row">
+      <div class="btn-row btn-row-principal">
         <a class="btn" href="dashboard.html">📊 Métricas de Gestión de Personal</a>
         <a class="btn" href="bitacora-tablero.html">📋 Tablero de Bitácora</a>
         <a class="btn" href="reporte-herramientas.html">🧰 Requerimiento de Herramientas</a>
         <a class="btn secundario" href="inventario.html">📦 Inventario de Técnicos</a>
-        <a class="btn" href="editor.html">✎ Editar formulario</a>
-        <button class="btn" id="btn-crear-sup">➕ Crear supervisor</button>
+      </div>
+      <h4 class="btn-row-titulo">Administración</h4>
+      <div class="btn-row btn-row-secundaria">
+        <a class="btn secundario" href="editor.html">✎ Editar formulario</a>
+        <button class="btn secundario" id="btn-crear-sup">➕ Crear supervisor</button>
         <button class="btn secundario" id="btn-invitar">🎟️ Invitar por link</button>
         <a class="btn secundario" href="perfil.html">⚙️ Mi cuenta</a>
       </div>
@@ -451,7 +501,8 @@ async function cargarBitacorasSupervisorRecientes(uid) {
             <span class="badge" style="font-size:0.75rem">${esc(b.tipoMacro)}</span>
           </div>`;
         })
-        .join("")}`;
+        .join("")}
+      ${items.length > recientes.length ? `<a class="btn link" href="bitacora-tablero.html" style="font-size:0.85rem">Ver todas →</a>` : ""}`;
   } catch (err) {
     console.error("Error al cargar bitácoras recientes:", err);
     cont.innerHTML = `<div class="meta" style="color:var(--error)">No se pudieron cargar las bitácoras recientes.</div>`;
@@ -750,8 +801,7 @@ async function mostrarSupervisor(uid, nombre, volverFn) {
       <button class="btn secundario" id="btn-eliminar-sup" style="color:#c0392b;border-color:#c0392b">🗑 Eliminar</button>
     </div>`;
 
-    html += `<h3 style="margin-top:16px">Técnicos (${tecnicos.length})</h3>`;
-    html += tecnicos.length
+    let tecnicosHtml = tecnicos.length
       ? tecnicos
           .map((t, i) => {
             const bg = AVATAR_COLORS[i % AVATAR_COLORS.length];
@@ -764,7 +814,7 @@ async function mostrarSupervisor(uid, nombre, volverFn) {
 
     // Reasignar todos sus técnicos a otro supervisor del mismo coordinador.
     if (tecnicos.length && hermanos.length) {
-      html += `<div class="add-row" style="margin-top:8px">
+      tecnicosHtml += `<div class="add-row" style="margin-top:8px">
         <select id="sel-reasignar"><option value="">Reasignar sus técnicos a…</option>
           ${hermanos.map((h) => `<option value="${h.uid}" data-nombre="${esc(h.nombre)}">${esc(h.nombre)}</option>`).join("")}
         </select>
@@ -772,75 +822,73 @@ async function mostrarSupervisor(uid, nombre, volverFn) {
       </div>`;
     }
 
-    html += `<h3 style="margin-top:16px">Planillas llenadas (${evals.length})</h3>`;
-    html += evals.length
-      ? evals
-          .map((e) => {
-            const fecha = e.createdAt?.toDate ? e.createdAt.toDate().toLocaleString("es-VE") : "";
-            const prom = e.puntajes?.promedioGeneral;
-            const badge = prom != null ? `${prom.toFixed(2)} / 10` : "—";
-            return `<div class="lista-item" data-id="${e.id}" style="cursor:pointer">
-              <div><strong>${esc(e.tecnicoNombre) || "(sin nombre)"}</strong>
-                <div class="meta">${esc(e.area) || ""} · ${esc(e.motivo) || "s/motivo"}<br>${fecha}</div>
-              </div>
-              <span class="badge">${badge}</span></div>`;
-          })
-          .join("")
-      : `<div class="lista-vacia">Aún no ha llenado planillas.</div>`;
+    const planillasHtml = htmlListaConVerMas(evals, (e) => {
+      const fecha = e.createdAt?.toDate ? e.createdAt.toDate().toLocaleString("es-VE") : "";
+      const prom = e.puntajes?.promedioGeneral;
+      const badge = prom != null ? `${prom.toFixed(2)} / 10` : "—";
+      return `<div class="lista-item" data-id="${e.id}" style="cursor:pointer">
+        <div><strong>${esc(e.tecnicoNombre) || "(sin nombre)"}</strong>
+          <div class="meta">${esc(e.area) || ""} · ${esc(e.motivo) || "s/motivo"}<br>${fecha}</div>
+        </div>
+        <span class="badge">${badge}</span></div>`;
+    }) || `<div class="lista-vacia">Aún no ha llenado planillas.</div>`;
 
-    // Registro de actividades / Bitácoras del supervisor
-    html += `<h3 style="margin-top:16px">Registro de actividades / Bitácoras (${bitacoras.length})</h3>`;
-    html += bitacoras.length
-      ? bitacoras
-          .map((b) => {
-            const fecha = fechaBitacoraLegible(b);
-            const duracion = b.duracionMinutos ? `${Math.floor(b.duracionMinutos / 60)}h ${b.duracionMinutos % 60}m` : "";
-            // numFotos vive en el documento padre justamente para poder contar
-            // sin bajarse las imágenes. `imagenes` es el campo viejo, de antes
-            // de la migración: se consulta de respaldo por si queda alguna.
-            const n = b.numFotos ?? (b.imagenes ? b.imagenes.length : 0);
-            const tieneFotos = n ? ` · 📷 ${n} foto${n > 1 ? "s" : ""}` : "";
-            return `<div class="lista-item" style="display:block;margin-bottom:8px">
-              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-                <strong>${esc(b.actividadEspecifica || b.tipoMacro)}</strong>
-                <span class="badge" style="font-size:0.75rem">${esc(b.tipoMacro)}</span>
-              </div>
-              <div class="meta" style="margin-top:4px">
-                ${esc(b.zona)} · ${esc(b.areaTrabajo)}<br>
-                🕒 ${esc(b.horaInicio)} – ${esc(b.horaFin)} ${duracion ? `(${duracion})` : ""}${fecha ? ` · 📅 ${fecha}` : ""}${tieneFotos}
-              </div>
-              ${b.descripcion ? `<div style="margin-top:6px;font-size:0.85rem;background:var(--gris);padding:8px;border-radius:6px">${esc(b.descripcion)}</div>` : ""}
-            </div>`;
-          })
-          .join("")
-      : `<div class="lista-vacia">Aún no ha registrado actividades en su bitácora.</div>`;
+    // Registro de actividades / Bitácoras del supervisor — colapsadas por defecto (<details>).
+    const bitacorasHtml = htmlListaConVerMas(bitacoras, (b) => {
+      const fecha = fechaBitacoraLegible(b);
+      const duracion = b.duracionMinutos ? `${Math.floor(b.duracionMinutos / 60)}h ${b.duracionMinutos % 60}m` : "";
+      // numFotos vive en el documento padre justamente para poder contar
+      // sin bajarse las imágenes. `imagenes` es el campo viejo, de antes
+      // de la migración: se consulta de respaldo por si queda alguna.
+      const n = b.numFotos ?? (b.imagenes ? b.imagenes.length : 0);
+      const tieneFotos = n ? ` · 📷 ${n} foto${n > 1 ? "s" : ""}` : "";
+      return `<details class="lista-item bitacora-item">
+        <summary>
+          <strong>${esc(b.actividadEspecifica || b.tipoMacro)}</strong>
+          <span class="badge" style="font-size:0.75rem">${esc(b.tipoMacro)}</span>
+        </summary>
+        <div class="meta" style="margin-top:4px">
+          ${esc(b.zona)} · ${esc(b.areaTrabajo)}<br>
+          🕒 ${esc(b.horaInicio)} – ${esc(b.horaFin)} ${duracion ? `(${duracion})` : ""}${fecha ? ` · 📅 ${fecha}` : ""}${tieneFotos}
+        </div>
+        ${b.descripcion ? `<div class="bitacora-desc">${esc(b.descripcion)}</div>` : ""}
+      </details>`;
+    }) || `<div class="lista-vacia">Aún no ha registrado actividades en su bitácora.</div>`;
 
     // Evaluaciones que los técnicos le hicieron a ESTE supervisor (link público).
-    html += `<h3 style="margin-top:16px">Evaluaciones recibidas de técnicos (${evalSup.length})</h3>`;
+    let evaluacionesHtml;
     if (evalSup.length) {
       const proms = evalSup.map((e) => e.puntajes?.promedioGeneral).filter((p) => p != null);
       const avg = proms.length ? (proms.reduce((a, b) => a + b, 0) / proms.length).toFixed(2) : "—";
-      html += `<div class="meta" style="margin-bottom:8px">Promedio recibido: <strong>${avg} / 10</strong></div>`;
-      html += evalSup
-        .map((e) => {
+      evaluacionesHtml =
+        `<div class="meta" style="margin-bottom:8px">Promedio recibido: <strong>${avg} / 10</strong></div>` +
+        htmlListaConVerMas(evalSup, (e) => {
           const fecha = e.createdAt?.toDate ? e.createdAt.toDate().toLocaleDateString("es-VE") : "";
           const prom = e.puntajes?.promedioGeneral;
           const badge = prom != null ? `${prom.toFixed(2)} / 10` : "—";
           return `<div class="lista-item"><div><strong>${esc(e.tecnicoNombre) || "Anónimo"}</strong><div class="meta">${fecha}</div></div><span class="badge">${badge}</span></div>`;
-        })
-        .join("");
+        });
     } else {
-      html += `<div class="lista-vacia">Aún no hay evaluaciones de técnicos.</div>`;
+      evaluacionesHtml = `<div class="lista-vacia">Aún no hay evaluaciones de técnicos.</div>`;
     }
 
     // (Solo el coordinador) genera el link público para evaluar a este supervisor.
     if (sesion.perfil.rol === "coordinador") {
-      html += `<div style="margin-top:16px">
+      evaluacionesHtml += `<div style="margin-top:16px">
         <button class="btn" id="btn-link-sup">🔗 Link para que técnicos lo evalúen</button>
         <div id="link-box"></div></div>`;
     }
 
+    html += htmlTabs([
+      { id: "tecnicos", label: "👥 Técnicos", count: tecnicos.length, contentHtml: tecnicosHtml },
+      { id: "planillas", label: "📝 Planillas", count: evals.length, contentHtml: planillasHtml },
+      { id: "bitacora", label: "📋 Bitácora", count: bitacoras.length, contentHtml: bitacorasHtml },
+      { id: "evaluaciones", label: "⭐ Evaluaciones", count: evalSup.length, contentHtml: evaluacionesHtml },
+    ]);
+
     cont.innerHTML = html;
+    wireTabs(cont);
+    wireVerMas(cont);
     document.getElementById("btn-volver-sups").addEventListener("click", volver);
     document.getElementById("btn-renombrar-sup").addEventListener("click", () =>
       corregirNombre({
@@ -1095,12 +1143,11 @@ async function cargarLista(perfil, uid) {
       items.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
     }
 
-    let html = "";
-    items.forEach((e) => {
+    const html = htmlListaConVerMas(items, (e) => {
       const fecha = e.createdAt?.toDate ? e.createdAt.toDate().toLocaleString("es-VE") : "";
       const prom = e.puntajes?.promedioGeneral;
       const badge = prom != null ? `${prom.toFixed(2)} / 10` : "—";
-      html += `
+      return `
         <div class="lista-item" data-id="${e.id}" style="cursor:pointer">
           <div>
             <strong>${esc(e.tecnicoNombre) || "(sin nombre)"}</strong>
@@ -1113,6 +1160,7 @@ async function cargarLista(perfil, uid) {
         </div>`;
     });
     cont.innerHTML = html;
+    wireVerMas(cont);
     cont.querySelectorAll("[data-id]").forEach((el) =>
       el.addEventListener("click", () => (window.location.href = `detalle.html?id=${el.dataset.id}`))
     );
