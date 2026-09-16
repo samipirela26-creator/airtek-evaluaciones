@@ -916,28 +916,88 @@ function crearUsuarioDirecto(rol) {
 }
 
 // ───────── Respaldo descargable (root) ─────────
+// Colecciones que entran al respaldo. Esta lista se quedó atrás una vez: se
+// escribió antes de que existieran las bitácoras y los inventarios, y nadie la
+// actualizó. Si agregas una colección al sistema, AGRÉGALA AQUÍ TAMBIÉN, o el
+// respaldo va a dar una falsa sensación de seguridad.
+const COLECCIONES_RESPALDO = [
+  "usuarios",
+  "tecnicos",
+  "evaluaciones",
+  "evaluacionesSupervisor",
+  "invitaciones",
+  "plantillas",
+  "enlaces",
+  "bitacoras",
+  "inventario_herramientas",
+  "inventario_materiales",
+];
+
+function pesoLegible(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
 async function descargarRespaldo() {
-  toast("Generando respaldo…");
+  // Las fotos son el grueso del peso. Se pregunta porque las dos respuestas
+  // son legítimas: para respaldar antes de tocar las fotos hacen falta; para
+  // un respaldo de rutina, solo estorban.
+  const conFotos = confirm(
+    "¿Incluir las fotos de las bitácoras?\n\n" +
+    "SÍ — el respaldo queda completo, pero puede pesar decenas de megas y " +
+    "tardar varios minutos. Es lo que necesitas antes de mover o migrar fotos.\n\n" +
+    "NO — respaldo liviano y rápido, con todo lo demás."
+  );
+
+  const aviso = toast("Generando respaldo…", { ms: 0 });
+  const paso = (t) => { aviso.innerHTML = t; };
+
   try {
-    const cols = ["usuarios", "tecnicos", "evaluaciones", "evaluacionesSupervisor", "invitaciones", "plantillas", "enlaces"];
-    const data = { generadoEn: new Date().toISOString() };
-    for (const c of cols) {
+    const data = { generadoEn: new Date().toISOString(), incluyeFotos: conFotos };
+
+    for (let i = 0; i < COLECCIONES_RESPALDO.length; i++) {
+      const c = COLECCIONES_RESPALDO[i];
+      paso(`Respaldando ${c}… (${i + 1}/${COLECCIONES_RESPALDO.length})`);
       const snap = await getDocs(collection(db, c));
       data[c] = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
     }
+
+    // Las fotos viven en una subcolección por bitácora, así que hay que
+    // recorrerlas una por una: no hay forma de traerlas de un solo tirón.
+    // (Las bitácoras anteriores a v2.0.0 las llevan dentro, en `imagenes`,
+    // y esas ya vinieron con el documento.)
+    if (conFotos) {
+      data.bitacorasFotos = {};
+      const total = data.bitacoras.length;
+      for (let i = 0; i < total; i++) {
+        const b = data.bitacoras[i];
+        if (i % 5 === 0) paso(`Respaldando fotos… (${i}/${total} bitácoras)`);
+        const fsnap = await getDocs(collection(db, "bitacoras", b.id, "fotos"));
+        if (!fsnap.empty) {
+          data.bitacorasFotos[b.id] = fsnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        }
+      }
+    }
+
+    paso("Armando el archivo…");
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `airtek-respaldo-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `airtek-respaldo${conFotos ? "-con-fotos" : ""}-${new Date().toISOString().slice(0, 10)}.json`;
     document.body.appendChild(a);
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
-    toast("Respaldo descargado ✓");
+
+    aviso.remove();
+    const cuantas = COLECCIONES_RESPALDO.reduce((n, c) => n + (data[c]?.length || 0), 0);
+    toast(`Respaldo descargado ✓ — ${cuantas} registros, ${pesoLegible(blob.size)}`, { ms: 7000 });
   } catch (err) {
     console.error(err);
-    toast("No se pudo el respaldo: " + err.message, { ms: 5000 });
+    aviso.remove();
+    toast("No se pudo el respaldo: " + err.message, { ms: 6000 });
   }
 }
 

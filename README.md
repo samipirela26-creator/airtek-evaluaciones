@@ -104,6 +104,23 @@ período cruzaron la medianoche, para que el cierre de mes se entienda.
 > Al agregar las colecciones de inventario hay que **publicar de nuevo
 > `firestore.rules`**, o las escrituras fallarán por permisos insuficientes.
 
+### Respaldo
+
+El root tiene un botón **⬇️ Respaldo** que descarga un JSON con todas las
+colecciones. Pregunta si incluir las fotos: con fotos el archivo queda completo
+pero puede pesar decenas de megas; sin fotos es rápido y liviano.
+
+**Si agregas una colección al sistema, agrégala también a
+`COLECCIONES_RESPALDO` en [js/panel.js](js/panel.js).** Esa lista se quedó atrás
+una vez —se escribió antes de que existieran las bitácoras y los inventarios— y
+durante meses el respaldo dio una falsa sensación de seguridad. Hay una prueba
+que compara la lista contra las colecciones que el código realmente usa y falla
+si falta alguna.
+
+> No existe una función de restauración: el respaldo es el archivo JSON y
+> recuperar sería a mano. Sirve para no perder los datos, no para volver atrás
+> con un clic.
+
 ### Fotos de las bitácoras
 
 Cada foto se comprime en el navegador a **WebP de 1024px** (con respaldo a JPEG

@@ -43,6 +43,9 @@ export const VERSIONES = [
         "Nuevo <strong>🧰 Requerimiento de Herramientas</strong>: cuántas hay buenas, regulares y malas entre todos los técnicos, para sustentar las solicitudes de reposición. También se exporta.",
         "El \"Tablero de eficiencia\" ahora se llama <strong>Métricas de Gestión de Personal</strong>.",
       ],
+      root: [
+        "El <strong>respaldo</strong> ahora incluye las bitácoras y los inventarios, que antes se quedaban fuera. Te pregunta si quieres las fotos: con ellas el archivo queda completo pero pesa bastante más.",
+      ],
     },
   },
 ];
