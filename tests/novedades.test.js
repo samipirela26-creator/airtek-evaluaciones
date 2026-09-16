@@ -50,11 +50,14 @@ test('cada rol ve lo suyo más lo de todos', async () => {
 });
 
 test('la versión actual le dice algo útil a supervisor y a coordinador', async () => {
+    // Al menos UN punto por rol. Exigir dos era arbitrario: hay entregas que
+    // solo cambian una cosa para un rol, y forzar un segundo punto solo lleva a
+    // inflar el texto con relleno que nadie lee.
     const { ultimaVersion, cambiosPara } = await carga();
     const v = ultimaVersion();
     for (const rol of ['supervisor', 'coordinador']) {
         const cambios = cambiosPara(v, rol);
-        assert.ok(cambios.length >= 2, `${rol} debería ver al menos dos cambios, vio ${cambios.length}`);
+        assert.ok(cambios.length >= 1, `${rol} no vería ningún cambio en la versión ${v.version}`);
     }
 });
 

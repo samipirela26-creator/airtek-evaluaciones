@@ -21,6 +21,21 @@ const CLAVE = "airtek_novedades_vistas";
  */
 export const VERSIONES = [
   {
+    version: "2.1.0",
+    fecha: "2026-09-16",
+    titulo: "Corregir nombres mal escritos",
+    cambios: {
+      coordinador: [
+        "Ya puedes <strong>corregir el nombre de un supervisor</strong>: entra a su ficha y pulsa \"✏️ Corregir nombre\". Antes había que borrarlo y crearlo de nuevo, perdiendo su historial.",
+        "La corrección se aplica también a <strong>lo que ya estaba registrado</strong>: sus evaluaciones, bitácoras, técnicos e inventarios. Así el nombre viejo no sigue apareciendo en los tableros ni en los reportes.",
+        "Antes de guardar te dice cuántos registros va a corregir, y al terminar te dice cuántos corrigió.",
+      ],
+      supervisor: [
+        "Al corregir el nombre de un técnico con el lápiz ✏️, ahora se corrige también en sus evaluaciones anteriores y en su inventario. Antes los PDF ya guardados conservaban el nombre viejo.",
+      ],
+    },
+  },
+  {
     version: "2.0.0",
     fecha: "2026-09-16",
     titulo: "Bitácora con métricas e inventario de técnicos",
