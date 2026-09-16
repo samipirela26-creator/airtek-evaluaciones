@@ -65,3 +65,42 @@ test('los scripts referenciados en el HTML existen', () => {
     }
     assert.ok(revisados > 0, 'debería haber al menos un <script src> local');
 });
+
+// ── 4. Cada <a href="..."> local del HTML apunta a un archivo existente ──
+// Los enlaces entre páginas son la forma en que se navega la app: un href roto
+// (una página nueva mal enlazada desde el panel) no lo detecta nada más.
+test('los enlaces locales del HTML existen', () => {
+    const htmls = listar(RAIZ, '.html');
+    let revisados = 0;
+    for (const html of htmls) {
+        const contenido = fs.readFileSync(html, 'utf8');
+        const dirHtml = path.dirname(html);
+        const re = /<a[^>]*\shref="([^"]+)"/g;
+        let m;
+        while ((m = re.exec(contenido)) !== null) {
+            const href = m[1];
+            // Externos, anclas, correos y teléfonos no se revisan.
+            if (/^(https?:|mailto:|tel:|#|javascript:)/.test(href)) continue;
+            const destino = href.split(/[?#]/)[0];
+            if (!destino) continue;
+            const abs = destino.startsWith('/')
+                ? path.join(RAIZ, destino)
+                : path.resolve(dirHtml, destino);
+            assert.ok(
+                fs.existsSync(abs),
+                `${path.relative(RAIZ, html)} enlaza a un archivo inexistente: ${href}`
+            );
+            revisados++;
+        }
+    }
+    assert.ok(revisados > 0, 'debería haber al menos un enlace local');
+});
+
+// ── 5. Las páginas nuevas están enlazadas desde algún sitio ─────────────
+// Una página a la que no se llega es una página que no existe para el usuario.
+test('las páginas del módulo están enlazadas desde el panel', () => {
+    const panel = fs.readFileSync(path.join(RAIZ, 'js', 'panel.js'), 'utf8');
+    for (const pagina of ['bitacora-tablero.html', 'inventario.html', 'reporte-herramientas.html']) {
+        assert.ok(panel.includes(pagina), `nadie enlaza a ${pagina} desde el panel`);
+    }
+});

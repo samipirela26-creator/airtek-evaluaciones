@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Requerimiento de Herramientas · Airtek</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="topbar">
+    <div class="marca">AIRTEK · Requerimientos</div>
+    <div><a class="btn link" href="panel.html">← Volver</a></div>
+  </div>
+
+  <div class="contenedor">
+    <div class="card">
+      <h1 style="margin-top:0">Requerimiento de Herramientas</h1>
+      <p class="meta">
+        Consolidado del estado de las herramientas de todos los técnicos de tus
+        supervisores. Sirve para sustentar las solicitudes de reposición.
+      </p>
+      <div id="kpis" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:14px"></div>
+      <div class="btn-row" style="margin-top:14px">
+        <button class="btn" id="btn-exportar">📥 Exportar a Excel (CSV)</button>
+        <button class="btn secundario" id="btn-solo-reponer">Ver solo lo que hay que reponer</button>
+      </div>
+      <div id="aviso" style="margin-top:12px"></div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0">Detalle por herramienta</h2>
+      <div style="overflow-x:auto">
+        <table id="tabla" style="width:100%;border-collapse:collapse;font-size:.88rem">
+          <thead>
+            <tr style="text-align:left;border-bottom:2px solid var(--borde)">
+              <th style="padding:8px 6px">Herramienta / Equipo</th>
+              <th style="padding:8px 6px;text-align:center">Total</th>
+              <th style="padding:8px 6px;text-align:center;color:#059669">Buenas</th>
+              <th style="padding:8px 6px;text-align:center;color:#d97706">Regulares</th>
+              <th style="padding:8px 6px;text-align:center;color:#dc2626">Malas</th>
+              <th style="padding:8px 6px;text-align:center">Técnicos</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-cuerpo"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/reporte-herramientas.js"></script>
+</body>
+</html>

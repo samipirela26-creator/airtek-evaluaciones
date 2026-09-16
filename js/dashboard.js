@@ -1,19 +1,10 @@
-// dashboard.js — tablero de eficiencia para el coordinador (Chart.js).
+// dashboard.js — Métricas de Gestión de Personal para el coordinador (Chart.js).
+// Mide la calidad de las evaluaciones y el posible sesgo de cada supervisor.
+// La actividad de campo se mide aparte, en bitacora-tablero.js.
 import { db } from "./firebase.js";
 import { protegerPagina } from "./session.js";
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
-
-const AZUL = "#0066ff";
-const PALETA = ["#0066ff", "#059669", "#7c3aed", "#dc2626", "#d97706", "#0891b2", "#be185d", "#374151"];
-const SIN_DATOS = "#9ca3af"; // gris para supervisores sin puntaje registrado
-
-// Registro de instancias → permite destruirlas antes de recrear (evita warning "canvas already in use").
-const chartInstances = {};
+import { misSupervisores, traerPorLotes } from "./consultas.js";
+import { barChart, AZUL, PALETA, SIN_DATOS } from "./graficas.js";
 
 protegerPagina("coordinador", async ({ user }) => {
   // ── Estado de carga ──
@@ -23,17 +14,8 @@ protegerPagina("coordinador", async ({ user }) => {
   let evals = [];
   try {
     // Solo MIS supervisores (no los de otros coordinadores).
-    const supSnap = await getDocs(query(collection(db, "usuarios"), where("coordinadorUid", "==", user.uid)));
-    const supUids = supSnap.docs.map((d) => d.id);
-    if (supUids.length) {
-      // Firestore 'in' admite hasta 10 valores → lo hacemos por lotes.
-      const lotes = [];
-      for (let i = 0; i < supUids.length; i += 10) lotes.push(supUids.slice(i, i + 10));
-      const resultados = await Promise.all(
-        lotes.map((c) => getDocs(query(collection(db, "evaluaciones"), where("supervisorUid", "in", c))))
-      );
-      resultados.forEach((r) => r.forEach((d) => evals.push(d.data())));
-    }
+    const supUids = (await misSupervisores(db, user.uid)).map((s) => s.uid);
+    evals = await traerPorLotes(db, "evaluaciones", "supervisorUid", supUids);
   } catch (err) {
     vacio.innerHTML = `<div class="msg error">No se pudieron cargar los datos: ${err.message}</div>`;
     return;
@@ -97,25 +79,3 @@ protegerPagina("coordinador", async ({ user }) => {
   const secProm = secNombres.map((t) => bySec[t].sum / bySec[t].n);
   barChart("chart-sec", secNombres, secProm, "Promedio (0–10)", 10, "#059669", true);
 });
-
-function barChart(canvasId, labels, data, label, max, color, horizontal = false) {
-  // Destruir instancia previa para evitar el warning "canvas already in use".
-  if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
-
-  const colors = Array.isArray(color) ? color : labels.map(() => color);
-  chartInstances[canvasId] = new Chart(document.getElementById(canvasId), {
-    type: "bar",
-    data: {
-      labels,
-      datasets: [{ label, data, backgroundColor: colors, borderRadius: 6, maxBarThickness: 46 }],
-    },
-    options: {
-      indexAxis: horizontal ? "y" : "x",
-      responsive: true,
-      plugins: { legend: { display: false } },
-      scales: {
-        [horizontal ? "x" : "y"]: { beginAtZero: true, ...(max ? { max } : {}) },
-      },
-    },
-  });
-}

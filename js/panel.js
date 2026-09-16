@@ -4,6 +4,8 @@
 import { db, auth, toast, logAudit, crearCuentaAux } from "./firebase.js";
 import { protegerPagina, cerrarSesion } from "./session.js";
 import { cargarPlantillasDeCoordinador, opcionesDeSeccion } from "./plantilla.js";
+import { fechaDeBitacora, fechaEsInferida } from "./bitacora-data.js";
+import { mostrarNovedades } from "./novedades.js";
 import { sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 import {
   collection,
@@ -97,6 +99,10 @@ protegerPagina(null, async ({ user, perfil }) => {
   sesion = { user, perfil };
   document.getElementById("usuario-info").textContent = `${perfil.nombre} · ${perfil.rol}`;
 
+  // Qué cambió en la última entrega. Solo la primera vez que entran con ella,
+  // y solo lo que le toca a su rol.
+  mostrarNovedades(document.getElementById("novedades"), perfil.rol, { esc });
+
   if (perfil.rol === "supervisor") {
     document.getElementById("acciones").innerHTML = `
       <h2>Hola, ${esc(perfil.nombre)}</h2>
@@ -128,6 +134,21 @@ protegerPagina(null, async ({ user, perfil }) => {
       cargarBitacorasSupervisorRecientes(user.uid);
     }
 
+    const modInv = document.getElementById("modulo-inventario");
+    if (modInv) {
+      modInv.style.display = "block";
+      modInv.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div>
+            <h2 style="margin:0 0 4px">📦 Inventario de Técnicos</h2>
+            <p class="meta" style="margin:0">Herramientas y equipos con su estado, y entregas de material de uso diario.</p>
+          </div>
+          <a class="btn" href="inventario.html" style="text-decoration:none;padding:10px 18px;font-size:0.95rem">
+            Abrir inventario
+          </a>
+        </div>`;
+    }
+
     document.getElementById("btn-add-tecnico").addEventListener("click", agregarTecnico);
     document.getElementById("nuevo-tecnico").addEventListener("input", actualizarHint);
     cargarTecnicos();
@@ -135,6 +156,8 @@ protegerPagina(null, async ({ user, perfil }) => {
   } else if (perfil.rol === "root") {
     const modBit = document.getElementById("modulo-bitacora");
     if (modBit) modBit.style.display = "none";
+    const modInv = document.getElementById("modulo-inventario");
+    if (modInv) modInv.style.display = "none";
     document.getElementById("acciones").innerHTML = `
       <h2>Hola, ${esc(perfil.nombre)} (Administrador)</h2>
       <p>Crea y administra a los coordinadores de Airtek.</p>
@@ -159,11 +182,16 @@ protegerPagina(null, async ({ user, perfil }) => {
   } else {
     const modBit = document.getElementById("modulo-bitacora");
     if (modBit) modBit.style.display = "none";
+    const modInv = document.getElementById("modulo-inventario");
+    if (modInv) modInv.style.display = "none";
     document.getElementById("acciones").innerHTML = `
       <h2>Hola, ${esc(perfil.nombre)} (Coordinador)</h2>
       <p>Aquí ves a tus supervisores y sus planillas.</p>
       <div class="btn-row">
-        <a class="btn" href="dashboard.html">📊 Tablero de eficiencia</a>
+        <a class="btn" href="dashboard.html">📊 Métricas de Gestión de Personal</a>
+        <a class="btn" href="bitacora-tablero.html">📋 Tablero de Bitácora</a>
+        <a class="btn" href="reporte-herramientas.html">🧰 Requerimiento de Herramientas</a>
+        <a class="btn secundario" href="inventario.html">📦 Inventario de Técnicos</a>
         <a class="btn" href="editor.html">✎ Editar formulario</a>
         <button class="btn" id="btn-crear-sup">➕ Crear supervisor</button>
         <button class="btn secundario" id="btn-invitar">🎟️ Invitar por link</button>
@@ -319,6 +347,22 @@ async function eliminarTecnico(id) {
   }
 }
 
+// ───────── Bitácoras ─────────
+// Se muestra el DÍA DE LA ACTIVIDAD, no el de carga. Las bitácoras anteriores
+// a esta versión no lo traen: ahí la fecha se infiere de createdAt y se marca
+// con "~" para no dar por cierto un dato que es aproximado.
+function fechaBitacoraLegible(b) {
+  const iso = fechaDeBitacora(b);
+  if (!iso) return "";
+  const [a, m, d] = iso.split("-");
+  return `${fechaEsInferida(b) ? "~" : ""}${Number(d)}/${Number(m)}/${a}`;
+}
+
+function ordenBitacoras(a, b) {
+  const clave = (x) => `${fechaDeBitacora(x) || ""}${x.horaInicio || ""}`;
+  return clave(b).localeCompare(clave(a));
+}
+
 // ───────── Bitácoras recientes del supervisor ─────────
 async function cargarBitacorasSupervisorRecientes(uid) {
   const cont = document.getElementById("bitacoras-supervisor-recientes");
@@ -328,7 +372,7 @@ async function cargarBitacorasSupervisorRecientes(uid) {
       query(collection(db, "bitacoras"), where("supervisorUid", "==", uid))
     );
     const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-    items.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+    items.sort(ordenBitacoras);
     const recientes = items.slice(0, 3);
 
     if (!recientes.length) {
@@ -340,7 +384,7 @@ async function cargarBitacorasSupervisorRecientes(uid) {
       <div style="font-size:0.85rem;font-weight:600;color:var(--texto2);margin-bottom:8px">Últimas actividades registradas:</div>
       ${recientes
         .map((b) => {
-          const fecha = b.createdAt?.toDate ? b.createdAt.toDate().toLocaleDateString("es-VE") : "";
+          const fecha = fechaBitacoraLegible(b);
           const duracion = b.duracionMinutos ? `${Math.floor(b.duracionMinutos / 60)}h ${b.duracionMinutos % 60}m` : "";
           return `
           <div class="lista-item" style="padding:10px 12px;margin-bottom:6px">
@@ -630,7 +674,7 @@ async function mostrarSupervisor(uid, nombre, volverFn) {
     const tecnicos = tSnap.docs.map((d) => d.data()).sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
     const evals = eSnap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
     const evalSup = sSnap.docs.map((d) => d.data()).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-    const bitacoras = bSnap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+    const bitacoras = bSnap.docs.map((d) => ({ id: d.id, ...d.data() })).sort(ordenBitacoras);
 
     const perfilSup = (await getDoc(doc(db, "usuarios", uid))).data() || {};
     const activo = perfilSup.activo !== false;
@@ -692,9 +736,13 @@ async function mostrarSupervisor(uid, nombre, volverFn) {
     html += bitacoras.length
       ? bitacoras
           .map((b) => {
-            const fecha = b.createdAt?.toDate ? b.createdAt.toDate().toLocaleDateString("es-VE") : "";
+            const fecha = fechaBitacoraLegible(b);
             const duracion = b.duracionMinutos ? `${Math.floor(b.duracionMinutos / 60)}h ${b.duracionMinutos % 60}m` : "";
-            const tieneFotos = b.imagenes && b.imagenes.length ? ` · 📷 ${b.imagenes.length} foto${b.imagenes.length > 1 ? "s" : ""}` : "";
+            // numFotos vive en el documento padre justamente para poder contar
+            // sin bajarse las imágenes. `imagenes` es el campo viejo, de antes
+            // de la migración: se consulta de respaldo por si queda alguna.
+            const n = b.numFotos ?? (b.imagenes ? b.imagenes.length : 0);
+            const tieneFotos = n ? ` · 📷 ${n} foto${n > 1 ? "s" : ""}` : "";
             return `<div class="lista-item" style="display:block;margin-bottom:8px">
               <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
                 <strong>${esc(b.actividadEspecifica || b.tipoMacro)}</strong>

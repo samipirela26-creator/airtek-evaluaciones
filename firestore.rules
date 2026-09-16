@@ -119,12 +119,90 @@ service cloud.firestore {
                     && activo();
 
       // Leer: el supervisor dueño, su coordinador asignado o el root.
+      // La comparación directa con coordinadorUid permite al tablero consultar
+      // por ese campo sin un get() por documento. El camino esMiSupervisor se
+      // mantiene para las bitácoras que no lo tengan grabado.
       allow read: if request.auth != null
-                  && (resource.data.supervisorUid == request.auth.uid || esMiSupervisor(resource.data.supervisorUid) || esRoot());
+                  && (resource.data.supervisorUid == request.auth.uid
+                      || resource.data.get('coordinadorUid', '') == request.auth.uid
+                      || esMiSupervisor(resource.data.supervisorUid) || esRoot());
 
       // Editar o borrar: el supervisor dueño, su coordinador o el root.
       allow update, delete: if request.auth != null
                             && (resource.data.supervisorUid == request.auth.uid || esMiSupervisor(resource.data.supervisorUid) || esRoot());
+
+      // Fotos de la bitácora, una por documento.
+      //
+      // Viven aparte del documento padre por dos razones: un documento de
+      // Firestore no puede pasar de 1 MiB (y cinco fotos en Base64 rozaban ese
+      // techo), y el tablero del coordinador se las descargaba enteras solo
+      // para graficar horas.
+      //
+      // Los permisos se heredan del padre: quien puede ver la bitácora puede
+      // ver sus fotos, y quien puede escribirla puede adjuntarlas.
+      match /fotos/{fotoId} {
+        function bitacora() {
+          return get(/databases/$(database)/documents/bitacoras/$(id)).data;
+        }
+        function esDeMiBitacora() {
+          return request.auth != null
+                 && (bitacora().supervisorUid == request.auth.uid
+                     || bitacora().get('coordinadorUid', '') == request.auth.uid
+                     || esMiSupervisor(bitacora().supervisorUid)
+                     || esRoot());
+        }
+        allow read: if esDeMiBitacora();
+        allow create: if esDeMiBitacora() && activo();
+        allow update, delete: if esDeMiBitacora() && activo();
+      }
+    }
+
+    // ── Inventarios de técnicos ─────────────────────────────────────────
+    // Dos colecciones con modelos distintos a propósito:
+    //  · inventario_herramientas: un documento por técnico (id = tecnicoId)
+    //    que se actualiza. Refleja el estado de HOY.
+    //  · inventario_materiales: un documento por entrega. Es historial.
+    // En ambas, `supervisorUid` es el dueño del técnico, no quien escribe:
+    // el coordinador también puede registrar por sus supervisores.
+
+    function puedeTocarInventario(sUid) {
+      return request.auth != null && activo()
+             && (sUid == request.auth.uid || esMiSupervisor(sUid) || esRoot());
+    }
+
+    // El técnico tiene un dueño y está escrito en la base, no en la petición.
+    // Sin esta comprobación, un supervisor podía escribir el inventario de un
+    // técnico ajeno con solo mandar su PROPIO uid: la regla le daba por bueno
+    // el supervisorUid del cliente y nunca miraba de quién era el técnico.
+    function tecnicoEsDe(tecnicoId, sUid) {
+      return exists(/databases/$(database)/documents/tecnicos/$(tecnicoId))
+             && get(/databases/$(database)/documents/tecnicos/$(tecnicoId)).data.supervisorUid == sUid;
+    }
+
+    match /inventario_herramientas/{tecnicoId} {
+      // El id del documento ES el técnico, así que se valida contra él.
+      allow create: if puedeTocarInventario(request.resource.data.supervisorUid)
+                    && tecnicoEsDe(tecnicoId, request.resource.data.supervisorUid);
+      allow update: if puedeTocarInventario(resource.data.supervisorUid)
+                    && request.resource.data.supervisorUid == resource.data.supervisorUid
+                    && tecnicoEsDe(tecnicoId, resource.data.supervisorUid);
+      allow read: if request.auth != null
+                  && (resource.data.supervisorUid == request.auth.uid
+                      || esMiSupervisor(resource.data.supervisorUid) || esRoot());
+      allow delete: if esMiSupervisor(resource.data.supervisorUid) || esRoot();
+    }
+
+    match /inventario_materiales/{id} {
+      // Aquí el id es aleatorio, así que el técnico viene en el documento.
+      allow create: if puedeTocarInventario(request.resource.data.supervisorUid)
+                    && tecnicoEsDe(request.resource.data.tecnicoId, request.resource.data.supervisorUid);
+      allow read: if request.auth != null
+                  && (resource.data.supervisorUid == request.auth.uid
+                      || esMiSupervisor(resource.data.supervisorUid) || esRoot());
+      // Una entrega es un hecho con fecha: se corrige o se borra, pero solo
+      // el dueño, su coordinador o el root.
+      allow update, delete: if puedeTocarInventario(resource.data.supervisorUid)
+                            && tecnicoEsDe(resource.data.tecnicoId, resource.data.supervisorUid);
     }
 
     // Enlaces públicos: el coordinador crea uno para que los técnicos evalúen
