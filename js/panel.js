@@ -5,6 +5,7 @@ import { db, auth, toast, logAudit, crearCuentaAux } from "./firebase.js";
 import { protegerPagina, cerrarSesion } from "./session.js";
 import { cargarPlantillasDeCoordinador, opcionesDeSeccion } from "./plantilla.js";
 import { fechaDeBitacora, fechaEsInferida } from "./bitacora-data.js";
+import { mostrarNovedades } from "./novedades.js";
 import { sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 import {
   collection,
@@ -97,6 +98,10 @@ let sesion = null;
 protegerPagina(null, async ({ user, perfil }) => {
   sesion = { user, perfil };
   document.getElementById("usuario-info").textContent = `${perfil.nombre} · ${perfil.rol}`;
+
+  // Qué cambió en la última entrega. Solo la primera vez que entran con ella,
+  // y solo lo que le toca a su rol.
+  mostrarNovedades(document.getElementById("novedades"), perfil.rol, { esc });
 
   if (perfil.rol === "supervisor") {
     document.getElementById("acciones").innerHTML = `

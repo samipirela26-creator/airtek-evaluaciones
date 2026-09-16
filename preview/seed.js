@@ -129,6 +129,11 @@ export const SEED = {
     b_5: bitacora({ id: "b_5", sup: "u_sup2", fecha: diaDeEsteMes(8), zona: "ZONA 6", nodo: "NODO MACHIQUES",
       macro: "GESTIÓN ADMINISTRATIVA", act: "CAPACITACIÓN ADIESTRAMIENTO AL PERSONAL", ini: "08:00", fin: "11:00", min: 180,
       desc: "Capacitación de fusión a dos técnicos nuevos." }),
+    // Jornada nocturna: arranca a las 22:00 y termina a las 02:00 del día
+    // siguiente. Sirve para ver el aviso de cómo se cuentan en el tablero.
+    b_7: (() => { const b = bitacora({ id: "b_7", sup: "u_sup2", fecha: diaDeEsteMes(5), zona: "ZONA 6", nodo: "NODO MACHIQUES",
+      macro: "GESTIÓN OPERATIVA (EN CAMPO)", act: "VENTANA DE MANTENIMIENTO", ini: "22:00", fin: "02:00", min: 240,
+      desc: "Ventana de mantenimiento nocturna en la troncal." }); b.diaSiguiente = true; return b; })(),
     // Bitácora vieja: sin campo `fecha`, para probar el aviso de fecha estimada.
     b_6: (() => { const b = bitacora({ id: "b_6", sup: "u_sup1", fecha: "", zona: "ZONA 1", nodo: "NODO BELLA VISTA",
       macro: "GESTIÓN ADMINISTRATIVA", act: "APOYO EN ALMACÉN", ini: "10:00", fin: "11:30", min: 90,
