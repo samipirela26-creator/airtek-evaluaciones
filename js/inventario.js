@@ -135,10 +135,10 @@ function renderHerramientas(guardado) {
         </div>`;
     }).join("");
 
-    return `<div class="card">
-      <h3 style="margin-top:0">${esc(cat)}</h3>
+    return `<details class="card cat-inventario">
+      <summary><h3>${esc(cat)}</h3><span class="badge">${items.length}</span></summary>
       ${filas}
-    </div>`;
+    </details>`;
   }).join("");
 
   indexarCampos(cont);
@@ -233,7 +233,10 @@ function renderMateriales() {
           ${unidadDe(m) ? `<span class="meta" style="font-size:.75rem;white-space:nowrap">${esc(unidadDe(m))}</span>` : ""}
         </div>
       </div>`).join("");
-    return `<div class="card"><h3 style="margin-top:0">${esc(cat)}</h3>${filas}</div>`;
+    return `<details class="card cat-inventario">
+      <summary><h3>${esc(cat)}</h3><span class="badge">${items.length}</span></summary>
+      ${filas}
+    </details>`;
   }).join("");
 }
 

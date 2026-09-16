@@ -21,6 +21,16 @@ const CLAVE = "airtek_novedades_vistas";
  */
 export const VERSIONES = [
   {
+    version: "2.2.1",
+    fecha: "2026-09-16",
+    titulo: "Categorías desplegables en el Inventario",
+    cambios: {
+      todos: [
+        "En el <strong>Inventario de Técnicos</strong>, las categorías de herramientas y de materiales (Básicas, Equipos de Prueba, Kit GPON, etc.) ahora se abren y cierran a demanda: tocás la que necesitás y solo esa se despliega, en vez de scrollear la lista completa.",
+      ],
+    },
+  },
+  {
     version: "2.2.0",
     fecha: "2026-09-16",
     titulo: "Ficha del supervisor más ordenada",

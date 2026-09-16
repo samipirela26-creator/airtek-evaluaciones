@@ -306,6 +306,15 @@ textarea { min-height: 70px; resize: vertical; }
 /* Botón "Ver más" al final de listas largas */
 .btn-ver-mas { display: block; width: 100%; margin-top: 4px; }
 
+/* Categorías de inventario como <details>: elegís cuál abrir, en vez de un scroll continuo */
+.cat-inventario summary {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  list-style: none; cursor: pointer;
+}
+.cat-inventario summary::-webkit-details-marker { display: none; }
+.cat-inventario summary h3 { margin: 0; }
+.cat-inventario[open] summary { margin-bottom: 10px; }
+
 /* Jerarquía en la barra de acciones del coordinador */
 .btn-row-titulo {
   font-size: .78rem; text-transform: uppercase; letter-spacing: .5px;
