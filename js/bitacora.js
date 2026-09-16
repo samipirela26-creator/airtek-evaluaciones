@@ -52,6 +52,7 @@ function inicializarFecha() {
   const hoy = hoyISO();
   campo.value = hoy;
   campo.max = hoy;
+  ofrecerDiaAnterior();
 }
 
 // El tope se fija al cargar la página. Si el supervisor deja la pestaña abierta
@@ -61,6 +62,44 @@ function refrescarTopeFecha() {
   const campo = document.getElementById("fecha-actividad");
   if (!campo) return;
   campo.max = hoyISO();
+}
+
+/** El día de ayer en formato YYYY-MM-DD. */
+function ayerISO() {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return hoyISO(d);
+}
+
+// Quien registra a las 2 de la mañana casi siempre está cerrando la jornada que
+// empezó ayer, pero el campo le llega con "hoy" porque para el reloj ya cambió
+// el día. Antes de las 6 a.m. se le ofrece el cambio en vez de dejar que se
+// equivoque en silencio: se le pregunta, no se le decide.
+const HORA_LIMITE_MADRUGADA = 6;
+
+function ofrecerDiaAnterior() {
+  const aviso = document.getElementById("aviso-madrugada");
+  const campo = document.getElementById("fecha-actividad");
+  if (!aviso || !campo) return;
+
+  const esMadrugada = new Date().getHours() < HORA_LIMITE_MADRUGADA;
+  if (!esMadrugada || campo.value !== hoyISO()) {
+    aviso.innerHTML = "";
+    return;
+  }
+
+  const ayer = ayerISO();
+  aviso.innerHTML = `
+    <div class="msg" style="font-size:.85rem">
+      Son las ${String(new Date().getHours()).padStart(2, "0")}:${String(new Date().getMinutes()).padStart(2, "0")}.
+      ¿La jornada empezó ayer (${ayer})?
+      <button type="button" id="btn-usar-ayer" class="btn secundario"
+              style="margin-left:8px;padding:4px 10px;font-size:.8rem">Sí, usar ayer</button>
+    </div>`;
+  document.getElementById("btn-usar-ayer").addEventListener("click", () => {
+    campo.value = ayer;
+    aviso.innerHTML = "";
+  });
 }
 
 // ── Poblar catálogos en el DOM ──
@@ -276,6 +315,8 @@ function vincularEventos() {
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) refrescarTopeFecha();
   });
+
+  document.getElementById("fecha-actividad").addEventListener("change", ofrecerDiaAnterior);
 
   // Monitoreo de horarios para cálculo reactivo
   document.getElementById("hora-inicio").addEventListener("input", actualizarDuracionHint);

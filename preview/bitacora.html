@@ -84,9 +84,13 @@
           </div>
 
           <div class="campo" style="margin-top:16px">
-            <label class="requerido" for="fecha-actividad">Fecha de la actividad</label>
+            <label class="requerido" for="fecha-actividad">Fecha en que <strong>comenzó</strong> la actividad</label>
             <input type="date" id="fecha-actividad" required />
-            <div class="meta" style="margin-top:4px">El día en que realizaste la actividad. No puede ser una fecha futura.</div>
+            <div class="meta" style="margin-top:4px">
+              Si la jornada cruzó la medianoche, va el día en que <strong>arrancaste</strong>,
+              no el día en que terminaste. No puede ser una fecha futura.
+            </div>
+            <div id="aviso-madrugada" style="margin-top:6px"></div>
           </div>
 
           <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap">

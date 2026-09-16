@@ -111,11 +111,25 @@ function pintar() {
     kpi(r.supervisores, "Supervisores") +
     kpi(r.nodos, "Nodos visitados");
 
-  // Aviso honesto: las bitácoras viejas no traen fecha propia.
+  // Avisos honestos sobre de dónde salen estos números.
+  const avisos = [];
+
   const inferidas = filtradas.filter(fechaEsInferida).length;
-  document.getElementById("aviso").innerHTML = inferidas
-    ? `<div class="msg">⚠ ${inferidas} de ${filtradas.length} actividades no tienen fecha propia (se registraron antes de que el formulario la pidiera). Para esas se usa la fecha en que fueron cargadas, que puede no ser el día en que se trabajó.</div>`
-    : "";
+  if (inferidas) {
+    avisos.push(`⚠ ${inferidas} de ${filtradas.length} actividades no tienen fecha propia (se registraron antes de que el formulario la pidiera). Para esas se usa la fecha en que fueron cargadas, que puede no ser el día en que se trabajó.`);
+  }
+
+  // Una jornada de 22:00 a 02:00 cuenta completa en el día que empezó, como se
+  // cuenta un turno en nómina. Sin decirlo, el coordinador no entiende por qué
+  // un cierre de mes trae horas que él ubica en el mes siguiente.
+  const nocturnas = filtradas.filter((b) => b.diaSiguiente).length;
+  if (nocturnas) {
+    avisos.push(`🌙 ${nocturnas} ${nocturnas === 1 ? "jornada cruzó" : "jornadas cruzaron"} la medianoche. Las horas se cuentan completas en el día en que la jornada comenzó, no repartidas entre los dos días.`);
+  }
+
+  document.getElementById("aviso").innerHTML = avisos
+    .map((t) => `<div class="msg" style="margin-bottom:6px">${t}</div>`)
+    .join("");
 
   if (!filtradas.length) {
     document.getElementById("vacio").innerHTML =

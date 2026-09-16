@@ -90,6 +90,17 @@ En el inventario de herramientas, un **0 escrito** significa "se revisó y no
 tiene", distinto de un campo en blanco, que significa "no se revisó". El reporte
 del coordinador distingue las dos cosas.
 
+### Jornadas que cruzan la medianoche
+
+Una jornada de 22:00 a 02:00 se guarda con **la fecha en que comenzó** y sus 4
+horas cuentan completas en ese día, como se cuenta un turno en nómina. No se
+reparten entre los dos días.
+
+Por eso el formulario pide "fecha en que **comenzó** la actividad", y si alguien
+registra antes de las 6 de la mañana le ofrece el día anterior — que es cuando
+más se confunde la gente. El tablero del coordinador avisa cuántas jornadas del
+período cruzaron la medianoche, para que el cierre de mes se entienda.
+
 > Al agregar las colecciones de inventario hay que **publicar de nuevo
 > `firestore.rules`**, o las escrituras fallarán por permisos insuficientes.
 
@@ -142,6 +153,35 @@ Las pruebas (`tests/`, runner integrado de Node, sin dependencias) verifican que
 - todos los `.js` compilan (`node --check`),
 - los `.json` de configuración (`manifest.json`, `firebase.json`, `.firebaserc`) parsean,
 - cada `<script src>` local del HTML apunta a un archivo que existe.
+
+### Avisar a los usuarios qué cambió
+
+Cuando alguien entra por primera vez después de una entrega, ve arriba del panel
+una tarjeta con los cambios que le tocan **según su rol**. Se muestra una sola
+vez por navegador y se cierra con "Entendido".
+
+Para la próxima entrega, agrega una entrada arriba del arreglo `VERSIONES` en
+[js/novedades.js](js/novedades.js):
+
+```javascript
+{
+  version: "2.1.0",
+  fecha: "2026-10-20",
+  titulo: "Lo que salió esta vez",
+  cambios: {
+    todos: ["Lo que le sirve a cualquiera"],
+    supervisor: ["Lo que solo usa el supervisor"],
+    coordinador: ["Lo que solo usa el coordinador"],
+  },
+}
+```
+
+Escríbelo en lenguaje de usuario: **qué puede hacer ahora que antes no podía**.
+Nada de nombres de archivos ni de funciones — lo lee un supervisor en su
+teléfono. Hay una prueba que falla si se cuela jerga técnica.
+
+Lo de `todos` va en tercera persona, porque lo leen supervisores y coordinadores
+por igual y no todos registran bitácoras.
 
 ### Pruebas de las reglas de Firestore
 
