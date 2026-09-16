@@ -4,8 +4,14 @@
   "description": "Sistema de evaluación de técnicos (Airtek) — HTML/CSS/JS + Firebase, publicado en GitHub Pages.",
   "private": true,
   "scripts": {
-    "test": "node --test",
+    "test": "node --test tests/",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-airtek \"node --test tests-reglas/\"",
+    "emu": "firebase emulators:start --only firestore --project demo-airtek",
     "serve": "python3 -m http.server 8080"
   },
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2",
+    "firebase-tools": "^15.30.1"
+  }
 }
