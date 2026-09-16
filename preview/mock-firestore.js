@@ -9,7 +9,9 @@ let autoId = 9000;
 const nid = () => "gen_" + autoId++;
 const col = (name) => (store[name] || (store[name] = {}));
 
-export function collection(_db, name) { return { __t: "coll", name }; }
+// Admite subcolecciones: collection(db, "bitacoras", id, "fotos") se guarda
+// bajo la clave "bitacoras/<id>/fotos".
+export function collection(_db, ...segmentos) { return { __t: "coll", name: segmentos.join("/") }; }
 
 export function doc(a, b, c) {
   if (a && a.__t === "coll") return { __t: "doc", coll: a.name, id: b || nid() };

@@ -83,11 +83,44 @@ Además de las evaluaciones, la app registra la **actividad de campo** y el
 - El **material de uso diario** se registra como entregas con fecha, para ver el
   consumo en el tiempo.
 
-Los catálogos (79 herramientas y 47 materiales) están en `js/inventario-data.js`
+Los catálogos (84 herramientas y 47 materiales) están en `js/inventario-data.js`
 y salen de la planilla del cliente. Para cambiarlos hay que editar ese archivo.
+
+En el inventario de herramientas, un **0 escrito** significa "se revisó y no
+tiene", distinto de un campo en blanco, que significa "no se revisó". El reporte
+del coordinador distingue las dos cosas.
 
 > Al agregar las colecciones de inventario hay que **publicar de nuevo
 > `firestore.rules`**, o las escrituras fallarán por permisos insuficientes.
+
+### Fotos de las bitácoras
+
+Cada foto se comprime en el navegador a **WebP de 1024px** (con respaldo a JPEG
+si el navegador no soporta WebP) y se guarda como **documento aparte** en
+`bitacoras/{id}/fotos`. El documento de la bitácora solo lleva `numFotos`.
+
+Se hace así por dos razones: un documento de Firestore no puede pasar de 1 MiB,
+y el tablero del coordinador se descargaba las imágenes enteras solo para
+graficar horas.
+
+Las bitácoras anteriores a este cambio guardan las fotos en un campo `imagenes`
+dentro del documento. Para moverlas:
+
+```bash
+# 1. Respaldo desde el panel del root (botón "⬇️ Respaldo")
+# 2. Prueba en seco — no escribe nada:
+GOOGLE_APPLICATION_CREDENTIALS=/ruta/clave.json \
+  node scripts/migrar-fotos.mjs --proyecto airtek-evaluaciones
+# 3. De verdad:
+GOOGLE_APPLICATION_CREDENTIALS=/ruta/clave.json \
+  node scripts/migrar-fotos.mjs --proyecto airtek-evaluaciones --aplicar
+```
+
+El script es idempotente: correrlo dos veces no duplica nada.
+
+> **Hoy ninguna pantalla muestra las fotos**, solo las cuenta. Los supervisores
+> están subiendo evidencia que nadie puede ver. Es un agujero funcional
+> conocido, pendiente de decidir con el coordinador.
 
 ## Próximos pasos (fase 2)
 - Editor de formulario para el coordinador (leer la plantilla desde Firestore).
@@ -109,6 +142,22 @@ Las pruebas (`tests/`, runner integrado de Node, sin dependencias) verifican que
 - todos los `.js` compilan (`node --check`),
 - los `.json` de configuración (`manifest.json`, `firebase.json`, `.firebaserc`) parsean,
 - cada `<script src>` local del HTML apunta a un archivo que existe.
+
+### Pruebas de las reglas de Firestore
+
+Las reglas de seguridad se prueban contra el **emulador de Firebase**, en un
+proyecto ficticio que nunca toca la base real:
+
+```bash
+npm run test:rules   # levanta el emulador, corre las pruebas y lo apaga
+npm run emu          # lo deja corriendo para trabajar a mano
+```
+
+Necesita Java (`sudo apt install default-jre`). Viven en `tests-reglas/`, aparte
+de `tests/`, para que `npm test` siga funcionando sin emulador.
+
+Existen porque una vez se publicaron reglas que nadie había ejecutado y traían
+un hueco de permisos. **Si tocas `firestore.rules`, corre estas pruebas.**
 
 Se ejecutan también en CI (GitHub Actions) en cada push/PR — ver
 [.github/workflows/ci.yml](.github/workflows/ci.yml). Para probar sin Firebase con

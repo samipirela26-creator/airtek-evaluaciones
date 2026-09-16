@@ -733,7 +733,11 @@ async function mostrarSupervisor(uid, nombre, volverFn) {
           .map((b) => {
             const fecha = fechaBitacoraLegible(b);
             const duracion = b.duracionMinutos ? `${Math.floor(b.duracionMinutos / 60)}h ${b.duracionMinutos % 60}m` : "";
-            const tieneFotos = b.imagenes && b.imagenes.length ? ` · 📷 ${b.imagenes.length} foto${b.imagenes.length > 1 ? "s" : ""}` : "";
+            // numFotos vive en el documento padre justamente para poder contar
+            // sin bajarse las imágenes. `imagenes` es el campo viejo, de antes
+            // de la migración: se consulta de respaldo por si queda alguna.
+            const n = b.numFotos ?? (b.imagenes ? b.imagenes.length : 0);
+            const tieneFotos = n ? ` · 📷 ${n} foto${n > 1 ? "s" : ""}` : "";
             return `<div class="lista-item" style="display:block;margin-bottom:8px">
               <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
                 <strong>${esc(b.actividadEspecifica || b.tipoMacro)}</strong>

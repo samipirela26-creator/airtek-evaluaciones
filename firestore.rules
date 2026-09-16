@@ -130,6 +130,31 @@ service cloud.firestore {
       // Editar o borrar: el supervisor dueño, su coordinador o el root.
       allow update, delete: if request.auth != null
                             && (resource.data.supervisorUid == request.auth.uid || esMiSupervisor(resource.data.supervisorUid) || esRoot());
+
+      // Fotos de la bitácora, una por documento.
+      //
+      // Viven aparte del documento padre por dos razones: un documento de
+      // Firestore no puede pasar de 1 MiB (y cinco fotos en Base64 rozaban ese
+      // techo), y el tablero del coordinador se las descargaba enteras solo
+      // para graficar horas.
+      //
+      // Los permisos se heredan del padre: quien puede ver la bitácora puede
+      // ver sus fotos, y quien puede escribirla puede adjuntarlas.
+      match /fotos/{fotoId} {
+        function bitacora() {
+          return get(/databases/$(database)/documents/bitacoras/$(id)).data;
+        }
+        function esDeMiBitacora() {
+          return request.auth != null
+                 && (bitacora().supervisorUid == request.auth.uid
+                     || bitacora().get('coordinadorUid', '') == request.auth.uid
+                     || esMiSupervisor(bitacora().supervisorUid)
+                     || esRoot());
+        }
+        allow read: if esDeMiBitacora();
+        allow create: if esDeMiBitacora() && activo();
+        allow update, delete: if esDeMiBitacora() && activo();
+      }
     }
 
     // ── Inventarios de técnicos ─────────────────────────────────────────
