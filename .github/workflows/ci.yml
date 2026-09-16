@@ -15,3 +15,22 @@ jobs:
           node-version: "20"
       - name: Pruebas de humo
         run: npm test
+
+  reglas:
+    # Las reglas de Firestore se prueban contra el emulador. Existe este trabajo
+    # porque una vez se publicaron reglas que nadie habia ejecutado y traian un
+    # hueco de permisos: que CI lo agarre antes que produccion.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Instalar dependencias
+        run: npm ci
+      - name: Pruebas de reglas de Firestore
+        run: npm run test:rules
