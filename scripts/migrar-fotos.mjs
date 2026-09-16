@@ -23,6 +23,7 @@
 // (botón "⬇️ Respaldo").
 
 import admin from 'firebase-admin';
+import { existsSync, statSync } from 'node:fs';
 
 const args = process.argv.slice(2);
 const APLICAR = args.includes('--aplicar');
@@ -30,9 +31,49 @@ const PROYECTO = (args.find((a) => a.startsWith('--proyecto=')) || '').split('='
   || args[args.indexOf('--proyecto') + 1]
   || process.env.GCLOUD_PROJECT;
 
-if (!PROYECTO) {
-  console.error('Falta el proyecto. Usa --proyecto <id> o define GCLOUD_PROJECT.');
+function morir(titulo, ...lineas) {
+  console.error(`\n✗ ${titulo}\n`);
+  lineas.forEach((l) => console.error(`  ${l}`));
+  console.error('');
   process.exit(1);
+}
+
+const COMO_SACAR_LA_CLAVE = [
+  'Para correr esto necesitas una clave de cuenta de servicio:',
+  '',
+  '  Firebase → ⚙ Configuración del proyecto → Cuentas de servicio',
+  '  → "Generar nueva clave privada". Te baja un archivo .json.',
+  '',
+  'Después corre el script apuntando a ESE archivo, con su ruta real:',
+  '',
+  '  GOOGLE_APPLICATION_CREDENTIALS=~/Descargas/loque-bajaste.json \\',
+  '    node scripts/migrar-fotos.mjs --proyecto ' + (process.env.GCLOUD_PROJECT || '<id-del-proyecto>'),
+  '',
+  'Esa clave da acceso total a tu base de datos: guárdala fuera del repo',
+  'y no la compartas.',
+];
+
+if (!PROYECTO) {
+  morir('Falta el proyecto.', 'Usa --proyecto <id> o define GCLOUD_PROJECT.');
+}
+
+// Se comprueba ANTES de conectar, para no soltar un rastro de 30 líneas por
+// algo que cabe en una frase. Este script se corre justo antes de una
+// migración: no es el momento de descifrar mensajes de librería.
+const CLAVE = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+if (!CLAVE) {
+  morir('No indicaste la clave de acceso (GOOGLE_APPLICATION_CREDENTIALS).', ...COMO_SACAR_LA_CLAVE);
+}
+if (CLAVE.includes('/ruta/') || CLAVE.endsWith('/clave.json')) {
+  morir(
+    `Esa ruta es un ejemplo, no un archivo de verdad: ${CLAVE}`,
+    'Hay que reemplazarla por la ruta del .json que bajaste de Firebase.',
+    '',
+    ...COMO_SACAR_LA_CLAVE
+  );
+}
+if (!existsSync(CLAVE) || !statSync(CLAVE).isFile()) {
+  morir(`No existe el archivo de clave: ${CLAVE}`, 'Revisa la ruta.', '', ...COMO_SACAR_LA_CLAVE);
 }
 
 const LOTE = 25; // bitácoras por tanda: las fotos pesan, no conviene traer más
@@ -148,6 +189,27 @@ async function migrar() {
 }
 
 migrar().catch((err) => {
-  console.error('Falló la migración:', err);
+  const m = String(err?.message || err);
+
+  if (/PERMISSION_DENIED|permission/i.test(m)) {
+    morir(
+      'La clave no tiene permiso para leer o escribir Firestore.',
+      'Comprueba que la bajaste del proyecto correcto y que la cuenta de',
+      'servicio conserva su rol de editor.'
+    );
+  }
+  if (/NOT_FOUND|does not exist/i.test(m) && /database|project/i.test(m)) {
+    morir(
+      `No se encontró la base de datos del proyecto "${PROYECTO}".`,
+      'Revisa que el id del proyecto esté bien escrito.'
+    );
+  }
+  if (/ENOTFOUND|ECONNREFUSED|ETIMEDOUT|network/i.test(m)) {
+    morir('No se pudo conectar con Firestore.', 'Revisa tu conexión a internet y vuelve a intentar.');
+  }
+
+  // Lo que no reconocemos sí va completo: esconder un error raro es peor.
+  console.error('\n✗ Falló la migración por algo que no supe interpretar:\n');
+  console.error(err);
   process.exit(1);
 });
