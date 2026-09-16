@@ -140,6 +140,13 @@ export const SEED = {
       desc: "Registro anterior a que el formulario pidiera la fecha." }); delete b.fecha; return b; })(),
   },
 
+  // Fotos de una bitácora, en su subcolección (así se guardan desde v2.0.0).
+  // Sirve para comprobar que el respaldo del root las recoge.
+  "bitacoras/b_1/fotos": {
+    "0": { orden: 0, dataUrl: "data:image/webp;base64,UklGRhoAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA==", formato: "webp", bytes: 26, createdAt: ts(2) },
+    "1": { orden: 1, dataUrl: "data:image/webp;base64,UklGRhoAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA==", formato: "webp", bytes: 26, createdAt: ts(2) },
+  },
+
   inventario_herramientas: {
     t_1: {
       tecnicoId: "t_1", tecnicoNombre: "Juan Pérez", supervisorUid: "u_sup1", supervisorNombre: "Supervisor Uno",
