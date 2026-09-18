@@ -4,6 +4,8 @@
 import { db, auth, toast, logAudit, crearCuentaAux } from "./firebase.js";
 import { protegerPagina, cerrarSesion, contextoActual } from "./session.js";
 import { montarSelectorVerComo, bloqueaSiImpersona, deshabilitarControlesDeEscritura } from "./ver-como.js";
+import { montarSelectorPrueba } from "./prueba.js";
+import { conPrefijoPrueba } from "./prueba-data.js";
 import { cargarPlantillasDeCoordinador, opcionesDeSeccion } from "./plantilla.js";
 import { fechaDeBitacora, fechaEsInferida } from "./bitacora-data.js";
 import { mostrarNovedades } from "./novedades.js";
@@ -241,7 +243,10 @@ protegerPagina(null, async ({ user, perfil }) => {
       <div id="invites-list"></div>
       <h4 class="btn-row-titulo">👁️ Ver como</h4>
       <p class="meta" style="margin:0 0 10px">Navega la app con los datos reales de un coordinador o supervisor, sin pedirle su contraseña. Mientras tanto no podrás crear, editar ni borrar nada.</p>
-      <div id="ver-como-box"></div>`;
+      <div id="ver-como-box"></div>
+      <h4 class="btn-row-titulo">🧪 Modo de prueba</h4>
+      <p class="meta" style="margin:0 0 10px">Actúa como coordinador o supervisor con datos 100% inventados — nunca toca cuentas ni datos reales — para reproducir problemas de punta a punta.</p>
+      <div id="modo-prueba-box"></div>`;
     document.getElementById("titulo-lista").textContent = "Coordinadores";
 
     document.getElementById("btn-crear-coord").addEventListener("click", () => crearUsuarioDirecto("coordinador"));
@@ -251,6 +256,7 @@ protegerPagina(null, async ({ user, perfil }) => {
     cargarCoordinadores();
     cargarInvitaciones();
     montarSelectorVerComo(document.getElementById("ver-como-box"));
+    montarSelectorPrueba(document.getElementById("modo-prueba-box"));
   } else {
     const modBit = document.getElementById("modulo-bitacora");
     if (modBit) modBit.style.display = "none";
@@ -386,10 +392,11 @@ async function agregarTecnico() {
     await Promise.all(
       nombres.map((nombre) =>
         addDoc(collection(db, "tecnicos"), {
-          nombre,
+          nombre: sesion.enPrueba ? conPrefijoPrueba(nombre) : nombre,
           supervisorUid: sesion.real.user.uid,
           supervisorNombre: sesion.real.perfil.nombre,
           createdAt: serverTimestamp(),
+          ...(sesion.enPrueba ? { esPrueba: true } : {}),
         })
       )
     );
@@ -1013,6 +1020,7 @@ async function generarLinkSupervisor(supUid, supNombre) {
           activo: true,
           plantillaSnapshot: snapshot,
           createdAt: serverTimestamp(),
+          ...(sesion.enPrueba ? { esPrueba: true } : {}),
         });
         const link = new URL(`evaluar.html?e=${ref.id}`, location.href).href;
         logAudit("link_evaluacion_creado", { supervisorUid: supUid });
@@ -1059,9 +1067,13 @@ function crearUsuarioDirecto(rol) {
     btn.textContent = "Creando…";
     try {
       const uid = await crearCuentaAux(correo, pass);
-      const perfilDoc = { nombre, correo, rol, activo: true, createdAt: serverTimestamp() };
+      const perfilDoc = {
+        nombre: sesion.enPrueba ? conPrefijoPrueba(nombre) : nombre,
+        correo, rol, activo: true, createdAt: serverTimestamp(),
+      };
       if (rol === "coordinador") perfilDoc.rootUid = sesion.real.user.uid;
       else perfilDoc.coordinadorUid = sesion.real.user.uid;
+      if (sesion.enPrueba) perfilDoc.esPrueba = true;
       await setDoc(doc(db, "usuarios", uid), perfilDoc);
       logAudit("usuario_creado_directo", { rol, correo });
       toast(`${quien} creado ✓`);

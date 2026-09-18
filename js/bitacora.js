@@ -16,10 +16,11 @@ import {
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
+// `sesion` guarda la identidad EFECTIVA (la de "Ver como" o "Modo de
+// prueba" si alguno está activo). Las lecturas usan sesion.uid/sesion.perfil;
+// toda escritura que registre "quién hizo esto" usa sesion.real (spec 003 T4,
+// spec 004 T7) — nunca hay que atribuirle una bitácora a la persona vista.
 let sesion = null;
-// Bitácora se escribe siempre a nombre de la sesión real (spec 003, T4):
-// este flag es solo para bloquear el envío mientras "Ver como" está activo.
-let impersonando = false;
 // Cada foto: { dataUrl, formato, bytes }. Guardar formato y peso permite
 // comprobar después, con fotos reales, si la compresión rinde en campo.
 let fotos = [];
@@ -40,15 +41,14 @@ function setMsg(elemId, tipo, texto) {
 
 // ── Inicialización y protección de sesión ──
 protegerPagina("supervisor", (s) => {
-  sesion = s;
-  impersonando = contextoActual(s).impersonando;
-  document.getElementById("sup-info").textContent = `Supervisor: ${sesion.perfil.nombre || sesion.user.email}`;
-  document.getElementById("campo-supervisor").value = sesion.perfil.nombre || sesion.user.email;
+  sesion = contextoActual(s);
+  document.getElementById("sup-info").textContent = `Supervisor: ${sesion.perfil.nombre || sesion.real.user.email}`;
+  document.getElementById("campo-supervisor").value = sesion.perfil.nombre || sesion.real.user.email;
 
   poblarSelectores();
   inicializarFecha();
   vincularEventos();
-  deshabilitarControlesDeEscritura({ impersonando }, ["btn-siguiente"]);
+  deshabilitarControlesDeEscritura(sesion, ["btn-siguiente"]);
 });
 
 // ── Fecha de la actividad: hoy por defecto, sin permitir futuro ──
@@ -360,7 +360,7 @@ function vincularEventos() {
   // Envío del formulario
   document.getElementById("form-bitacora").addEventListener("submit", async (e) => {
     e.preventDefault();
-    if (bloqueaSiImpersona({ impersonando })) return;
+    if (bloqueaSiImpersona(sesion)) return;
     setMsg("msg-paso-2", "", "");
 
     const zonaChecked = document.querySelector("input[name='zona']:checked");
@@ -406,8 +406,8 @@ function vincularEventos() {
 
     try {
       const docData = {
-        supervisorUid: sesion.user.uid,
-        supervisorNombre: sesion.perfil.nombre || sesion.user.email,
+        supervisorUid: sesion.real.user.uid,
+        supervisorNombre: sesion.real.perfil.nombre || sesion.real.user.email,
         coordinadorUid: sesion.perfil.coordinadorUid || null,
         fecha,
         zona: zonaChecked ? zonaChecked.value : "",
@@ -425,6 +425,7 @@ function vincularEventos() {
         // la subcolección "fotos", y el padre solo guarda cuántas son.
         numFotos: fotos.length,
         createdAt: serverTimestamp(),
+        ...(sesion.enPrueba ? { esPrueba: true } : {}),
       };
 
       const ref = await addDoc(collection(db, "bitacoras"), docData);
@@ -432,7 +433,7 @@ function vincularEventos() {
       logAudit("bitacora_creada", {
         tipoMacro,
         actividadEspecifica: subActividad,
-        supervisor: sesion.perfil.nombre,
+        supervisor: sesion.real.perfil.nombre,
       });
 
       // La bitácora ya está guardada: si alguna foto falló se dice, pero no se

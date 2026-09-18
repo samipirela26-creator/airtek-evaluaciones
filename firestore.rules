@@ -41,12 +41,26 @@ service cloud.firestore {
           && (request.resource.data.rol == 'supervisor' || request.resource.data.rol == 'coordinador')
           && exists(/databases/$(database)/documents/invitaciones/$(request.resource.data.inviteToken))
           && invit(request.resource.data.inviteToken).usadoPor == request.auth.uid
-          && invit(request.resource.data.inviteToken).rol == request.resource.data.rol)
+          && invit(request.resource.data.inviteToken).rol == request.resource.data.rol
+          // El coordinador/root que el perfil nuevo declara como suyo tiene
+          // que ser quien de verdad generó la invitación (spec 005) — si
+          // no, cualquier invitación válida serviría para adjuntarse a
+          // cualquier coordinador o root que exista, no solo al que invitó.
+          && (
+            (request.resource.data.rol == 'supervisor'
+              && request.resource.data.coordinadorUid == invit(request.resource.data.inviteToken).creadorUid)
+            || (request.resource.data.rol == 'coordinador'
+              && request.resource.data.rootUid == invit(request.resource.data.inviteToken).creadorUid)
+          ))
         // 2) El root crea un coordinador directamente
         || (esRoot() && request.resource.data.rol == 'coordinador')
         // 3) El coordinador crea un supervisor directamente (ligado a él)
         || (esCoordinador() && activo() && request.resource.data.rol == 'supervisor'
-            && request.resource.data.coordinadorUid == request.auth.uid);
+            && request.resource.data.coordinadorUid == request.auth.uid)
+        // 4) root crea un supervisor DE PRUEBA, ligado a sí mismo (spec 004)
+        || (esRoot() && request.resource.data.rol == 'supervisor'
+            && request.resource.data.coordinadorUid == request.auth.uid
+            && request.resource.data.esPrueba == true);
       // Actualizar nombre: el dueño, su coordinador o el root. El rol NO cambia.
       allow update: if request.auth != null
                     && (request.auth.uid == uid || esCoordinador() || esRoot())
@@ -62,17 +76,27 @@ service cloud.firestore {
     // cada coordinador crea/edita/borra SOLO los suyos.
     match /plantillas/{id} {
       allow read: if request.auth != null;
-      allow create: if esCoordinador() && activo()
-                    && request.resource.data.coordinadorUid == request.auth.uid;
-      allow update, delete: if esCoordinador() && activo()
-                            && resource.data.coordinadorUid == request.auth.uid;
+      // El coordinador crea/edita las suyas; root, solo las DE PRUEBA que
+      // haya creado a su propio nombre (spec 004 — root no tiene atajo aquí
+      // más allá de eso: a diferencia de otras colecciones, nunca pudo
+      // tocar plantillas reales de nadie).
+      allow create: if (esCoordinador() && activo()
+                        && request.resource.data.coordinadorUid == request.auth.uid)
+                    || (esRoot() && request.resource.data.coordinadorUid == request.auth.uid
+                        && request.resource.data.esPrueba == true);
+      allow update, delete: if (esCoordinador() && activo()
+                                && resource.data.coordinadorUid == request.auth.uid)
+                            || (esRoot() && resource.data.coordinadorUid == request.auth.uid
+                                && resource.data.esPrueba == true);
     }
 
     // Invitaciones: el root invita coordinadores; el coordinador, supervisores.
     match /invitaciones/{token} {
       allow read: if true;                 // se valida antes de tener sesión
       allow create: if ((esRoot() && request.resource.data.rol == 'coordinador')
-                    || (esCoordinador() && request.resource.data.rol == 'supervisor'))
+                    || (esCoordinador() && request.resource.data.rol == 'supervisor')
+                    // root invita un supervisor DE PRUEBA (spec 004)
+                    || (esRoot() && request.resource.data.rol == 'supervisor'))
                     && activo();
       // Reclamo atómico de un solo uso: solo se puede pasar de sin-usar a
       // usada, y quien la reclama se pone como usadoPor (a prueba de carreras).
@@ -209,8 +233,11 @@ service cloud.firestore {
     // a un supervisor. Se leen sin sesión (la página pública carga el formulario).
     match /enlaces/{token} {
       allow read: if true;
-      allow create: if esCoordinador() && activo()
-                    && request.resource.data.creadorUid == request.auth.uid;
+      allow create: if (esCoordinador() && activo()
+                        && request.resource.data.creadorUid == request.auth.uid)
+                    // root genera un enlace DE PRUEBA, ligado a sí mismo (spec 004)
+                    || (esRoot() && request.resource.data.creadorUid == request.auth.uid
+                        && request.resource.data.esPrueba == true);
       allow update, delete: if request.auth != null && resource.data.creadorUid == request.auth.uid;
     }
 

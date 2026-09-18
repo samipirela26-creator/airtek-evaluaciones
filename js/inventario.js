@@ -352,12 +352,13 @@ async function guardarHerramientas() {
       tecnicoNombre: tecnicoActual.nombre || "",
       supervisorUid: tecnicoActual.supervisorUid,
       supervisorNombre: tecnicoActual.supervisorNombre || "",
-      coordinadorUid: sesion.real.perfil.rol === "coordinador"
+      coordinadorUid: sesion.perfil.rol === "coordinador"
         ? sesion.real.user.uid
-        : (sesion.real.perfil.coordinadorUid || null),
+        : (sesion.perfil.coordinadorUid || null),
       items,
       actualizadoPor: sesion.real.user.uid,
       actualizadoEn: serverTimestamp(),
+      ...(sesion.enPrueba ? { esPrueba: true } : {}),
     });
     logAudit("inventario_herramientas_guardado", {
       tecnico: tecnicoActual.nombre,
@@ -413,14 +414,15 @@ async function guardarMateriales() {
       tecnicoNombre: tecnicoActual.nombre || "",
       supervisorUid: tecnicoActual.supervisorUid,
       supervisorNombre: tecnicoActual.supervisorNombre || "",
-      coordinadorUid: sesion.real.perfil.rol === "coordinador"
+      coordinadorUid: sesion.perfil.rol === "coordinador"
         ? sesion.real.user.uid
-        : (sesion.real.perfil.coordinadorUid || null),
+        : (sesion.perfil.coordinadorUid || null),
       fecha,
       nota,
       items,
       registradoPor: sesion.real.user.uid,
       createdAt: serverTimestamp(),
+      ...(sesion.enPrueba ? { esPrueba: true } : {}),
     });
     logAudit("inventario_material_entregado", { tecnico: tecnicoActual.nombre, renglones: items.length });
     toast("Entrega registrada ✓");

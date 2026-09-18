@@ -29,6 +29,8 @@ const ACCIONES = {
   usuario_creado_directo: "Usuario creado directamente",
   ver_como_inicio: "Ver como: inicio",
   ver_como_fin: "Ver como: fin",
+  modo_prueba_inicio: "Modo de prueba: inicio",
+  modo_prueba_fin: "Modo de prueba: fin",
 };
 
 protegerPagina("root", async () => {

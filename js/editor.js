@@ -8,6 +8,7 @@ import { db, toast, logAudit } from "./firebase.js";
 import { protegerPagina, contextoActual } from "./session.js";
 import { cargarPlantillasDeCoordinador, opcionesDeSeccion, PLANTILLA_DEFAULT, ESCALAS } from "./plantilla.js";
 import { bloqueaSiImpersona, deshabilitarControlesDeEscritura } from "./ver-como.js";
+import { conPrefijoPrueba } from "./prueba-data.js";
 import {
   doc,
   setDoc,
@@ -212,6 +213,7 @@ async function migrarPuntajes(forms) {
         version: (f.version || 0) + 1,
         actualizadaPor: sesion.real.perfil.nombre,
         actualizadaEn: serverTimestamp(),
+        ...(f.esPrueba ? { esPrueba: true } : {}), // setDoc reemplaza todo: no perderlo al migrar
       });
       ok++;
     } catch (err) {
@@ -476,7 +478,7 @@ async function guardar() {
   }
 
   const registro = {
-    nombre: P.nombre,
+    nombre: sesion.enPrueba ? conPrefijoPrueba(P.nombre) : P.nombre,
     tipo: P.tipo || "tecnico",
     datos: P.datos,
     secciones: P.secciones,
@@ -485,6 +487,10 @@ async function guardar() {
     version: (P.version || 0) + 1,
     actualizadaPor: sesion.real.perfil.nombre,
     actualizadaEn: serverTimestamp(),
+    // `setDoc` reemplaza el documento entero: sin esto, reeditar una
+    // plantilla de prueba ya creada perdería la marca en el primer guardado
+    // posterior (P.esPrueba viaja solo cuando se carga una existente).
+    ...(sesion.enPrueba || P.esPrueba ? { esPrueba: true } : {}),
   };
 
   const btns = [document.getElementById("btn-guardar"), document.getElementById("btn-guardar-2")].filter(Boolean);

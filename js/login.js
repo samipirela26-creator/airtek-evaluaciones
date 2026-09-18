@@ -4,6 +4,8 @@ import {
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
   onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 
 const form = document.getElementById("form-login");
@@ -52,3 +54,36 @@ document.getElementById("link-olvide").addEventListener("click", async (e) => {
     msg.innerHTML = `<div class="msg error">No se pudo enviar: ${t}</div>`;
   }
 });
+
+// Ver / ocultar contraseña
+const btnToggle = document.getElementById("btn-toggle-password");
+if (btnToggle) {
+  const pwdInput = document.getElementById("password");
+  const iconEye = btnToggle.querySelector(".icon-eye");
+  const iconEyeOff = btnToggle.querySelector(".icon-eye-off");
+
+  btnToggle.addEventListener("click", () => {
+    const isPassword = pwdInput.type === "password";
+    pwdInput.type = isPassword ? "text" : "password";
+    if (iconEye && iconEyeOff) {
+      iconEye.style.display = isPassword ? "none" : "block";
+      iconEyeOff.style.display = isPassword ? "block" : "none";
+    }
+  });
+}
+
+// Inicio de sesión con Google
+const btnGoogle = document.getElementById("btn-google");
+if (btnGoogle) {
+  btnGoogle.addEventListener("click", async () => {
+    msg.innerHTML = "";
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+      window.location.href = "panel.html";
+    } catch (err) {
+      if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") return;
+      msg.innerHTML = `<div class="msg error">No se pudo iniciar sesión con Google: ${err.message}</div>`;
+    }
+  });
+}

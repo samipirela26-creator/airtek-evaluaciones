@@ -46,6 +46,10 @@ Por ahora los usuarios se crean a mano (aún no hay pantalla de registro):
    ```
    Repite por cada supervisor y por el coordinador.
 
+> Para reemplazar a alguien que deja su puesto por otra persona, conservando
+> todo su historial (evaluaciones, bitácoras, técnicos, inventario), no crees
+> una cuenta nueva — ver [docs/reemplazar-usuario.md](docs/reemplazar-usuario.md).
+
 ### 3. Reglas de seguridad de Firestore
 En **Firestore → Reglas**, pega el contenido de `firestore.rules` y publica.
 Esto asegura que solo usuarios autenticados lean/escriban, que un supervisor no
