@@ -2,11 +2,12 @@
 // Mide la calidad de las evaluaciones y el posible sesgo de cada supervisor.
 // La actividad de campo se mide aparte, en bitacora-tablero.js.
 import { db } from "./firebase.js";
-import { protegerPagina } from "./session.js";
+import { protegerPagina, contextoActual } from "./session.js";
 import { misSupervisores, traerPorLotes } from "./consultas.js";
 import { barChart, AZUL, PALETA, SIN_DATOS } from "./graficas.js";
 
-protegerPagina("coordinador", async ({ user }) => {
+protegerPagina("coordinador", async ({ user, perfil }) => {
+  const sesion = contextoActual({ user, perfil });
   // ── Estado de carga ──
   const vacio = document.getElementById("vacio");
   vacio.innerHTML = `<div class="card lista-vacia">Cargando datos…</div>`;
@@ -14,7 +15,7 @@ protegerPagina("coordinador", async ({ user }) => {
   let evals = [];
   try {
     // Solo MIS supervisores (no los de otros coordinadores).
-    const supUids = (await misSupervisores(db, user.uid)).map((s) => s.uid);
+    const supUids = (await misSupervisores(db, sesion.uid)).map((s) => s.uid);
     evals = await traerPorLotes(db, "evaluaciones", "supervisorUid", supUids);
   } catch (err) {
     vacio.innerHTML = `<div class="msg error">No se pudieron cargar los datos: ${err.message}</div>`;

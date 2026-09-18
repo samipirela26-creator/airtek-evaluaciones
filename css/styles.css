@@ -11,6 +11,7 @@
   --texto2: #8a8a9a;     /* texto secundario/etiquetas */
   --ok: #059669;
   --error: #dc2626;
+  --advertencia: #b45309;   /* naranja del aviso de "Ver como" (spec 003) */
   --sombra: 0 2px 12px rgba(0, 0, 0, 0.06);
   --sombra-btn: 0 4px 14px rgba(0, 102, 255, 0.25);
 }
@@ -42,6 +43,34 @@ body {
 }
 .topbar .marca { font-weight: 700; font-size: 1.1rem; letter-spacing: 0.5px; }
 .topbar .usuario { font-size: 0.9rem; opacity: 0.95; }
+
+/* Aviso de modo "Ver como" (spec 003): se inserta justo debajo de la topbar
+   en cualquier página mientras root navega con los datos de otra persona. */
+.banner-ver-como {
+  background: #fef3c7;
+  color: var(--advertencia);
+  border-bottom: 2px solid var(--advertencia);
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-align: center;
+}
+.banner-ver-como button {
+  background: var(--advertencia);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
 
 .contenedor { max-width: 600px; margin: 0 auto; padding: 18px 16px 40px; }
 

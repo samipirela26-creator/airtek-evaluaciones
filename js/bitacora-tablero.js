@@ -3,7 +3,7 @@
 // El tablero de evaluaciones (dashboard.js) mide otra cosa y vive aparte.
 
 import { db } from "./firebase.js";
-import { protegerPagina } from "./session.js";
+import { protegerPagina, contextoActual } from "./session.js";
 import { misSupervisores, traerPorLotes } from "./consultas.js";
 import { barChart, donaChart, acortar, AZUL } from "./graficas.js";
 import { filasACSV, descargarCSV, nombreConFecha } from "./exportar-csv.js";
@@ -29,13 +29,14 @@ function primerDiaDelMes() {
   return hoyISO(new Date(d.getFullYear(), d.getMonth(), 1));
 }
 
-protegerPagina("coordinador", async ({ user }) => {
+protegerPagina("coordinador", async ({ user, perfil }) => {
+  const sesion = contextoActual({ user, perfil });
   const vacio = document.getElementById("vacio");
   vacio.innerHTML = `<div class="card lista-vacia">Cargando bitácoras…</div>`;
 
   let supervisores = [];
   try {
-    supervisores = await misSupervisores(db, user.uid);
+    supervisores = await misSupervisores(db, sesion.uid);
     const uids = supervisores.map((s) => s.uid);
     todas = await traerPorLotes(db, "bitacoras", "supervisorUid", uids);
   } catch (err) {

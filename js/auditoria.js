@@ -27,6 +27,8 @@ const ACCIONES = {
   reset_contrasena_enviado: "Restablecimiento de contraseña enviado",
   usuario_eliminado: "Usuario eliminado",
   usuario_creado_directo: "Usuario creado directamente",
+  ver_como_inicio: "Ver como: inicio",
+  ver_como_fin: "Ver como: fin",
 };
 
 protegerPagina("root", async () => {

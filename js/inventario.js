@@ -6,8 +6,9 @@
 //  · Materiales   → un documento por ENTREGA (historial de consumo).
 
 import { db, toast, logAudit } from "./firebase.js";
-import { protegerPagina } from "./session.js";
+import { protegerPagina, contextoActual } from "./session.js";
 import { misSupervisores, traerPorLotes } from "./consultas.js";
+import { bloqueaSiImpersona, deshabilitarControlesDeEscritura } from "./ver-como.js";
 import {
   HERRAMIENTAS,
   CATEGORIAS_HERRAMIENTAS,
@@ -51,28 +52,29 @@ function setMsg(id, tipo, texto) {
 }
 
 protegerPagina(["supervisor", "coordinador"], async (s) => {
-  sesion = s;
-  const esCoord = s.perfil.rol === "coordinador";
+  sesion = contextoActual(s);
+  const esCoord = sesion.perfil.rol === "coordinador";
   document.getElementById("sup-info").textContent = esCoord
-    ? `Coordinador: ${s.perfil.nombre || s.user.email} · técnicos de todos tus supervisores`
-    : `Supervisor: ${s.perfil.nombre || s.user.email}`;
+    ? `Coordinador: ${sesion.perfil.nombre || sesion.real.user.email} · técnicos de todos tus supervisores`
+    : `Supervisor: ${sesion.perfil.nombre || sesion.real.user.email}`;
 
   document.getElementById("fecha-entrega").value = hoyISO();
   document.getElementById("fecha-entrega").max = hoyISO();
 
   await cargarTecnicos(esCoord);
   vincularEventos();
+  deshabilitarControlesDeEscritura(sesion, ["btn-guardar-herramientas", "btn-guardar-materiales"]);
 });
 
 async function cargarTecnicos(esCoord) {
   const sel = document.getElementById("sel-tecnico");
   try {
     if (esCoord) {
-      const uids = (await misSupervisores(db, sesion.user.uid)).map((x) => x.uid);
+      const uids = (await misSupervisores(db, sesion.uid)).map((x) => x.uid);
       tecnicos = await traerPorLotes(db, "tecnicos", "supervisorUid", uids);
     } else {
       const snap = await getDocs(
-        query(collection(db, "tecnicos"), where("supervisorUid", "==", sesion.user.uid))
+        query(collection(db, "tecnicos"), where("supervisorUid", "==", sesion.uid))
       );
       tecnicos = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
     }
@@ -135,12 +137,14 @@ function renderHerramientas(guardado) {
         </div>`;
     }).join("");
 
-    return `<details class="card cat-inventario">
+    return `<details class="card cat-inventario" data-categoria="${esc(cat)}">
       <summary><h3>${esc(cat)}</h3><span class="badge">${items.length}</span></summary>
       ${filas}
     </details>`;
   }).join("");
 
+  llenarSelectCategorias("sel-categoria-herr", CATEGORIAS_HERRAMIENTAS);
+  filtrarPorCategoria(cont, "");
   indexarCampos(cont);
 
   cont.querySelectorAll("input[type=number]").forEach((inp) =>
@@ -218,7 +222,8 @@ function actualizarResumen() {
 }
 
 function renderMateriales() {
-  document.getElementById("lista-materiales").innerHTML = CATEGORIAS_MATERIALES.map((cat) => {
+  const cont = document.getElementById("lista-materiales");
+  cont.innerHTML = CATEGORIAS_MATERIALES.map((cat) => {
     const items = MATERIALES_USO_DIARIO.filter((m) => m.categoria === cat);
     const filas = items.map((m) => `
       <div class="lista-item" style="display:flex;gap:10px;align-items:center">
@@ -233,11 +238,37 @@ function renderMateriales() {
           ${unidadDe(m) ? `<span class="meta" style="font-size:.75rem;white-space:nowrap">${esc(unidadDe(m))}</span>` : ""}
         </div>
       </div>`).join("");
-    return `<details class="card cat-inventario">
+    return `<details class="card cat-inventario" data-categoria="${esc(cat)}">
       <summary><h3>${esc(cat)}</h3><span class="badge">${items.length}</span></summary>
       ${filas}
     </details>`;
   }).join("");
+
+  llenarSelectCategorias("sel-categoria-mat", CATEGORIAS_MATERIALES);
+  filtrarPorCategoria(cont, "");
+}
+
+// Llena el <select> de categorías una sola vez (si ya tiene opciones, no repite).
+function llenarSelectCategorias(idSelect, categorias) {
+  const sel = document.getElementById(idSelect);
+  if (sel.dataset.listo) return;
+  categorias.forEach((cat) => {
+    const opt = document.createElement("option");
+    opt.value = cat;
+    opt.textContent = cat;
+    sel.appendChild(opt);
+  });
+  sel.dataset.listo = "1";
+}
+
+// Muestra solo la categoría elegida (abierta) y esconde el resto.
+// Con "" (todas) se ven todas las categorías cerradas, como antes.
+function filtrarPorCategoria(cont, categoria) {
+  cont.querySelectorAll(":scope > details[data-categoria]").forEach((det) => {
+    const esElegida = !categoria || det.dataset.categoria === categoria;
+    det.style.display = esElegida ? "" : "none";
+    det.open = !!categoria && esElegida;
+  });
 }
 
 // ── Carga y guardado ──
@@ -307,6 +338,7 @@ function mostrarPestana(cual) {
 }
 
 async function guardarHerramientas() {
+  if (bloqueaSiImpersona(sesion)) return;
   if (!tecnicoActual) return;
   const btn = document.getElementById("btn-guardar-herramientas");
   const items = renglonesConDatos(leerRenglonesHerramientas());
@@ -320,11 +352,11 @@ async function guardarHerramientas() {
       tecnicoNombre: tecnicoActual.nombre || "",
       supervisorUid: tecnicoActual.supervisorUid,
       supervisorNombre: tecnicoActual.supervisorNombre || "",
-      coordinadorUid: sesion.perfil.rol === "coordinador"
-        ? sesion.user.uid
-        : (sesion.perfil.coordinadorUid || null),
+      coordinadorUid: sesion.real.perfil.rol === "coordinador"
+        ? sesion.real.user.uid
+        : (sesion.real.perfil.coordinadorUid || null),
       items,
-      actualizadoPor: sesion.user.uid,
+      actualizadoPor: sesion.real.user.uid,
       actualizadoEn: serverTimestamp(),
     });
     logAudit("inventario_herramientas_guardado", {
@@ -345,6 +377,7 @@ async function guardarHerramientas() {
 }
 
 async function guardarMateriales() {
+  if (bloqueaSiImpersona(sesion)) return;
   if (!tecnicoActual) return;
   const fecha = document.getElementById("fecha-entrega").value;
   const nota = document.getElementById("nota-entrega").value.trim();
@@ -380,13 +413,13 @@ async function guardarMateriales() {
       tecnicoNombre: tecnicoActual.nombre || "",
       supervisorUid: tecnicoActual.supervisorUid,
       supervisorNombre: tecnicoActual.supervisorNombre || "",
-      coordinadorUid: sesion.perfil.rol === "coordinador"
-        ? sesion.user.uid
-        : (sesion.perfil.coordinadorUid || null),
+      coordinadorUid: sesion.real.perfil.rol === "coordinador"
+        ? sesion.real.user.uid
+        : (sesion.real.perfil.coordinadorUid || null),
       fecha,
       nota,
       items,
-      registradoPor: sesion.user.uid,
+      registradoPor: sesion.real.user.uid,
       createdAt: serverTimestamp(),
     });
     logAudit("inventario_material_entregado", { tecnico: tecnicoActual.nombre, renglones: items.length });
@@ -410,4 +443,8 @@ function vincularEventos() {
   document.getElementById("tab-materiales").addEventListener("click", () => mostrarPestana("materiales"));
   document.getElementById("btn-guardar-herramientas").addEventListener("click", guardarHerramientas);
   document.getElementById("btn-guardar-materiales").addEventListener("click", guardarMateriales);
+  document.getElementById("sel-categoria-herr").addEventListener("change", (e) =>
+    filtrarPorCategoria(document.getElementById("lista-herramientas"), e.target.value));
+  document.getElementById("sel-categoria-mat").addEventListener("change", (e) =>
+    filtrarPorCategoria(document.getElementById("lista-materiales"), e.target.value));
 }

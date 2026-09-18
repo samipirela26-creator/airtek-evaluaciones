@@ -1,6 +1,7 @@
 // detalle.js — muestra una evaluación completa (solo lectura) y la exporta a PDF.
 import { db, toast, logAudit } from "./firebase.js";
-import { protegerPagina } from "./session.js";
+import { protegerPagina, contextoActual } from "./session.js";
+import { bloqueaSiImpersona, deshabilitarControlesDeEscritura } from "./ver-como.js";
 import {
   doc,
   getDoc,
@@ -13,8 +14,12 @@ function esc(s) {
 
 const id = new URLSearchParams(location.search).get("id");
 let E = null; // la evaluación
+// Solo para bloquear el borrado mientras "Ver como" está activo (RF-8/RF-9)
+// — a quién pertenece "editar" ya se decide con la identidad real (T4).
+let impersonando = false;
 
 protegerPagina(null, async ({ user, perfil }) => {
+  impersonando = contextoActual({ user, perfil }).impersonando;
   const cont = document.getElementById("detalle");
   if (!id) {
     cont.innerHTML = `<div class="msg error">Falta el identificador de la evaluación.</div>`;
@@ -30,11 +35,13 @@ protegerPagina(null, async ({ user, perfil }) => {
     render(cont);
     document.getElementById("btn-pdf").addEventListener("click", generarPDF);
     document.getElementById("btn-eliminar").addEventListener("click", eliminar);
+    deshabilitarControlesDeEscritura({ impersonando }, ["btn-eliminar"]);
     // El supervisor dueño puede editar su evaluación.
     if (perfil.rol === "supervisor" && E.supervisorUid === user.uid) {
       const be = document.getElementById("btn-editar");
       be.style.display = "";
       be.addEventListener("click", () => (window.location.href = `evaluacion.html?edit=${id}`));
+      deshabilitarControlesDeEscritura({ impersonando }, ["btn-editar"]);
     }
   } catch (err) {
     console.error(err);
@@ -43,6 +50,7 @@ protegerPagina(null, async ({ user, perfil }) => {
 });
 
 async function eliminar() {
+  if (bloqueaSiImpersona({ impersonando })) return;
   if (!confirm("¿Eliminar esta evaluación? No se puede deshacer.")) return;
   try {
     await deleteDoc(doc(db, "evaluaciones", id));

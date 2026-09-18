@@ -1,6 +1,7 @@
 // evaluacion.js — renderiza la plantilla, recoge respuestas, calcula puntajes y guarda.
 import { db, toast } from "./firebase.js";
-import { protegerPagina } from "./session.js";
+import { protegerPagina, contextoActual } from "./session.js";
+import { bloqueaSiImpersona, deshabilitarControlesDeEscritura } from "./ver-como.js";
 import { cargarPlantillasDeCoordinador, opcionesDeSeccion, PLANTILLA_DEFAULT } from "./plantilla.js";
 import {
   collection,
@@ -16,6 +17,9 @@ let plantillasDisponibles = [];
 let P = null;
 
 let sesion = null; // { user, perfil }
+// La evaluación se escribe siempre a nombre de la sesión real (spec 003,
+// T4): este flag es solo para bloquear el envío mientras "Ver como" está activo.
+let impersonando = false;
 const firmas = {}; // guarda los controladores de cada canvas
 let tecnicoId = null; // técnico seleccionado (viene en ?tecnico=ID)
 let tecnicoPre = null; // nombre pre-cargado de ese técnico
@@ -26,6 +30,7 @@ let evalCargada = null; // datos de la evaluación que se está editando
 // Solo supervisores evalúan.
 protegerPagina("supervisor", async (s) => {
   sesion = s;
+  impersonando = contextoActual(s).impersonando;
   const forms = await cargarPlantillasDeCoordinador(db, sesion.perfil.coordinadorUid);
   // Solo formularios para evaluar TÉCNICOS (no los privados de supervisores).
   const propios = forms.filter((f) => (f.tipo || "tecnico") === "tecnico");
@@ -64,6 +69,7 @@ protegerPagina("supervisor", async (s) => {
   }
   render();
   if (evalCargada) prellenar();
+  deshabilitarControlesDeEscritura({ impersonando }, ["btn-guardar"]);
 });
 
 // Configuración fija (una sola vez): firmas y submit.
@@ -307,6 +313,7 @@ function calcularPuntajes(respuestas) {
 // ---- Guardar ----
 async function guardar(e) {
   e.preventDefault();
+  if (bloqueaSiImpersona({ impersonando })) return;
   const msg = document.getElementById("mensaje");
   const btn = document.getElementById("btn-guardar");
   msg.innerHTML = "";

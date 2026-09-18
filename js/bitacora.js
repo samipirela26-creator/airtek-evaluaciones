@@ -1,6 +1,7 @@
 // bitacora.js — Controlador de Bitácora de Supervisión (Paso 1 y Paso 2).
 import { db, toast, logAudit } from "./firebase.js";
-import { protegerPagina } from "./session.js";
+import { protegerPagina, contextoActual } from "./session.js";
+import { bloqueaSiImpersona, deshabilitarControlesDeEscritura } from "./ver-como.js";
 import {
   ZONAS,
   NODOS,
@@ -16,6 +17,9 @@ import {
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
 let sesion = null;
+// Bitácora se escribe siempre a nombre de la sesión real (spec 003, T4):
+// este flag es solo para bloquear el envío mientras "Ver como" está activo.
+let impersonando = false;
 // Cada foto: { dataUrl, formato, bytes }. Guardar formato y peso permite
 // comprobar después, con fotos reales, si la compresión rinde en campo.
 let fotos = [];
@@ -37,12 +41,14 @@ function setMsg(elemId, tipo, texto) {
 // ── Inicialización y protección de sesión ──
 protegerPagina("supervisor", (s) => {
   sesion = s;
+  impersonando = contextoActual(s).impersonando;
   document.getElementById("sup-info").textContent = `Supervisor: ${sesion.perfil.nombre || sesion.user.email}`;
   document.getElementById("campo-supervisor").value = sesion.perfil.nombre || sesion.user.email;
 
   poblarSelectores();
   inicializarFecha();
   vincularEventos();
+  deshabilitarControlesDeEscritura({ impersonando }, ["btn-siguiente"]);
 });
 
 // ── Fecha de la actividad: hoy por defecto, sin permitir futuro ──
@@ -354,6 +360,7 @@ function vincularEventos() {
   // Envío del formulario
   document.getElementById("form-bitacora").addEventListener("submit", async (e) => {
     e.preventDefault();
+    if (bloqueaSiImpersona({ impersonando })) return;
     setMsg("msg-paso-2", "", "");
 
     const zonaChecked = document.querySelector("input[name='zona']:checked");

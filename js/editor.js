@@ -5,8 +5,9 @@
 //  · reordenar secciones y preguntas con flechas
 //  · edición sin saltos de scroll
 import { db, toast, logAudit } from "./firebase.js";
-import { protegerPagina } from "./session.js";
+import { protegerPagina, contextoActual } from "./session.js";
 import { cargarPlantillasDeCoordinador, opcionesDeSeccion, PLANTILLA_DEFAULT, ESCALAS } from "./plantilla.js";
+import { bloqueaSiImpersona, deshabilitarControlesDeEscritura } from "./ver-como.js";
 import {
   doc,
   setDoc,
@@ -28,7 +29,7 @@ const PRESETS = [
 ];
 
 protegerPagina("coordinador", (s) => {
-  sesion = s;
+  sesion = contextoActual(s);
   verLista();
 });
 
@@ -57,7 +58,7 @@ async function verLista() {
   P = null;
   const cont = document.getElementById("editor");
   cont.innerHTML = "Cargando…";
-  const forms = await cargarPlantillasDeCoordinador(db, sesion.user.uid);
+  const forms = await cargarPlantillasDeCoordinador(db, sesion.uid);
 
   let html = `<div class="card"><button class="btn" id="btn-nuevo">+ Crear formulario</button></div>`;
   // Herramienta: actualizar los puntajes viejos (1/4/7/10) a la nueva escala (0/6/8/10).
@@ -94,8 +95,16 @@ async function verLista() {
       .join("") + `</div>`;
   }
   cont.innerHTML = html;
+  deshabilitarControlesDeEscritura(sesion, ["btn-nuevo", "btn-migrar", "btn-duplicar-oficial"]);
+  if (sesion.impersonando) {
+    cont.querySelectorAll("[data-editar], [data-eliminar]").forEach((el) => {
+      el.disabled = true;
+      el.title = "No disponible mientras ves la app como otra persona";
+    });
+  }
 
   document.getElementById("btn-nuevo").addEventListener("click", () => {
+    if (bloqueaSiImpersona(sesion)) return;
     // Formulario EN BLANCO: el usuario lo llena desde cero (una sección vacía).
     // Los datos del encabezado (técnico, fecha, orden, área…) se conservan porque
     // la evaluación los necesita, pero no aparecen en el editor.
@@ -115,6 +124,7 @@ async function verLista() {
   });
   document.getElementById("btn-migrar").addEventListener("click", () => migrarPuntajes(forms));
   document.getElementById("btn-duplicar-oficial").addEventListener("click", () => {
+    if (bloqueaSiImpersona(sesion)) return;
     P = clonar(PLANTILLA_DEFAULT);
     P.id = null;
     P.oficial = false;
@@ -124,6 +134,7 @@ async function verLista() {
   });
   cont.querySelectorAll("[data-editar]").forEach((b) =>
     b.addEventListener("click", () => {
+      if (bloqueaSiImpersona(sesion)) return;
       P = clonar(forms.find((x) => x.id === b.dataset.editar));
       normalizarColumnas(P);
       verEditor();
@@ -131,6 +142,7 @@ async function verLista() {
   );
   cont.querySelectorAll("[data-eliminar]").forEach((b) =>
     b.addEventListener("click", async () => {
+      if (bloqueaSiImpersona(sesion)) return;
       if (!confirm("¿Eliminar este formulario? Las evaluaciones ya hechas con él se conservan.")) return;
       try {
         await deleteDoc(doc(db, "plantillas", b.dataset.eliminar));
@@ -153,6 +165,7 @@ const REMAP_PUNTAJES = {
 };
 
 async function migrarPuntajes(forms) {
+  if (bloqueaSiImpersona(sesion)) return;
   const msg = document.getElementById("mensaje");
   if (!forms.length) {
     msg.innerHTML = `<div class="msg ok">No tienes formularios personalizados guardados. El formulario oficial de Airtek ya usa la escala nueva. ✓</div>`;
@@ -195,9 +208,9 @@ async function migrarPuntajes(forms) {
         datos: f.datos || [],
         secciones: f.secciones,
         siNo: f.siNo || { id: "conoceCanales", label: "" },
-        coordinadorUid: sesion.user.uid,
+        coordinadorUid: sesion.real.user.uid,
         version: (f.version || 0) + 1,
-        actualizadaPor: sesion.perfil.nombre,
+        actualizadaPor: sesion.real.perfil.nombre,
         actualizadaEn: serverTimestamp(),
       });
       ok++;
@@ -444,6 +457,7 @@ function agregarSeccion() {
 }
 
 async function guardar() {
+  if (bloqueaSiImpersona(sesion)) return;
   const msg = document.getElementById("mensaje");
   msg.innerHTML = "";
   const error = (t) => { msg.innerHTML = `<div class="msg error">${t}</div>`; msg.scrollIntoView({ behavior: "smooth", block: "center" }); };
@@ -467,9 +481,9 @@ async function guardar() {
     datos: P.datos,
     secciones: P.secciones,
     siNo: P.siNo,
-    coordinadorUid: sesion.user.uid,
+    coordinadorUid: sesion.real.user.uid,
     version: (P.version || 0) + 1,
-    actualizadaPor: sesion.perfil.nombre,
+    actualizadaPor: sesion.real.perfil.nombre,
     actualizadaEn: serverTimestamp(),
   };
 

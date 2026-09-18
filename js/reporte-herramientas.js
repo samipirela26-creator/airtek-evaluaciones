@@ -3,7 +3,7 @@
 // cuántos destornilladores malos", con números para pedir reposición.
 
 import { db } from "./firebase.js";
-import { protegerPagina } from "./session.js";
+import { protegerPagina, contextoActual } from "./session.js";
 import { misSupervisores, traerPorLotes } from "./consultas.js";
 import { filasACSV, descargarCSV, nombreConFecha } from "./exportar-csv.js";
 import {
@@ -20,13 +20,14 @@ function esc(s) {
   return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-protegerPagina("coordinador", async ({ user }) => {
+protegerPagina("coordinador", async ({ user, perfil }) => {
+  const sesion = contextoActual({ user, perfil });
   const aviso = document.getElementById("aviso");
   aviso.innerHTML = `<div class="lista-vacia">Cargando inventarios…</div>`;
 
   let inventarios = [];
   try {
-    const uids = (await misSupervisores(db, user.uid)).map((s) => s.uid);
+    const uids = (await misSupervisores(db, sesion.uid)).map((s) => s.uid);
     inventarios = await traerPorLotes(db, "inventario_herramientas", "supervisorUid", uids);
   } catch (err) {
     console.error(err);

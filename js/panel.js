@@ -2,7 +2,8 @@
 //  - Supervisor: gestiona sus técnicos (avatar cards) y hace clic para evaluar; ve sus planillas.
 //  - Coordinador: edita el formulario y ve todas las planillas.
 import { db, auth, toast, logAudit, crearCuentaAux } from "./firebase.js";
-import { protegerPagina, cerrarSesion } from "./session.js";
+import { protegerPagina, cerrarSesion, contextoActual } from "./session.js";
+import { montarSelectorVerComo, bloqueaSiImpersona, deshabilitarControlesDeEscritura } from "./ver-como.js";
 import { cargarPlantillasDeCoordinador, opcionesDeSeccion } from "./plantilla.js";
 import { fechaDeBitacora, fechaEsInferida } from "./bitacora-data.js";
 import { mostrarNovedades } from "./novedades.js";
@@ -53,7 +54,9 @@ function htmlBotonEstado(activo, quienLabel) {
 function wireBotonEstado(uid, nombre, activo, quienLabel, recargar) {
   const b = document.getElementById("btn-estado");
   if (!b) return;
+  deshabilitarControlesDeEscritura(sesion, ["btn-estado"]);
   b.addEventListener("click", async () => {
+    if (bloqueaSiImpersona(sesion)) return;
     const accion = activo ? "Inhabilitar" : "Reactivar";
     if (!confirm(`¿${accion} a ${nombre}? ${activo ? "No podrá iniciar sesión." : ""}`)) return;
     try {
@@ -116,6 +119,7 @@ function wireVerMas(container) {
 
 // Enviar a un usuario un correo para que restablezca su contraseña.
 async function enviarReset(correo, nombre) {
+  if (bloqueaSiImpersona(sesion)) return;
   if (!correo) {
     toast("Ese usuario no tiene correo registrado (cuenta antigua). Que use 'Olvidé mi contraseña' en el login.", { ms: 7000 });
     return;
@@ -132,6 +136,7 @@ async function enviarReset(correo, nombre) {
 
 // Elimina a un usuario del sistema (borra su perfil → pierde acceso y desaparece).
 async function eliminarUsuario(uid, nombre, recargar) {
+  if (bloqueaSiImpersona(sesion)) return;
   if (!confirm(
     `¿Eliminar a ${nombre} del sistema?\n\n` +
     `Perderá el acceso y desaparecerá de la lista. NO borra a sus subordinados, ` +
@@ -152,16 +157,22 @@ document.getElementById("btn-salir").addEventListener("click", cerrarSesion);
 let sesion = null;
 
 protegerPagina(null, async ({ user, perfil }) => {
-  sesion = { user, perfil };
+  // `sesion` guarda la identidad EFECTIVA (la de "Ver como" si está activo).
+  // Toda lectura de este archivo debe usar sesion.uid/sesion.perfil; toda
+  // ESCRITURA que registre "quién hizo esto" debe usar sesion.real (la
+  // identidad verdadera de quien tiene la sesión de Firebase Auth) — nunca
+  // hay que atribuirle una escritura a la persona vista.
+  sesion = contextoActual({ user, perfil });
   document.getElementById("usuario-info").textContent = `${perfil.nombre} · ${perfil.rol}`;
 
   // Qué cambió en la última entrega. Solo la primera vez que entran con ella,
-  // y solo lo que le toca a su rol.
+  // y solo lo que le toca a su rol. Esto es sobre la cuenta real, no sobre
+  // "Ver como": a root no le sirve un aviso pensado para otro rol.
   mostrarNovedades(document.getElementById("novedades"), perfil.rol, { esc });
 
-  if (perfil.rol === "supervisor") {
+  if (sesion.perfil.rol === "supervisor") {
     document.getElementById("acciones").innerHTML = `
-      <h2>Hola, ${esc(perfil.nombre)}</h2>
+      <h2>Hola, ${esc(sesion.perfil.nombre)}</h2>
       <p>Tus técnicos. Haz clic en uno para evaluarlo.
          <a href="perfil.html" style="color:var(--azul);font-weight:600">⚙️ Mi cuenta</a></p>
       <div class="add-row">
@@ -187,7 +198,7 @@ protegerPagina(null, async ({ user, perfil }) => {
           </a>
         </div>
         <div id="bitacoras-supervisor-recientes" style="margin-top:14px"></div>`;
-      cargarBitacorasSupervisorRecientes(user.uid);
+      cargarBitacorasSupervisorRecientes(sesion.uid);
     }
 
     const modInv = document.getElementById("modulo-inventario");
@@ -207,15 +218,16 @@ protegerPagina(null, async ({ user, perfil }) => {
 
     document.getElementById("btn-add-tecnico").addEventListener("click", agregarTecnico);
     document.getElementById("nuevo-tecnico").addEventListener("input", actualizarHint);
+    deshabilitarControlesDeEscritura(sesion, ["btn-add-tecnico", "nuevo-tecnico"]);
     cargarTecnicos();
-    cargarLista(perfil, user.uid);
-  } else if (perfil.rol === "root") {
+    cargarLista(sesion.perfil, sesion.uid);
+  } else if (sesion.perfil.rol === "root") {
     const modBit = document.getElementById("modulo-bitacora");
     if (modBit) modBit.style.display = "none";
     const modInv = document.getElementById("modulo-inventario");
     if (modInv) modInv.style.display = "none";
     document.getElementById("acciones").innerHTML = `
-      <h2>Hola, ${esc(perfil.nombre)} (Administrador)</h2>
+      <h2>Hola, ${esc(sesion.perfil.nombre)} (Administrador)</h2>
       <p>Crea y administra a los coordinadores de Airtek.</p>
       <div class="btn-row">
         <button class="btn" id="btn-crear-coord">➕ Crear coordinador</button>
@@ -226,7 +238,10 @@ protegerPagina(null, async ({ user, perfil }) => {
       </div>
       <div id="crear-box"></div>
       <div id="invite-box"></div>
-      <div id="invites-list"></div>`;
+      <div id="invites-list"></div>
+      <h4 class="btn-row-titulo">👁️ Ver como</h4>
+      <p class="meta" style="margin:0 0 10px">Navega la app con los datos reales de un coordinador o supervisor, sin pedirle su contraseña. Mientras tanto no podrás crear, editar ni borrar nada.</p>
+      <div id="ver-como-box"></div>`;
     document.getElementById("titulo-lista").textContent = "Coordinadores";
 
     document.getElementById("btn-crear-coord").addEventListener("click", () => crearUsuarioDirecto("coordinador"));
@@ -235,13 +250,14 @@ protegerPagina(null, async ({ user, perfil }) => {
     document.getElementById("btn-respaldo").addEventListener("click", descargarRespaldo);
     cargarCoordinadores();
     cargarInvitaciones();
+    montarSelectorVerComo(document.getElementById("ver-como-box"));
   } else {
     const modBit = document.getElementById("modulo-bitacora");
     if (modBit) modBit.style.display = "none";
     const modInv = document.getElementById("modulo-inventario");
     if (modInv) modInv.style.display = "none";
     document.getElementById("acciones").innerHTML = `
-      <h2>Hola, ${esc(perfil.nombre)} (Coordinador)</h2>
+      <h2>Hola, ${esc(sesion.perfil.nombre)} (Coordinador)</h2>
       <p>Aquí ves a tus supervisores y sus planillas.</p>
       <div class="btn-row btn-row-principal">
         <a class="btn" href="dashboard.html">📊 Métricas de Gestión de Personal</a>
@@ -264,6 +280,7 @@ protegerPagina(null, async ({ user, perfil }) => {
     document.getElementById("btn-crear-sup").addEventListener("click", () => crearUsuarioDirecto("supervisor"));
     document.getElementById("btn-invitar")
       .addEventListener("click", (e) => generarInvitacion("supervisor", e.currentTarget));
+    deshabilitarControlesDeEscritura(sesion, ["btn-crear-sup", "btn-invitar"]);
     cargarSupervisores();
     cargarInvitaciones();
   }
@@ -273,7 +290,7 @@ protegerPagina(null, async ({ user, perfil }) => {
 async function cargarTecnicos() {
   const cont = document.getElementById("tecnicos-list");
   try {
-    const snap = await getDocs(query(collection(db, "tecnicos"), where("supervisorUid", "==", sesion.user.uid)));
+    const snap = await getDocs(query(collection(db, "tecnicos"), where("supervisorUid", "==", sesion.uid)));
     const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
     items.sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
     if (!items.length) {
@@ -305,6 +322,15 @@ async function cargarTecnicos() {
         window.location.href = `historial.html?tecnico=${el.dataset.hist}`;
       })
     );
+    // Editar/eliminar técnico: deshabilitados mientras se ve como otra
+    // persona (RF-8) — evaluar/historial arriba siguen disponibles, son
+    // de solo lectura.
+    if (sesion.impersonando) {
+      cont.querySelectorAll("[data-editar], [data-del]").forEach((el) => {
+        el.disabled = true;
+        el.title = "No disponible mientras ves la app como otra persona";
+      });
+    }
     // Editar nombre del técnico
     cont.querySelectorAll("[data-editar]").forEach((el) =>
       el.addEventListener("click", (e) => {
@@ -348,6 +374,7 @@ function actualizarHint() {
 }
 
 async function agregarTecnico() {
+  if (bloqueaSiImpersona(sesion)) return;
   const input = document.getElementById("nuevo-tecnico");
   const btn = document.getElementById("btn-add-tecnico");
   const nombres = parseNombres(input.value);
@@ -360,8 +387,8 @@ async function agregarTecnico() {
       nombres.map((nombre) =>
         addDoc(collection(db, "tecnicos"), {
           nombre,
-          supervisorUid: sesion.user.uid,
-          supervisorNombre: sesion.perfil.nombre,
+          supervisorUid: sesion.real.user.uid,
+          supervisorNombre: sesion.real.perfil.nombre,
           createdAt: serverTimestamp(),
         })
       )
@@ -403,6 +430,7 @@ async function editarTecnico(id, nombreActual) {
  * silencio no inspira confianza.
  */
 async function corregirNombre({ titulo, nombreActual, copias, valorUid, extra = 1, ejecutar, alTerminar }) {
+  if (bloqueaSiImpersona(sesion)) return;
   const escrito = prompt(titulo, nombreActual);
   if (escrito === null) return;
 
@@ -442,6 +470,7 @@ async function corregirNombre({ titulo, nombreActual, copias, valorUid, extra = 
 }
 
 async function eliminarTecnico(id) {
+  if (bloqueaSiImpersona(sesion)) return;
   if (!confirm("¿Eliminar este técnico? (sus evaluaciones ya guardadas se conservan)")) return;
   try {
     await deleteDoc(doc(db, "tecnicos", id));
@@ -520,7 +549,7 @@ async function cargarCoordinadores() {
     const snap = await getDocs(collection(db, "usuarios"));
     const all = snap.docs.map((d) => ({ uid: d.id, ...d.data() }));
     const coords = all
-      .filter((u) => u.rol === "coordinador" && u.rootUid === sesion.user.uid)
+      .filter((u) => u.rol === "coordinador" && u.rootUid === sesion.uid)
       .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
     const countSup = (cid) => all.filter((u) => u.rol === "supervisor" && u.coordinadorUid === cid).length;
     if (!coords.length) {
@@ -606,14 +635,15 @@ async function mostrarCoordinador(uid, nombre) {
 
 // ───────── Invitaciones (root o coordinador) ─────────
 async function generarInvitacion(rol, btn) {
+  if (bloqueaSiImpersona(sesion)) return;
   const box = document.getElementById("invite-box");
   if (btn) btn.disabled = true;
   const quien = rol === "coordinador" ? "un coordinador" : "un supervisor";
   box.innerHTML = `<p class="meta" style="margin-top:12px">Generando enlace…</p>`;
   try {
     const ref = await addDoc(collection(db, "invitaciones"), {
-      creadorUid: sesion.user.uid,
-      creadorNombre: sesion.perfil.nombre,
+      creadorUid: sesion.real.user.uid,
+      creadorNombre: sesion.real.perfil.nombre,
       rol,
       usado: false,
       expiraEnMs: Date.now() + 7 * 24 * 60 * 60 * 1000, // vence en 7 días
@@ -659,7 +689,7 @@ async function cargarInvitaciones() {
   if (!cont) return;
   try {
     const snap = await getDocs(
-      query(collection(db, "invitaciones"), where("creadorUid", "==", sesion.user.uid))
+      query(collection(db, "invitaciones"), where("creadorUid", "==", sesion.uid))
     );
     const items = snap.docs
       .map((d) => ({ id: d.id, ...d.data() }))
@@ -697,8 +727,15 @@ async function cargarInvitaciones() {
         try { await navigator.clipboard.writeText(b.dataset.copiar); b.textContent = "✓"; } catch {}
       })
     );
+    if (sesion.impersonando) {
+      cont.querySelectorAll("[data-revocar]").forEach((b) => {
+        b.disabled = true;
+        b.title = "No disponible mientras ves la app como otra persona";
+      });
+    }
     cont.querySelectorAll("[data-revocar]").forEach((b) =>
       b.addEventListener("click", async () => {
+        if (bloqueaSiImpersona(sesion)) return;
         if (!confirm("¿Revocar esta invitación? El enlace dejará de funcionar.")) return;
         try {
           await deleteDoc(doc(db, "invitaciones", b.dataset.revocar));
@@ -722,7 +759,7 @@ async function cargarSupervisores() {
   document.getElementById("titulo-lista").textContent = "Mis supervisores";
   cont.innerHTML = "Cargando…";
   try {
-    const uSnap = await getDocs(query(collection(db, "usuarios"), where("coordinadorUid", "==", sesion.user.uid)));
+    const uSnap = await getDocs(query(collection(db, "usuarios"), where("coordinadorUid", "==", sesion.uid)));
     const sups = uSnap.docs
       .map((d) => ({ uid: d.id, ...d.data() }))
       .filter((u) => u.rol === "supervisor")
@@ -889,6 +926,9 @@ async function mostrarSupervisor(uid, nombre, volverFn) {
     cont.innerHTML = html;
     wireTabs(cont);
     wireVerMas(cont);
+    deshabilitarControlesDeEscritura(sesion, [
+      "btn-renombrar-sup", "btn-reset", "btn-eliminar-sup", "btn-reasignar", "sel-reasignar", "btn-link-sup",
+    ]);
     document.getElementById("btn-volver-sups").addEventListener("click", volver);
     document.getElementById("btn-renombrar-sup").addEventListener("click", () =>
       corregirNombre({
@@ -916,6 +956,7 @@ async function mostrarSupervisor(uid, nombre, volverFn) {
     );
     const btnR = document.getElementById("btn-reasignar");
     if (btnR) btnR.addEventListener("click", async () => {
+      if (bloqueaSiImpersona(sesion)) return;
       const sel = document.getElementById("sel-reasignar");
       const destino = sel.value;
       if (!destino) return;
@@ -940,10 +981,11 @@ async function mostrarSupervisor(uid, nombre, volverFn) {
 
 // ───────── Link público para evaluar a un supervisor (coordinador) ─────────
 async function generarLinkSupervisor(supUid, supNombre) {
+  if (bloqueaSiImpersona(sesion)) return;
   const box = document.getElementById("link-box");
   box.innerHTML = `<p class="meta" style="margin-top:8px">Cargando tus formularios…</p>`;
   try {
-    const forms = (await cargarPlantillasDeCoordinador(db, sesion.user.uid)).filter((f) => f.tipo === "supervisor");
+    const forms = (await cargarPlantillasDeCoordinador(db, sesion.uid)).filter((f) => f.tipo === "supervisor");
     if (!forms.length) {
       box.innerHTML = `<div class="msg error" style="margin-top:8px">Primero crea un formulario de tipo <strong>"Para evaluar supervisores"</strong> en "✎ Editar formulario".</div>`;
       return;
@@ -967,7 +1009,7 @@ async function generarLinkSupervisor(supUid, supNombre) {
           tipo: "evalSupervisor",
           supervisorUid: supUid,
           supervisorNombre: supNombre,
-          creadorUid: sesion.user.uid,
+          creadorUid: sesion.real.user.uid,
           activo: true,
           plantillaSnapshot: snapshot,
           createdAt: serverTimestamp(),
@@ -991,6 +1033,7 @@ async function generarLinkSupervisor(supUid, supNombre) {
 
 // ───────── Crear usuario directamente (root→coordinador, coordinador→supervisor) ─────────
 function crearUsuarioDirecto(rol) {
+  if (bloqueaSiImpersona(sesion)) return;
   const box = document.getElementById("crear-box");
   const quien = rol === "coordinador" ? "coordinador" : "supervisor";
   box.innerHTML = `
@@ -1003,6 +1046,7 @@ function crearUsuarioDirecto(rol) {
       <div id="c-msg"></div>
     </div>`;
   document.getElementById("c-guardar").addEventListener("click", async () => {
+    if (bloqueaSiImpersona(sesion)) return;
     const nombre = document.getElementById("c-nombre").value.trim();
     const correo = document.getElementById("c-correo").value.trim();
     const pass = document.getElementById("c-pass").value;
@@ -1016,8 +1060,8 @@ function crearUsuarioDirecto(rol) {
     try {
       const uid = await crearCuentaAux(correo, pass);
       const perfilDoc = { nombre, correo, rol, activo: true, createdAt: serverTimestamp() };
-      if (rol === "coordinador") perfilDoc.rootUid = sesion.user.uid;
-      else perfilDoc.coordinadorUid = sesion.user.uid;
+      if (rol === "coordinador") perfilDoc.rootUid = sesion.real.user.uid;
+      else perfilDoc.coordinadorUid = sesion.real.user.uid;
       await setDoc(doc(db, "usuarios", uid), perfilDoc);
       logAudit("usuario_creado_directo", { rol, correo });
       toast(`${quien} creado ✓`);

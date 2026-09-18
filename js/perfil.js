@@ -1,6 +1,7 @@
 // perfil.js — editar el propio nombre y correo, y (coordinador) el nombre de los supervisores.
 import { auth, db } from "./firebase.js";
-import { protegerPagina } from "./session.js";
+import { protegerPagina, contextoActual } from "./session.js";
+import { bloqueaSiImpersona, deshabilitarControlesDeEscritura } from "./ver-como.js";
 import {
   updateEmail,
   updatePassword,
@@ -21,10 +22,17 @@ function esc(s) {
 const set = (id, tipo, txt) =>
   (document.getElementById(id).innerHTML = `<div class="msg ${tipo}">${txt}</div>`);
 
+// "Mi cuenta" edita el correo/contraseña reales de Firebase Auth: siempre
+// la sesión REAL, nunca la de "Ver como" (ver T4 en specs/003-.../tasks.md).
 let sesion = null;
+// Aun así, mientras "Ver como" esté activo, root no debe poder editar NADA
+// aquí tampoco (RF-8: bloqueo total, sin excepciones) — solo se usa este
+// flag para eso, nunca para decidir qué mostrar.
+let impersonando = false;
 
 protegerPagina(null, async ({ user, perfil }) => {
   sesion = { user, perfil };
+  impersonando = contextoActual({ user, perfil }).impersonando;
   document.getElementById("mi-nombre").value = perfil.nombre || "";
   document.getElementById("mi-correo").value = user.email || "";
 
@@ -32,6 +40,7 @@ protegerPagina(null, async ({ user, perfil }) => {
   document.getElementById("btn-correo").addEventListener("click", cambiarCorreo);
   document.getElementById("btn-pass").addEventListener("click", cambiarPassword);
   document.getElementById("btn-verificar").addEventListener("click", verificarCorreo);
+  deshabilitarControlesDeEscritura({ impersonando }, ["btn-nombre", "btn-correo", "btn-pass", "btn-verificar"]);
 
   if (perfil.rol === "coordinador") {
     document.getElementById("card-sups").style.display = "block";
@@ -41,6 +50,7 @@ protegerPagina(null, async ({ user, perfil }) => {
 
 // ── Mi nombre ──
 async function guardarNombre() {
+  if (bloqueaSiImpersona({ impersonando })) return;
   const nombre = document.getElementById("mi-nombre").value.trim();
   if (!nombre) return set("msg-nombre", "error", "El nombre no puede quedar vacío.");
   try {
@@ -53,6 +63,7 @@ async function guardarNombre() {
 
 // ── Mi correo ──
 async function cambiarCorreo() {
+  if (bloqueaSiImpersona({ impersonando })) return;
   const email = document.getElementById("mi-correo").value.trim();
   if (!email) return set("msg-correo", "error", "Escribe el nuevo correo.");
   try {
@@ -72,6 +83,7 @@ async function cambiarCorreo() {
 
 // ── Cambiar contraseña ──
 async function cambiarPassword() {
+  if (bloqueaSiImpersona({ impersonando })) return;
   const pass = document.getElementById("mi-pass").value;
   if (pass.length < 6) return set("msg-pass", "error", "La contraseña debe tener al menos 6 caracteres.");
   try {
@@ -89,6 +101,7 @@ async function cambiarPassword() {
 
 // ── Verificar correo ──
 async function verificarCorreo() {
+  if (bloqueaSiImpersona({ impersonando })) return;
   try {
     if (auth.currentUser.emailVerified) return set("msg-verificar", "ok", "Tu correo ya está verificado ✓");
     await sendEmailVerification(auth.currentUser);
@@ -117,8 +130,8 @@ async function cargarSupervisores() {
       .map(
         (s) => `
       <div class="add-row">
-        <input type="text" data-uid="${s.uid}" value="${esc(s.nombre)}">
-        <button class="btn secundario" data-guardar="${s.uid}">Guardar</button>
+        <input type="text" data-uid="${s.uid}" value="${esc(s.nombre)}" ${impersonando ? "disabled" : ""}>
+        <button class="btn secundario" data-guardar="${s.uid}" ${impersonando ? "disabled" : ""}>Guardar</button>
       </div>
       <div id="msg-sup-${s.uid}" style="margin:-8px 0 10px"></div>`
       )
@@ -132,6 +145,7 @@ async function cargarSupervisores() {
 }
 
 async function guardarSupervisor(uid, cont) {
+  if (bloqueaSiImpersona({ impersonando })) return;
   const input = cont.querySelector(`input[data-uid="${uid}"]`);
   const nombre = input.value.trim();
   if (!nombre) return set(`msg-sup-${uid}`, "error", "El nombre no puede quedar vacío.");
