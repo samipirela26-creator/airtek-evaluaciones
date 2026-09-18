@@ -213,23 +213,27 @@ textarea { min-height: 70px; resize: vertical; }
 .msg.ok { background: #e5f6e9; color: var(--ok); }
 .msg.error { background: #fdecea; color: var(--error); }
 
-/* Login — Minimal Clean (Referencia exacta) */
+/* Login — Minimal Clean con Soporte Desktop Split-Screen */
 .login-screen-wrap {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f4f5f8;
+  background: #f1f4f9;
   padding: 0;
+  box-sizing: border-box;
 }
 
-@media (min-width: 480px) {
+@media (min-width: 900px) {
   .login-screen-wrap {
-    padding: 30px 16px;
+    padding: 40px 24px;
+    background: radial-gradient(circle at 10% 20%, rgba(0, 102, 255, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(0, 204, 252, 0.06) 0%, transparent 40%),
+                #f1f4f9;
   }
 }
 
-.login-screen {
+.login-split-card {
   width: 100%;
   max-width: 390px;
   min-height: 100vh;
@@ -237,16 +241,195 @@ textarea { min-height: 70px; resize: vertical; }
   position: relative;
   overflow: hidden;
   display: flex;
-  flex-direction: column;
-  padding: 24px 24px 32px;
   box-sizing: border-box;
 }
 
-@media (min-width: 480px) {
-  .login-screen {
+@media (min-width: 480px) and (max-width: 899px) {
+  .login-screen-wrap {
+    padding: 30px 16px;
+  }
+  .login-split-card {
     min-height: 800px;
     border-radius: 42px;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 0 10px #0a0a0c;
+  }
+}
+
+@media (min-width: 900px) {
+  .login-split-card {
+    max-width: 980px;
+    min-height: 640px;
+    border-radius: 32px;
+    box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.12), 0 0 0 1px #e2e8f0;
+  }
+}
+
+/* Panel Izquierdo: Brand Banner (Oculto en móvil, activo en escritorio) */
+.login-brand-pane {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .login-brand-pane {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex: 1;
+    background: linear-gradient(150deg, #0052cc 0%, #0066ff 55%, #003fa5 100%);
+    color: #ffffff;
+    padding: 48px 40px;
+    position: relative;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+
+  .brand-pane-waves {
+    position: absolute;
+    top: -40px;
+    left: -40px;
+    width: 360px;
+    height: 360px;
+    pointer-events: none;
+    opacity: 0.28;
+    filter: drop-shadow(0 0 15px rgba(0, 204, 252, 0.4));
+  }
+  .pane-waves-decor {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  /* Divisor orgánico de ondas estilo Pinterest */
+  .brand-wave-separator {
+    position: absolute;
+    top: -2px;
+    bottom: -2px;
+    right: -2px;
+    width: 65px;
+    height: calc(100% + 4px);
+    pointer-events: none;
+    z-index: 3;
+    filter: drop-shadow(-6px 0 10px rgba(0, 32, 96, 0.12));
+  }
+
+  .brand-pane-top {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .brand-pane-badge {
+    width: 46px;
+    height: 46px;
+    background: #ffffff;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    flex-shrink: 0;
+  }
+
+  .brand-badge-icon {
+    width: 26px;
+    height: 26px;
+    object-fit: contain;
+  }
+
+  .brand-pane-logo {
+    height: 28px;
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2));
+  }
+
+  .brand-pane-body {
+    position: relative;
+    z-index: 2;
+    margin: auto 0;
+    padding: 24px 0;
+  }
+
+  .brand-pane-pill {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+    padding: 5px 14px;
+    border-radius: 9999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 18px;
+  }
+
+  .brand-pane-title {
+    color: #ffffff !important;
+    font-size: 2.05rem;
+    font-weight: 800;
+    line-height: 1.22;
+    margin: 0 0 14px 0;
+    letter-spacing: -0.5px;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  }
+
+  .brand-pane-desc {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+    max-width: 340px;
+  }
+
+  .brand-pane-footer {
+    position: relative;
+    z-index: 2;
+  }
+
+  .brand-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.92);
+  }
+
+  .status-pulse {
+    width: 8px;
+    height: 8px;
+    background: #00e676;
+    border-radius: 50%;
+    box-shadow: 0 0 0 4px rgba(0, 230, 118, 0.35);
+  }
+}
+
+/* Panel Derecho: Formulario */
+.login-form-pane {
+  flex: 1.15;
+  background: #ffffff;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 24px 32px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+@media (min-width: 900px) {
+  .login-form-pane {
+    padding: 48px 48px 40px;
+    justify-content: center;
+  }
+  .login-form-pane .fluid-decor {
+    display: none;
+  }
+  .login-form-pane .login-top-bar {
+    margin-bottom: 20px;
   }
 }
 
