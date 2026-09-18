@@ -196,17 +196,27 @@
       actualizar cualquier perfil (3 pruebas) — documenta por qué T5 tiene
       que bloquear esas acciones en la interfaz: las reglas solas no
       alcanzan ahí.
-    - **Nota de entorno**: el puerto 8085 (el de siempre para el emulador,
-      en `firebase.json` y los demás `tests-reglas/*.test.js`) estaba
-      ocupado por un proceso ajeno a este proyecto en esta máquina (un
-      `python3 -m http.server` de otra herramienta). Para no tocar ese
-      proceso, corrí esta prueba una vez de forma temporal contra el
-      puerto 8095 (cambiando `firebase.json` y el puerto del archivo, y
-      revirtiendo ambos apenas terminó) — confirmado con `git diff
-      firebase.json` sin cambios al terminar. El archivo que queda en el
-      repo usa el puerto 8085 estándar, igual que `fotos.test.js`,
-      `inventarios.test.js` y `renombrar.test.js`; correrá normal con
-      `npm run test:rules` en cuanto ese puerto esté libre.
+    - **Nota de entorno (puerto)**: el puerto 8085 del emulador estaba
+      ocupado por un proceso ajeno a este proyecto en esta máquina. Para no
+      tocar ese proceso, la primera corrida fue temporal contra el puerto
+      8095 (revirtiendo `firebase.json` apenas terminó). Más tarde, con el
+      8085 libre, se confirmó también con el puerto estándar.
+    - **Bug pre-existente encontrado y corregido**: al correr
+      `npm run test:rules` completo (los 4 archivos de `tests-reglas/`
+      juntos, como hace CI) salieron fallos intermitentes — no solo en
+      `ver-como.test.js`, también en `inventarios.test.js`, que esta spec
+      no toca. Causa: `node --test` corre los archivos de prueba en
+      paralelo por defecto, y los 4 comparten el mismo emulador; el
+      `clearFirestore()` del `beforeEach` de un archivo podía borrar a
+      mitad de camino los datos que otro archivo, corriendo al mismo
+      tiempo, necesitaba para su aserción ("Null value error" al leer un
+      documento que ya no estaba). No es un problema de las reglas ni de
+      esta spec — ya existía con los 3 archivos anteriores, agregar el
+      cuarto solo lo hizo más probable. Arreglado en `package.json`:
+      `test:rules` ahora corre con `--test-concurrency=1` (los archivos se
+      ejecutan uno por uno, sin pisarse). Confirmado con `npm run
+      test:rules` dos veces seguidas: **35/35 en verde** ambas veces
+      (antes: entre 31 y 34 de 35, con fallos distintos en cada corrida).
   - **Recorrido manual en `preview/`** (root → Ver como Carlos
     (Coordinador) → navegar a `editor.html` → confirmar botones
     deshabilitados → forzar un click igual → toast de rechazo, sin crear
