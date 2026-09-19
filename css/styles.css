@@ -317,29 +317,10 @@ textarea { min-height: 70px; resize: vertical; }
     z-index: 2;
     display: flex;
     align-items: center;
-    gap: 14px;
-  }
-
-  .brand-pane-badge {
-    width: 46px;
-    height: 46px;
-    background: #ffffff;
-    border-radius: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-    flex-shrink: 0;
-  }
-
-  .brand-badge-icon {
-    width: 26px;
-    height: 26px;
-    object-fit: contain;
   }
 
   .brand-pane-logo {
-    height: 28px;
+    height: 32px;
     width: auto;
     object-fit: contain;
     filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2));
@@ -488,40 +469,22 @@ textarea { min-height: 70px; resize: vertical; }
   justify-content: center;
   position: relative;
   z-index: 4;
-  margin: 4px 0 6px;
+  margin: 6px 0 14px;
   text-align: center;
 }
 
-.mobile-brand-badge {
-  width: 52px;
-  height: 52px;
-  background: #ffffff;
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
-  margin-bottom: 12px;
-}
-
-.mobile-badge-icon {
-  width: 30px;
-  height: 30px;
-  object-fit: contain;
-}
-
 .mobile-brand-logo {
-  height: 28px;
+  height: 36px;
   width: auto;
   object-fit: contain;
-  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2));
-  margin-bottom: 4px;
+  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.25));
+  margin-bottom: 6px;
 }
 
 .mobile-brand-tag {
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   font-weight: 800;
-  letter-spacing: 2px;
+  letter-spacing: 2.5px;
   color: #00ccfc;
   text-transform: uppercase;
 }
