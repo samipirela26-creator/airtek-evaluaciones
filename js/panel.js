@@ -43,6 +43,30 @@ function esc(s) {
   return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+const ICONS = {
+  cuenta: `<svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+  bitacora: `<svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`,
+  inventario: `<svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`,
+  historial: `<svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14h6"/><path d="M9 10h6"/></svg>`,
+  editar: `<svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>`,
+  eliminar: `<svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+  crear: `<svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>`,
+  invitar: `<svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`,
+  auditoria: `<svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+  respaldo: `<svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+  metricas: `<svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
+  tablero: `<svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>`,
+  herramientas: `<svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`,
+  formulario: `<svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
+  verComo: `<svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`,
+  prueba: `<svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v7.31L4.14 18.2A2 2 0 0 0 5.86 21h12.28a2 2 0 0 0 1.72-2.8L14 9.31V2"/></svg>`,
+  key: `<svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>`,
+  trash: `<svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
+  back: `<svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>`,
+  users: `<svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+  star: `<svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+};
+
 // ── Inhabilitar / reactivar usuarios ──
 async function leerActivo(uid) {
   const s = await getDoc(doc(db, "usuarios", uid));
@@ -154,9 +178,100 @@ async function eliminarUsuario(uid, nombre, recargar) {
   }
 }
 
-document.getElementById("btn-salir").addEventListener("click", cerrarSesion);
+const btnSalir = document.getElementById("btn-salir");
+if (btnSalir) btnSalir.addEventListener("click", cerrarSesion);
+const btnSalirSidebar = document.getElementById("btn-salir-sidebar");
+if (btnSalirSidebar) btnSalirSidebar.addEventListener("click", cerrarSesion);
 
 let sesion = null;
+
+function montarSidebar(perfil) {
+  const elInfo = document.getElementById("usuario-info-sidebar");
+  if (elInfo) elInfo.textContent = perfil.nombre;
+  const elRol = document.getElementById("usuario-rol-sidebar");
+  if (elRol) elRol.textContent = perfil.rol === "root" ? "Administrador" : perfil.rol;
+  const elAvatar = document.getElementById("sidebar-user-avatar");
+  if (elAvatar) elAvatar.textContent = initials(perfil.nombre);
+
+  const nav = document.getElementById("sidebar-nav");
+  if (!nav) return;
+
+  if (perfil.rol === "supervisor") {
+    nav.innerHTML = `
+      <div class="sidebar-nav-title">Operaciones</div>
+      <a class="sidebar-nav-item active" href="panel.html">
+        ${ICONS.users}
+        <span>Mis Técnicos</span>
+      </a>
+      <a class="sidebar-nav-item" href="bitacora.html">
+        ${ICONS.bitacora}
+        <span>Bitácora de Campo</span>
+      </a>
+      <a class="sidebar-nav-item" href="inventario.html">
+        ${ICONS.inventario}
+        <span>Inventario de Técnicos</span>
+      </a>
+      <div class="sidebar-nav-title">Configuración</div>
+      <a class="sidebar-nav-item" href="perfil.html">
+        ${ICONS.cuenta}
+        <span>Mi Cuenta</span>
+      </a>`;
+  } else if (perfil.rol === "root") {
+    nav.innerHTML = `
+      <div class="sidebar-nav-title">Sistema</div>
+      <a class="sidebar-nav-item active" href="panel.html">
+        ${ICONS.users}
+        <span>Coordinadores</span>
+      </a>
+      <a class="sidebar-nav-item" href="auditoria.html">
+        ${ICONS.auditoria}
+        <span>Auditoría</span>
+      </a>
+      <a class="sidebar-nav-item" id="sidebar-btn-respaldo" href="javascript:void(0)">
+        ${ICONS.respaldo}
+        <span>Descargar Respaldo</span>
+      </a>
+      <div class="sidebar-nav-title">Configuración</div>
+      <a class="sidebar-nav-item" href="perfil.html">
+        ${ICONS.cuenta}
+        <span>Mi Cuenta</span>
+      </a>`;
+    const btnRespaldo = document.getElementById("sidebar-btn-respaldo");
+    if (btnRespaldo) btnRespaldo.addEventListener("click", descargarRespaldo);
+  } else {
+    nav.innerHTML = `
+      <div class="sidebar-nav-title">Operaciones</div>
+      <a class="sidebar-nav-item active" href="panel.html">
+        ${ICONS.users}
+        <span>Supervisores</span>
+      </a>
+      <a class="sidebar-nav-item" href="dashboard.html">
+        ${ICONS.metricas}
+        <span>Métricas de Personal</span>
+      </a>
+      <a class="sidebar-nav-item" href="bitacora-tablero.html">
+        ${ICONS.tablero}
+        <span>Tablero de Bitácora</span>
+      </a>
+      <a class="sidebar-nav-item" href="reporte-herramientas.html">
+        ${ICONS.herramientas}
+        <span>Requerimiento Herramientas</span>
+      </a>
+      <a class="sidebar-nav-item" href="inventario.html">
+        ${ICONS.inventario}
+        <span>Inventario de Técnicos</span>
+      </a>
+      <div class="sidebar-nav-title">Administración</div>
+      <a class="sidebar-nav-item" href="editor.html">
+        ${ICONS.formulario}
+        <span>Editar Formulario</span>
+      </a>
+      <a class="sidebar-nav-item" href="perfil.html">
+        ${ICONS.cuenta}
+        <span>Mi Cuenta</span>
+      </a>`;
+  }
+}
 
 protegerPagina(null, async ({ user, perfil }) => {
   // `sesion` guarda la identidad EFECTIVA (la de "Ver como" si está activo).
@@ -165,7 +280,9 @@ protegerPagina(null, async ({ user, perfil }) => {
   // identidad verdadera de quien tiene la sesión de Firebase Auth) — nunca
   // hay que atribuirle una escritura a la persona vista.
   sesion = contextoActual({ user, perfil });
-  document.getElementById("usuario-info").textContent = `${perfil.nombre} · ${perfil.rol}`;
+  const elInfo = document.getElementById("usuario-info");
+  if (elInfo) elInfo.textContent = `${perfil.nombre} · ${perfil.rol}`;
+  montarSidebar(perfil);
 
   // Qué cambió en la última entrega. Solo la primera vez que entran con ella,
   // y solo lo que le toca a su rol. Esto es sobre la cuenta real, no sobre
@@ -174,13 +291,25 @@ protegerPagina(null, async ({ user, perfil }) => {
 
   if (sesion.perfil.rol === "supervisor") {
     document.getElementById("acciones").innerHTML = `
-      <h2>Hola, ${esc(sesion.perfil.nombre)}</h2>
-      <p>Tus técnicos. Haz clic en uno para evaluarlo.
-         <a href="perfil.html" style="color:var(--azul);font-weight:600">⚙️ Mi cuenta</a></p>
+      <div class="panel-hero-banner">
+        <div class="panel-hero-content">
+          <span class="panel-hero-tag">OPERACIONES DE CAMPO</span>
+          <h2>Hola, ${esc(sesion.perfil.nombre)}</h2>
+          <p>Supervisa a tu cuadrilla, registra bitácoras y evalúa el trabajo técnico.</p>
+        </div>
+        <a class="btn-account-pill" href="perfil.html">
+          ${ICONS.cuenta}
+          <span>Mi cuenta</span>
+        </a>
+      </div>
+      <div style="margin-bottom:12px">
+        <h3 style="margin:0 0 4px">Tus técnicos</h3>
+        <p class="meta" style="margin:0">Haz clic en un técnico para evaluarlo o usa los botones para ver su historial o editarlo.</p>
+      </div>
       <div class="add-row">
         <textarea id="nuevo-tecnico" rows="2"
           placeholder="Un técnico por línea. Puedes pegar una lista completa y se agregan todos."></textarea>
-        <button class="btn" id="btn-add-tecnico">+ Agregar</button>
+        <button class="btn" id="btn-add-tecnico">${ICONS.crear} Agregar</button>
       </div>
       <div id="add-hint" class="meta" style="margin:-8px 0 12px"></div>
       <div id="tecnicos-list">Cargando…</div>`;
@@ -192,11 +321,11 @@ protegerPagina(null, async ({ user, perfil }) => {
       modBit.innerHTML = `
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
           <div>
-            <h2 style="margin:0 0 4px">📝 Bitácora de Supervisión</h2>
+            <h2 style="margin:0 0 4px;display:flex;align-items:center;gap:8px">${ICONS.bitacora} Bitácora de Supervisión</h2>
             <p class="meta" style="margin:0">Registra tus actividades diarias (administrativas, operativas o certificación).</p>
           </div>
-          <a class="btn" href="bitacora.html" style="text-decoration:none;padding:10px 18px;font-size:0.95rem">
-            + Registrar actividad
+          <a class="btn" href="bitacora.html" style="text-decoration:none">
+            ${ICONS.crear} Registrar actividad
           </a>
         </div>
         <div id="bitacoras-supervisor-recientes" style="margin-top:14px"></div>`;
@@ -209,10 +338,10 @@ protegerPagina(null, async ({ user, perfil }) => {
       modInv.innerHTML = `
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
           <div>
-            <h2 style="margin:0 0 4px">📦 Inventario de Técnicos</h2>
+            <h2 style="margin:0 0 4px;display:flex;align-items:center;gap:8px">${ICONS.inventario} Inventario de Técnicos</h2>
             <p class="meta" style="margin:0">Herramientas y equipos con su estado, y entregas de material de uso diario.</p>
           </div>
-          <a class="btn" href="inventario.html" style="text-decoration:none;padding:10px 18px;font-size:0.95rem">
+          <a class="btn" href="inventario.html" style="text-decoration:none">
             Abrir inventario
           </a>
         </div>`;
@@ -229,22 +358,30 @@ protegerPagina(null, async ({ user, perfil }) => {
     const modInv = document.getElementById("modulo-inventario");
     if (modInv) modInv.style.display = "none";
     document.getElementById("acciones").innerHTML = `
-      <h2>Hola, ${esc(sesion.perfil.nombre)} (Administrador)</h2>
-      <p>Crea y administra a los coordinadores de Airtek.</p>
+      <div class="panel-hero-banner">
+        <div class="panel-hero-content">
+          <span class="panel-hero-tag">SISTEMA ADMINISTRATIVO</span>
+          <h2>Hola, ${esc(sesion.perfil.nombre)}</h2>
+          <p>Crea y administra a los coordinadores de Airtek, gestiona auditorías y respaldos del sistema.</p>
+        </div>
+        <a class="btn-account-pill" href="perfil.html">
+          ${ICONS.cuenta}
+          <span>Mi cuenta</span>
+        </a>
+      </div>
       <div class="btn-row">
-        <button class="btn" id="btn-crear-coord">➕ Crear coordinador</button>
-        <button class="btn secundario" id="btn-invitar-coord">🎟️ Invitar por link</button>
-        <a class="btn secundario" href="auditoria.html">📜 Auditoría</a>
-        <button class="btn secundario" id="btn-respaldo">⬇️ Respaldo</button>
-        <a class="btn secundario" href="perfil.html">⚙️ Mi cuenta</a>
+        <button class="btn" id="btn-crear-coord">${ICONS.crear} Crear coordinador</button>
+        <button class="btn secundario" id="btn-invitar-coord">${ICONS.invitar} Invitar por link</button>
+        <a class="btn secundario" href="auditoria.html">${ICONS.auditoria} Auditoría</a>
+        <button class="btn secundario" id="btn-respaldo">${ICONS.respaldo} Respaldo</button>
       </div>
       <div id="crear-box"></div>
       <div id="invite-box"></div>
       <div id="invites-list"></div>
-      <h4 class="btn-row-titulo">👁️ Ver como</h4>
+      <h4 class="btn-row-titulo" style="display:flex;align-items:center;gap:6px">${ICONS.verComo} Ver como</h4>
       <p class="meta" style="margin:0 0 10px">Navega la app con los datos reales de un coordinador o supervisor, sin pedirle su contraseña. Mientras tanto no podrás crear, editar ni borrar nada.</p>
       <div id="ver-como-box"></div>
-      <h4 class="btn-row-titulo">🧪 Modo de prueba</h4>
+      <h4 class="btn-row-titulo" style="display:flex;align-items:center;gap:6px">${ICONS.prueba} Modo de prueba</h4>
       <p class="meta" style="margin:0 0 10px">Actúa como coordinador o supervisor con datos 100% inventados — nunca toca cuentas ni datos reales — para reproducir problemas de punta a punta.</p>
       <div id="modo-prueba-box"></div>`;
     document.getElementById("titulo-lista").textContent = "Coordinadores";
@@ -263,20 +400,28 @@ protegerPagina(null, async ({ user, perfil }) => {
     const modInv = document.getElementById("modulo-inventario");
     if (modInv) modInv.style.display = "none";
     document.getElementById("acciones").innerHTML = `
-      <h2>Hola, ${esc(sesion.perfil.nombre)} (Coordinador)</h2>
-      <p>Aquí ves a tus supervisores y sus planillas.</p>
+      <div class="panel-hero-banner">
+        <div class="panel-hero-content">
+          <span class="panel-hero-tag">COORDINACIÓN OPERATIVA</span>
+          <h2>Hola, ${esc(sesion.perfil.nombre)}</h2>
+          <p>Supervisa las cuadrillas, consulta el tablero de bitácora y monitorea evaluaciones.</p>
+        </div>
+        <a class="btn-account-pill" href="perfil.html">
+          ${ICONS.cuenta}
+          <span>Mi cuenta</span>
+        </a>
+      </div>
       <div class="btn-row btn-row-principal">
-        <a class="btn" href="dashboard.html">📊 Métricas de Gestión de Personal</a>
-        <a class="btn" href="bitacora-tablero.html">📋 Tablero de Bitácora</a>
-        <a class="btn" href="reporte-herramientas.html">🧰 Requerimiento de Herramientas</a>
-        <a class="btn secundario" href="inventario.html">📦 Inventario de Técnicos</a>
+        <a class="btn" href="dashboard.html">${ICONS.metricas} Métricas de Gestión de Personal</a>
+        <a class="btn" href="bitacora-tablero.html">${ICONS.tablero} Tablero de Bitácora</a>
+        <a class="btn" href="reporte-herramientas.html">${ICONS.herramientas} Requerimiento de Herramientas</a>
+        <a class="btn secundario" href="inventario.html">${ICONS.inventario} Inventario de Técnicos</a>
       </div>
       <h4 class="btn-row-titulo">Administración</h4>
       <div class="btn-row btn-row-secundaria">
-        <a class="btn secundario" href="editor.html">✎ Editar formulario</a>
-        <button class="btn secundario" id="btn-crear-sup">➕ Crear supervisor</button>
-        <button class="btn secundario" id="btn-invitar">🎟️ Invitar por link</button>
-        <a class="btn secundario" href="perfil.html">⚙️ Mi cuenta</a>
+        <a class="btn secundario" href="editor.html">${ICONS.formulario} Editar formulario</a>
+        <button class="btn secundario" id="btn-crear-sup">${ICONS.crear} Crear supervisor</button>
+        <button class="btn secundario" id="btn-invitar">${ICONS.invitar} Invitar por link</button>
       </div>
       <div id="crear-box"></div>
       <div id="invite-box"></div>
@@ -300,7 +445,7 @@ async function cargarTecnicos() {
     const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
     items.sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
     if (!items.length) {
-      cont.innerHTML = `<div class="lista-vacia">Aún no tienes técnicos. Agrega el primero arriba. 👆</div>`;
+      cont.innerHTML = `<div class="lista-vacia">Aún no tienes técnicos en tu cuadrilla. Agrega el primero con el campo de arriba.</div>`;
       return;
     }
     cont.innerHTML = items
@@ -310,9 +455,11 @@ async function cargarTecnicos() {
         <div class="srow" data-eval="${t.id}">
           <div class="aa-avatar" style="background:${bg}">${initials(t.nombre)}</div>
           <span class="srow-name">${esc(t.nombre)}</span>
-          <button class="srow-x" data-hist="${t.id}" title="Historial" style="color:var(--azul)">📋</button>
-          <button class="srow-x" data-editar="${t.id}" data-nombre="${esc(t.nombre)}" title="Editar nombre">✏️</button>
-          <button class="srow-x" data-del="${t.id}" title="Eliminar técnico">✕</button>
+          <div class="srow-actions">
+            <button class="srow-x" data-hist="${t.id}" title="Historial" style="color:var(--azul-airtek)">${ICONS.historial}</button>
+            <button class="srow-x" data-editar="${t.id}" data-nombre="${esc(t.nombre)}" title="Editar nombre">${ICONS.editar}</button>
+            <button class="srow-x" data-del="${t.id}" title="Eliminar técnico">${ICONS.eliminar}</button>
+          </div>
         </div>`;
       })
       .join("");
@@ -560,7 +707,7 @@ async function cargarCoordinadores() {
       .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
     const countSup = (cid) => all.filter((u) => u.rol === "supervisor" && u.coordinadorUid === cid).length;
     if (!coords.length) {
-      cont.innerHTML = `<div class="lista-vacia">Aún no tienes coordinadores. Genera un enlace con "🎟️ Invitar coordinador".</div>`;
+      cont.innerHTML = `<div class="lista-vacia">Aún no tienes coordinadores. Genera un enlace con "Invitar por link".</div>`;
       return;
     }
     cont.innerHTML = coords
@@ -606,10 +753,10 @@ async function mostrarCoordinador(uid, nombre) {
     const perfilC = (await getDoc(doc(db, "usuarios", uid))).data() || {};
     const activo = perfilC.activo !== false;
     let html = `<div class="btn-row">
-      <button class="btn secundario" id="btn-volver-coords">← Volver</button>
+      <button class="btn secundario" id="btn-volver-coords">${ICONS.back} Volver</button>
       ${htmlBotonEstado(activo, "coordinador")}
-      <button class="btn secundario" id="btn-reset-coord">🔑 Restablecer contraseña</button>
-      <button class="btn secundario" id="btn-eliminar-coord" style="color:#c0392b;border-color:#c0392b">🗑 Eliminar</button>
+      <button class="btn secundario" id="btn-reset-coord">${ICONS.key} Restablecer contraseña</button>
+      <button class="btn secundario" id="btn-eliminar-coord" style="color:#c0392b;border-color:#c0392b">${ICONS.trash} Eliminar</button>
     </div>`;
     html += `<h3 style="margin-top:16px">Supervisores (${sups.length})</h3>`;
     html += sups.length
@@ -715,9 +862,9 @@ async function cargarInvitaciones() {
         const link = new URL(`registro.html?invite=${inv.id}`, location.href).href;
         const acciones =
           estado === "Pendiente"
-            ? `<button class="srow-x" data-copiar="${esc(link)}" title="Copiar enlace" style="color:var(--azul)">⧉</button>
-               <button class="srow-x" data-revocar="${inv.id}" title="Revocar">✕</button>`
-            : `<button class="srow-x" data-revocar="${inv.id}" title="Eliminar">✕</button>`;
+            ? `<button class="srow-x" data-copiar="${esc(link)}" title="Copiar enlace" style="color:var(--azul-airtek)">${ICONS.invitar}</button>
+               <button class="srow-x btn-delete" data-revocar="${inv.id}" title="Revocar">${ICONS.eliminar}</button>`
+            : `<button class="srow-x btn-delete" data-revocar="${inv.id}" title="Eliminar">${ICONS.eliminar}</button>`;
         const quien = inv.rol === "coordinador" ? "Coordinador" : "Supervisor";
         const badge = `<span style="background:${bg};color:${color};border-radius:20px;padding:3px 10px;font-size:.78rem;font-weight:700">${estado}</span>`;
         return `<div class="srow" style="cursor:default">
@@ -782,7 +929,7 @@ async function cargarSupervisores() {
     const countTec = (sid) => tecs.filter((t) => t.supervisorUid === sid).length;
 
     if (!sups.length) {
-      cont.innerHTML = `<div class="lista-vacia">Aún no tienes supervisores. Genera un enlace con "🎟️ Invitar supervisor" y compártelo.</div>`;
+      cont.innerHTML = `<div class="lista-vacia">Aún no tienes supervisores. Genera un enlace con "Invitar por link" y compártelo.</div>`;
       return;
     }
     cont.innerHTML = sups
@@ -838,11 +985,11 @@ async function mostrarSupervisor(uid, nombre, volverFn) {
         .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
     }
     let html = `<div class="btn-row">
-      <button class="btn secundario" id="btn-volver-sups">← Volver</button>
-      <button class="btn secundario" id="btn-renombrar-sup">✏️ Corregir nombre</button>
+      <button class="btn secundario" id="btn-volver-sups">${ICONS.back} Volver</button>
+      <button class="btn secundario" id="btn-renombrar-sup">${ICONS.editar} Corregir nombre</button>
       ${htmlBotonEstado(activo, "supervisor")}
-      <button class="btn secundario" id="btn-reset">🔑 Restablecer contraseña</button>
-      <button class="btn secundario" id="btn-eliminar-sup" style="color:#c0392b;border-color:#c0392b">🗑 Eliminar</button>
+      <button class="btn secundario" id="btn-reset">${ICONS.key} Restablecer contraseña</button>
+      <button class="btn secundario" id="btn-eliminar-sup" style="color:#c0392b;border-color:#c0392b">${ICONS.trash} Eliminar</button>
     </div>`;
 
     let tecnicosHtml = tecnicos.length
@@ -919,15 +1066,15 @@ async function mostrarSupervisor(uid, nombre, volverFn) {
     // (Solo el coordinador) genera el link público para evaluar a este supervisor.
     if (sesion.perfil.rol === "coordinador") {
       evaluacionesHtml += `<div style="margin-top:16px">
-        <button class="btn" id="btn-link-sup">🔗 Link para que técnicos lo evalúen</button>
+        <button class="btn" id="btn-link-sup">${ICONS.link} Link para que técnicos lo evalúen</button>
         <div id="link-box"></div></div>`;
     }
 
     html += htmlTabs([
-      { id: "tecnicos", label: "👥 Técnicos", count: tecnicos.length, contentHtml: tecnicosHtml },
-      { id: "planillas", label: "📝 Planillas", count: evals.length, contentHtml: planillasHtml },
-      { id: "bitacora", label: "📋 Bitácora", count: bitacoras.length, contentHtml: bitacorasHtml },
-      { id: "evaluaciones", label: "⭐ Evaluaciones", count: evalSup.length, contentHtml: evaluacionesHtml },
+      { id: "tecnicos", label: `${ICONS.users} Técnicos`, count: tecnicos.length, contentHtml: tecnicosHtml },
+      { id: "planillas", label: `${ICONS.bitacora} Planillas`, count: evals.length, contentHtml: planillasHtml },
+      { id: "bitacora", label: `${ICONS.tablero} Bitácora`, count: bitacoras.length, contentHtml: bitacorasHtml },
+      { id: "evaluaciones", label: `${ICONS.star} Evaluaciones`, count: evalSup.length, contentHtml: evaluacionesHtml },
     ]);
 
     cont.innerHTML = html;
@@ -994,7 +1141,7 @@ async function generarLinkSupervisor(supUid, supNombre) {
   try {
     const forms = (await cargarPlantillasDeCoordinador(db, sesion.uid)).filter((f) => f.tipo === "supervisor");
     if (!forms.length) {
-      box.innerHTML = `<div class="msg error" style="margin-top:8px">Primero crea un formulario de tipo <strong>"Para evaluar supervisores"</strong> en "✎ Editar formulario".</div>`;
+      box.innerHTML = `<div class="msg error" style="margin-top:8px">Primero crea un formulario de tipo <strong>"Para evaluar supervisores"</strong> en "Editar formulario".</div>`;
       return;
     }
     box.innerHTML = `<div class="add-row" style="margin-top:8px">

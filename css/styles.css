@@ -2,19 +2,33 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
 
 :root {
-  --azul: #0066ff;       /* azul de marca Airtek */
-  --azul-osc: #0047b3;   /* azul para hover */
-  --negro: #111111;      /* barras/encabezados oscuros */
-  --gris: #f4f5f7;       /* fondo tipo AsistApp */
-  --borde: #ececf0;
-  --texto: #1a1a2e;
-  --texto2: #8a8a9a;     /* texto secundario/etiquetas */
-  --ok: #059669;
-  --error: #dc2626;
-  --advertencia: #b45309;   /* naranja del aviso de "Ver como" (spec 003) */
-  --prueba: #7c3aed;        /* violeta del aviso de "Modo de prueba" (spec 004) */
-  --sombra: 0 2px 12px rgba(0, 0, 0, 0.06);
+  /* Tokens oficiales DESIGN.md — Edición Exteriores / Campo */
+  --azul-airtek: #0066ff;       /* azul insignia oficial */
+  --azul-hover: #0047b3;        /* estado hover/active */
+  --cian-acento: #00ccfc;       /* cian de acento y fibra */
+  --fondo-campo: #f4f6fa;       /* gris hielo antideslumbrante */
+  --tarjeta-bg: #ffffff;        /* blanco puro satín */
+  --tarjeta-borde: #e2e8f0;     /* borde pizarra claro 1px */
+  --texto-primario: #0f172a;    /* carbón navy ultra-profundo (WCAG AAA) */
+  --texto-secundario: #475569;  /* pizarra medio */
+  --ok: #059669;                /* verde operativo campo */
+  --advertencia: #ea580c;       /* ámbar solar */
+  --error: #dc2626;             /* rojo carmesí */
+  --prueba: #7c3aed;            /* violeta modo de prueba */
+
+  /* Compatibilidad del sistema */
+  --azul: var(--azul-airtek);
+  --azul-osc: var(--azul-hover);
+  --negro: var(--texto-primario);
+  --gris: var(--fondo-campo);
+  --borde: var(--tarjeta-borde);
+  --texto: var(--texto-primario);
+  --texto2: var(--texto-secundario);
+  --sombra: 0 4px 12px rgba(15, 23, 42, 0.05);
+  --sombra-card: 0 4px 16px rgba(15, 23, 42, 0.06);
   --sombra-btn: 0 4px 14px rgba(0, 102, 255, 0.25);
+  --radio-bento: 20px;
+  --radio-card: 18px;
 }
 
 * { box-sizing: border-box; }
@@ -22,28 +36,84 @@
 body {
   margin: 0;
   font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  background: var(--gris);
-  color: var(--texto);
+  background: var(--fondo-campo);
+  color: var(--texto-primario);
   line-height: 1.5;
   overflow-x: hidden; /* nada se desborda a los lados en móvil */
 }
 
-/* Barra superior (negra, estilo Airtek) — fija arriba como app móvil */
+/* Barra superior oficial Airtek — nítida, sin reflejos */
 .topbar {
-  background: var(--negro);
-  color: #fff;
+  background: #ffffff;
+  color: var(--texto-primario);
+  border-bottom: 1px solid var(--tarjeta-borde);
   padding: 12px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  box-shadow: var(--sombra);
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
   position: sticky;
   top: 0;
   z-index: 20;
 }
-.topbar .marca { font-weight: 700; font-size: 1.1rem; letter-spacing: 0.5px; }
-.topbar .usuario { font-size: 0.9rem; opacity: 0.95; }
+.topbar .marca-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.topbar .topbar-logo {
+  height: 26px;
+  width: auto;
+  display: block;
+}
+.topbar .topbar-divider {
+  width: 1px;
+  height: 18px;
+  background: var(--tarjeta-borde);
+}
+.topbar .topbar-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--azul-airtek);
+  text-transform: uppercase;
+}
+.topbar .marca { font-weight: 700; font-size: 1.05rem; letter-spacing: 0.5px; color: var(--texto-primario); }
+.topbar-user-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.topbar .usuario {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--texto-secundario);
+  background: var(--fondo-campo);
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--tarjeta-borde);
+}
+.btn-topbar-salir {
+  background: #ffffff;
+  color: var(--texto-secundario);
+  border: 1px solid var(--tarjeta-borde);
+  border-radius: 12px;
+  padding: 8px 14px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+.btn-topbar-salir:hover {
+  background: #fef2f2;
+  color: var(--error);
+  border-color: #fecaca;
+}
 
 /* Aviso de modo "Ver como" (spec 003): se inserta justo debajo de la topbar
    en cualquier página mientras root navega con los datos de otra persona. */
@@ -101,27 +171,53 @@ body {
   font-family: inherit;
 }
 
-.contenedor { max-width: 600px; margin: 0 auto; padding: 18px 16px 40px; }
+.contenedor { max-width: 1040px; margin: 0 auto; padding: 24px 16px 60px; }
 
-/* Tarjeta genérica (estilo AsistApp) */
-.card {
-  background: #fff;
-  border: 1px solid var(--borde);
-  border-radius: 16px;
-  box-shadow: var(--sombra);
-  padding: 18px;
-  margin-bottom: 14px;
+/* Bento Grid System (Sección 4 de DESIGN.md) */
+.bento-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
 }
 
-h1, h2, h3 { color: var(--azul-osc); }
-h1 { font-size: 1.4rem; }
-h2 { font-size: 1.15rem; margin-top: 0; }
+@media (min-width: 860px) {
+  .bento-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    align-items: start;
+  }
+  .bento-grid > .bento-featured,
+  .bento-grid > #novedades,
+  .bento-grid > .bento-span-full {
+    grid-column: 1 / -1;
+  }
+}
 
-label { font-weight: 600; display: block; margin-bottom: 6px; }
+/* Tarjeta Bento Base */
+.card {
+  background: var(--tarjeta-bg);
+  border: 1px solid var(--tarjeta-borde);
+  border-radius: var(--radio-card);
+  box-shadow: var(--sombra-card);
+  padding: 22px;
+  margin-bottom: 14px;
+  position: relative;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.bento-grid .card {
+  margin-bottom: 0;
+}
+
+h1, h2, h3 { color: var(--texto-primario); font-weight: 700; }
+h1 { font-size: 1.45rem; }
+h2 { font-size: 1.2rem; margin-top: 0; margin-bottom: 10px; }
+h3 { font-size: 1.05rem; }
+
+label { font-weight: 600; display: block; margin-bottom: 6px; color: var(--texto-primario); }
 /* Etiquetas cortas de campo en mayúsculas, al estilo AsistApp */
 .campo > label {
-  font-size: .72rem; text-transform: uppercase; letter-spacing: .5px;
-  color: var(--texto2); font-weight: 600;
+  font-size: .74rem; text-transform: uppercase; letter-spacing: .5px;
+  color: var(--texto-secundario); font-weight: 600;
 }
 .requerido::after { content: " *"; color: var(--error); }
 
@@ -129,40 +225,149 @@ input[type="text"], input[type="email"], input[type="password"],
 input[type="datetime-local"], select, textarea {
   width: 100%;
   padding: 13px 14px;
-  border: 1px solid var(--borde);
-  border-radius: 12px;
+  border: 1.5px solid var(--tarjeta-borde);
+  border-radius: 14px;
   font-size: 1rem;
   font-family: inherit;
   background: #fff;
+  color: var(--texto-primario);
   transition: border-color .15s, box-shadow .15s;
 }
 input:focus, select:focus, textarea:focus {
   outline: none;
-  border-color: var(--azul);
+  border-color: var(--azul-airtek);
   box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.12);
 }
 textarea { min-height: 70px; resize: vertical; }
 .campo { margin-bottom: 16px; }
 
-/* Botones */
+/* Botones ergonómicos — mínimo 48px para uso en exteriores */
 .btn {
-  background: var(--azul);
+  min-height: 48px;
+  background: var(--azul-airtek);
   color: #fff;
   border: none;
-  padding: 12px 20px;
-  border-radius: 12px;
-  font-size: 1rem;
+  padding: 12px 22px;
+  border-radius: 14px;
+  font-size: 0.96rem;
   cursor: pointer;
   font-weight: 600;
   box-shadow: var(--sombra-btn);
-  transition: background .15s, transform .05s;
+  transition: background .15s, transform .08s, box-shadow .15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  font-family: inherit;
 }
-.btn:hover { background: var(--azul-osc); }
+.btn:hover { background: var(--azul-hover); }
 .btn:active { transform: scale(.98); }
-.btn.secundario { box-shadow: none; }
+.btn.secundario {
+  background: #ffffff;
+  color: var(--texto-primario);
+  border: 1.5px solid var(--tarjeta-borde);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
+}
+.btn.secundario:hover {
+  background: var(--fondo-campo);
+  border-color: #cbd5e1;
+  color: var(--azul-airtek);
+}
+.btn.secundario:active { transform: scale(.98); }
 
 /* Fila de botones de acción: se acomodan y saltan de línea con separación */
 .btn-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+
+/* Hero Banner para Supervisor y Coordinador */
+.panel-hero-banner {
+  background: linear-gradient(135deg, #0052cc 0%, #0066ff 100%);
+  color: #ffffff;
+  border-radius: var(--radio-bento);
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 20px;
+  box-shadow: 0 10px 25px rgba(0, 102, 255, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.panel-hero-banner::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 240px;
+  height: 100%;
+  background-image: url('../img/airtek-waves.svg');
+  background-repeat: no-repeat;
+  background-position: right center;
+  background-size: cover;
+  opacity: 0.22;
+  pointer-events: none;
+}
+.panel-hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 600px;
+}
+.panel-hero-tag {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: var(--cian-acento);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.panel-hero-banner h2 {
+  color: #ffffff !important;
+  font-size: 1.45rem;
+  font-weight: 800;
+  margin: 0 0 6px;
+}
+.panel-hero-banner p {
+  color: rgba(255, 255, 255, 0.92);
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+.btn-account-pill {
+  position: relative;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+  padding: 10px 18px;
+  border-radius: 9999px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(8px);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.btn-account-pill:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: #ffffff;
+}
+.btn-account-pill:active { transform: scale(0.97); }
+
+/* SVG Helpers */
+.btn-icon {
+  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: middle;
+}
+.icon-blue {
+  color: var(--azul-airtek);
+}
 
 /* Aviso flotante (toast), estilo AsistApp */
 .toast-airtek {
@@ -815,26 +1020,65 @@ textarea { min-height: 70px; resize: vertical; }
 .aa-avatar.lg { width: 52px; height: 52px; font-size: 18px; }
 
 .srow {
-  display: flex; align-items: center; gap: 12px;
-  padding: 10px 12px; margin-bottom: 8px;
-  border: 1px solid var(--borde); border-radius: 12px; background: #fff;
-  cursor: pointer; transition: box-shadow .15s, transform .05s;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  border: 1px solid var(--tarjeta-borde);
+  border-radius: 16px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.08s;
+  min-height: 56px;
 }
-.srow:hover { box-shadow: var(--sombra); }
-.srow:active { transform: scale(.995); }
-.srow-name { flex: 1; font-weight: 600; }
+.srow:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+}
+.srow:active { transform: scale(0.995); }
+.srow-name {
+  flex: 1;
+  font-weight: 600;
+  color: var(--texto-primario);
+  font-size: 0.98rem;
+}
 /* Tarjeta con nombre + subtítulo de rol (estilo "salón") */
 .srow-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .srow-main .srow-name { flex: none; }
 .srow-sub {
-  font-size: .76rem; color: var(--texto2); font-weight: 500;
-  text-transform: uppercase; letter-spacing: .4px;
+  font-size: .76rem;
+  color: var(--texto-secundario);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .4px;
 }
 .srow-x {
-  color: var(--error); border: none; background: none; cursor: pointer;
-  font-size: 15px; padding: 4px 9px; border-radius: 8px;
+  color: var(--texto-secundario);
+  border: 1px solid var(--tarjeta-borde);
+  background: #ffffff;
+  cursor: pointer;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  font-family: inherit;
 }
-.srow-x:hover { background: #fdecea; }
+.srow-x:hover {
+  background: var(--fondo-campo);
+  color: var(--azul-airtek);
+  border-color: #cbd5e1;
+}
+.srow-x[data-del]:hover {
+  background: #fef2f2;
+  color: var(--error);
+  border-color: #fecaca;
+}
+.srow-x:active { transform: scale(0.92); }
 
 .add-row { display: flex; gap: 8px; margin: 12px 0 16px; align-items: flex-start; }
 .add-row textarea { min-height: 46px; }
@@ -967,9 +1211,21 @@ textarea { min-height: 70px; resize: vertical; }
   .card { padding: 15px; border-radius: 12px; }
   h1 { font-size: 1.25rem; }
 
-  .topbar { padding: 10px 14px; }
-  .topbar .marca { font-size: 1rem; }
-  .topbar .usuario { font-size: .78rem; }
+  .topbar { padding: 10px 14px; gap: 8px; }
+  .topbar .topbar-logo { height: 22px; }
+  .topbar .topbar-divider { display: none; }
+  .topbar .topbar-tag { display: none; }
+  .topbar .marca { font-size: 0.95rem; }
+  .topbar .usuario {
+    font-size: 0.78rem;
+    padding: 4px 10px;
+    max-width: 130px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .btn-topbar-salir span { display: none; }
+  .btn-topbar-salir { padding: 6px 10px; border-radius: 10px; }
 
   /* La tabla no se aplasta: mantiene un ancho mínimo y se desliza */
   .tabla-scroll .tabla-escala { min-width: 480px; }
@@ -990,3 +1246,241 @@ textarea { min-height: 70px; resize: vertical; }
   .firma canvas { height: 160px; }
   .lista-item { flex-wrap: wrap; gap: 6px; }
 }
+
+/* ==========================================================================
+   Estructura de Aplicación de Escritorio con Panel Lateral (Sidebar)
+   ========================================================================== */
+.panel-layout-app {
+  min-height: 100vh;
+  display: block;
+}
+
+.panel-main-area {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+}
+
+/* Sidebar Oculto por Defecto en Móvil (< 960px) */
+.panel-sidebar {
+  display: none;
+}
+
+/* En Escritorio (>= 960px): Activa el Grid de 2 Columnas */
+@media (min-width: 960px) {
+  .panel-layout-app {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    min-height: 100vh;
+    background: var(--fondo-campo);
+  }
+
+  /* Ocultar la barra superior móvil en escritorio */
+  .mobile-topbar {
+    display: none !important;
+  }
+
+  /* Sidebar Estilo Airtek Pro */
+  .panel-sidebar {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    background: #ffffff;
+    border-right: 1px solid var(--tarjeta-borde);
+    box-shadow: 2px 0 16px rgba(15, 23, 42, 0.03);
+    padding: 24px 18px 20px;
+    z-index: 50;
+    overflow-y: auto;
+  }
+
+  .sidebar-header {
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .sidebar-brand {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+
+  .sidebar-logo {
+    height: 28px;
+    width: auto;
+    object-fit: contain;
+    align-self: flex-start;
+  }
+
+  .sidebar-system-tag {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    color: var(--azul-airtek);
+    text-transform: uppercase;
+  }
+
+  .sidebar-status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: #166534;
+  }
+
+  .sidebar-status-chip .status-pulse {
+    width: 8px;
+    height: 8px;
+    background: #22c55e;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25);
+    animation: statusPulse 2s infinite ease-in-out;
+  }
+
+  /* Navegación del Panel Lateral */
+  .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+  }
+
+  .sidebar-nav-title {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    font-weight: 700;
+    color: var(--texto-secundario);
+    margin: 14px 10px 4px;
+  }
+
+  .sidebar-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--texto-secundario);
+    text-decoration: none;
+    transition: all 0.15s ease;
+    cursor: pointer;
+  }
+
+  .sidebar-nav-item:hover {
+    background: #f8fafc;
+    color: var(--azul-airtek);
+    transform: translateX(2px);
+  }
+
+  .sidebar-nav-item.active {
+    background: #eff6ff;
+    color: var(--azul-airtek);
+    font-weight: 700;
+    box-shadow: inset 3px 0 0 var(--azul-airtek);
+  }
+
+  .sidebar-nav-item svg {
+    flex-shrink: 0;
+  }
+
+  .sidebar-nav-badge {
+    margin-left: auto;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: #dbeafe;
+    color: var(--azul-airtek);
+    padding: 2px 8px;
+    border-radius: 12px;
+  }
+
+  /* Tarjeta de usuario inferior */
+  .sidebar-footer {
+    padding-top: 16px;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  .sidebar-user-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f8fafc;
+    border: 1px solid var(--tarjeta-borde);
+    padding: 10px 12px;
+    border-radius: 14px;
+  }
+
+  .sidebar-user-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--azul-airtek);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.88rem;
+    flex-shrink: 0;
+  }
+
+  .sidebar-user-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .sidebar-user-name {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--texto-primario);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .sidebar-user-role {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--texto-secundario);
+    text-transform: capitalize;
+  }
+
+  .btn-sidebar-salir {
+    background: transparent;
+    border: none;
+    color: var(--texto-secundario);
+    padding: 6px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+  }
+
+  .btn-sidebar-salir:hover {
+    background: #fee2e2;
+    color: var(--error);
+  }
+
+  .panel-workspace {
+    max-width: 1240px;
+    width: 100%;
+    padding: 28px 32px 60px;
+    margin: 0;
+  }
+}
+

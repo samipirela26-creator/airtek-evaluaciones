@@ -21,6 +21,7 @@ for f in *.html; do
     | sed -E \
         -e 's#href="css/#href="/css/#g' \
         -e 's#src="js/#src="/js/#g' \
+        -e 's#src="img/#src="/img/#g' \
         -e 's#href="([a-zA-Z0-9_-]+\.html)"#href="/preview/\1"#g' \
     > "$OUT/$f"
 done
