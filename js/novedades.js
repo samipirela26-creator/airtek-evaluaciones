@@ -21,6 +21,26 @@ const CLAVE = "airtek_novedades_vistas";
  */
 export const VERSIONES = [
   {
+    version: "2.3.0",
+    fecha: "2026-09-18",
+    titulo: "Nuevo panel para computadora y teléfono",
+    cambios: {
+      todos: [
+        "En computadoras y pantallas grandes, el panel ahora cuenta con una <strong>barra lateral fija</strong> con accesos directos a todas las áreas de trabajo.",
+        "En teléfonos móviles, la pantalla se ajusta automáticamente para que todo sea cómodo al tacto y fácil de ver en la calle.",
+      ],
+      supervisor: [
+        "Tus accesos a técnicos, bitácoras de campo e inventario ahora están siempre visibles en el panel lateral.",
+      ],
+      coordinador: [
+        "Navega entre métricas de personal, tableros de bitácora y supervisores con un solo clic desde la barra lateral.",
+      ],
+      root: [
+        "Acceso directo a la auditoría, coordinadores y respaldos desde la navegación de escritorio.",
+      ],
+    },
+  },
+  {
     version: "2.2.1",
     fecha: "2026-09-16",
     titulo: "Categorías desplegables en el Inventario",
