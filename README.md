@@ -1,4 +1,4 @@
-# Airtek · Sistema de Evaluación de Técnicos
+# GESTO · Sistema de Evaluación de Técnicos
 
 App web (HTML/CSS/JavaScript + Firebase) para que **supervisores** evalúen a sus
 **técnicos** con un formulario que el **coordinador** podrá variar. Sin servidor

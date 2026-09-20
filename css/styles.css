@@ -62,9 +62,13 @@ body {
   align-items: center;
   gap: 12px;
 }
-.topbar .topbar-logo {
-  height: 26px;
-  width: auto;
+.topbar .topbar-logo-text {
+  font-family: "Poppins", sans-serif;
+  font-weight: 900;
+  font-size: 1.15rem;
+  line-height: 1;
+  letter-spacing: 0.5px;
+  color: var(--azul-airtek);
   display: block;
 }
 .topbar .topbar-divider {
@@ -521,14 +525,26 @@ textarea { min-height: 70px; resize: vertical; }
     position: relative;
     z-index: 2;
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
   }
 
-  .brand-pane-logo {
-    height: 32px;
-    width: auto;
-    object-fit: contain;
-    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2));
+  .brand-pane-logo-text {
+    font-family: "Poppins", sans-serif;
+    font-weight: 900;
+    font-size: 1.7rem;
+    line-height: 1;
+    letter-spacing: 1px;
+    color: #ffffff;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .brand-pane-logo-tagline {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    color: rgba(255, 255, 255, 0.85);
   }
 
   .brand-pane-body {
@@ -678,11 +694,15 @@ textarea { min-height: 70px; resize: vertical; }
   text-align: center;
 }
 
-.mobile-brand-logo {
-  height: 36px;
-  width: auto;
-  object-fit: contain;
-  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.25));
+.mobile-brand-logo-text {
+  display: block;
+  font-family: "Poppins", sans-serif;
+  font-weight: 900;
+  font-size: 1.5rem;
+  line-height: 1;
+  letter-spacing: 1px;
+  color: #ffffff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
   margin-bottom: 6px;
 }
 
@@ -1212,7 +1232,7 @@ textarea { min-height: 70px; resize: vertical; }
   h1 { font-size: 1.25rem; }
 
   .topbar { padding: 10px 14px; gap: 8px; }
-  .topbar .topbar-logo { height: 22px; }
+  .topbar .topbar-logo-text { font-size: 1rem; }
   .topbar .topbar-divider { display: none; }
   .topbar .topbar-tag { display: none; }
   .topbar .marca { font-size: 0.95rem; }
@@ -1310,10 +1330,13 @@ textarea { min-height: 70px; resize: vertical; }
     margin-bottom: 14px;
   }
 
-  .sidebar-logo {
-    height: 28px;
-    width: auto;
-    object-fit: contain;
+  .sidebar-logo-text {
+    font-family: "Poppins", sans-serif;
+    font-weight: 900;
+    font-size: 1.35rem;
+    line-height: 1;
+    letter-spacing: 0.5px;
+    color: var(--azul-airtek);
     align-self: flex-start;
   }
 

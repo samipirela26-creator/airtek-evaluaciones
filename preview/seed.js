@@ -26,12 +26,12 @@ const CAL = [
 function snapshot(nombre) {
   return {
     nombre,
-    siNo: { id: "conoceCanales", label: "¿Conoce los canales de atención de Airtek?" },
+    siNo: { id: "conoceCanales", label: "¿Conoce los canales de atención de GESTO?" },
     secciones: [
       { id: "personales", titulo: "Aspectos Personales", opciones: CAL,
         preguntas: ["Presencia personal (uniforme, carnet)", "Puntualidad y responsabilidad", "Resolución de problemas"] },
       { id: "tecnicos", titulo: "Aspectos Técnicos", opciones: CAL,
-        preguntas: ["Estándar de calidad Airtek", "Documentación de órdenes", "Uso de materiales"] },
+        preguntas: ["Estándar de calidad GESTO", "Documentación de órdenes", "Uso de materiales"] },
     ],
   };
 }

@@ -1,6 +1,6 @@
-# DESIGN.md — Sistema de Diseño Airtek Evaluaciones (Edición Exteriores / Campo)
+# DESIGN.md — Sistema de Diseño GESTO Evaluaciones (Edición Exteriores / Campo)
 
-Sistema de diseño semántico fundacional para **Airtek Evaluaciones**. Diseñado específicamente para garantizar máxima legibilidad bajo luz solar directa (uso por técnicos y supervisores en campo), respetando la identidad oficial de la marca y aplicando arquitectura Bento Grid modular.
+Sistema de diseño semántico fundacional para **GESTO Evaluaciones**. Diseñado específicamente para garantizar máxima legibilidad bajo luz solar directa (uso por técnicos y supervisores en campo), respetando la identidad oficial de la marca y aplicando arquitectura Bento Grid modular.
 
 ---
 
@@ -78,12 +78,11 @@ Los colores fueron extraídos directamente de los activos vectoriales oficiales 
 
 ## 5. Simbología y Recursos de Marca
 
-1. **Logotipo Airtek:**
+1. **Logotipo GESTO:**
+   * Wordmark tipográfico (Poppins, `font-weight: 900`), no una imagen — se resuelve como texto estilizado en cada superficie.
    * En superficies blancas o fondo claro: versión en color oscuro (`#0F172A`) o azul (`#0066FF`).
    * En tarjetas destacadas azules: versión en blanco puro (`#FFFFFF`).
-2. **Glifo Pin de Ubicación (Airtek Pin):**
-   * El pin oficial con la "K" estilizada se emplea como marcador en mapas de campo, icono de cuadrilla activa y avatar corporativo.
-3. **Iconografía de Interfaz:**
+2. **Iconografía de Interfaz:**
    * Exclusivamente iconos SVG con trazo uniforme (2px) y esquinas redondeadas.
    * Prohibido el uso de emojis como iconos funcionales.
 

@@ -1,7 +1,7 @@
 # AGENTS.md — airtek-evaluaciones
 
 ## Proyecto
-Sistema web de evaluación de técnicos para Airtek. Arquitectura estática (HTML/CSS/JS ES Modules) sin build step, con Firebase (Auth + Firestore) como backend y despliegue en GitHub Pages.
+Sistema web de evaluación de técnicos para GESTO. Arquitectura estática (HTML/CSS/JS ES Modules) sin build step, con Firebase (Auth + Firestore) como backend y despliegue en GitHub Pages.
 
 ## Metodología
 - Metodología activa: **Spec-Driven Development (SDD)** en modalidad **Spec-Anchored**.

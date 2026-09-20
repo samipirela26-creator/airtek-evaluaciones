@@ -1,7 +1,7 @@
 {
-  "name": "Airtek · Evaluaciones",
-  "short_name": "Airtek Eval",
-  "description": "Sistema de evaluación de técnicos de Airtek",
+  "name": "GESTO · Evaluaciones",
+  "short_name": "GESTO Eval",
+  "description": "GESTO (Gestión y Supervisión de Tareas Operativas): sistema de evaluación de técnicos",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

@@ -71,16 +71,16 @@ async function verLista() {
       </div>
       <button class="btn secundario" id="btn-migrar">🔄 Revisar y actualizar puntajes</button>
     </div>`;
-  // Formulario oficial de Airtek (precargado para todos, disponible a los supervisores).
+  // Formulario oficial de GESTO (precargado para todos, disponible a los supervisores).
   html += `<div class="card"><div class="srow" style="cursor:default">
       <div class="srow-main">
         <span class="srow-name">${escapar(PLANTILLA_DEFAULT.nombre)}</span>
-        <span class="srow-sub">Oficial de Airtek · ya disponible para tus supervisores</span>
+        <span class="srow-sub">Oficial de GESTO · ya disponible para tus supervisores</span>
       </div>
       <button class="btn secundario" id="btn-duplicar-oficial">Duplicar para editar</button>
     </div></div>`;
   if (!forms.length) {
-    html += `<div class="card lista-vacia">Aún no tienes formularios. Crea el primero (parte de la plantilla oficial de Airtek y edítala a tu gusto).</div>`;
+    html += `<div class="card lista-vacia">Aún no tienes formularios. Crea el primero (parte de la plantilla oficial de GESTO y edítala a tu gusto).</div>`;
   } else {
     html += `<div class="card">` + forms
       .map(
@@ -169,7 +169,7 @@ async function migrarPuntajes(forms) {
   if (bloqueaSiImpersona(sesion)) return;
   const msg = document.getElementById("mensaje");
   if (!forms.length) {
-    msg.innerHTML = `<div class="msg ok">No tienes formularios personalizados guardados. El formulario oficial de Airtek ya usa la escala nueva. ✓</div>`;
+    msg.innerHTML = `<div class="msg ok">No tienes formularios personalizados guardados. El formulario oficial de GESTO ya usa la escala nueva. ✓</div>`;
     return;
   }
   const btn = document.getElementById("btn-migrar");

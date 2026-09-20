@@ -157,7 +157,7 @@ function generarPDF() {
     docp.rect(0, 0, W, 26, "F");
     docp.setTextColor(...BLANCO);
     docp.setFontSize(18); docp.setFont("helvetica", "bold");
-    docp.text("AIRTEK", 14, 12);
+    docp.text("GESTO", 14, 12);
     docp.setFontSize(9); docp.setFont("helvetica", "normal");
     docp.text("Evaluación de Desempeño Técnico", 14, 19);
     docp.setFillColor(...AZUL);
@@ -230,7 +230,7 @@ function generarPDF() {
     for (let p = 1; p <= pages; p++) {
       docp.setPage(p);
       docp.setFontSize(7.5); docp.setTextColor(...GRIS); docp.setFont("helvetica", "normal");
-      docp.text(`AIRTEK · Evaluación de ${E.tecnicoNombre || ""} · Pág ${p}/${pages}`,
+      docp.text(`GESTO · Evaluación de ${E.tecnicoNombre || ""} · Pág ${p}/${pages}`,
         W / 2, docp.internal.pageSize.getHeight() - 8, { align: "center" });
     }
 

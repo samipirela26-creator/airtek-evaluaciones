@@ -58,6 +58,6 @@ test('conBOM antepone el BOM UTF-8 que Excel necesita', async () => {
 
 test('nombreConFecha arma un nombre de archivo limpio', async () => {
     const { nombreConFecha } = await carga();
-    assert.strictEqual(nombreConFecha('bitacoras airtek', new Date(2026, 8, 15)), 'bitacoras_airtek_2026-09-15.csv');
+    assert.strictEqual(nombreConFecha('bitacoras gesto', new Date(2026, 8, 15)), 'bitacoras_gesto_2026-09-15.csv');
     assert.strictEqual(nombreConFecha('reporte/raro:1', new Date(2026, 0, 5)), 'reporte_raro_1_2026-01-05.csv');
 });

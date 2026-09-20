@@ -362,7 +362,7 @@ protegerPagina(null, async ({ user, perfil }) => {
         <div class="panel-hero-content">
           <span class="panel-hero-tag">SISTEMA ADMINISTRATIVO</span>
           <h2>Hola, ${esc(sesion.perfil.nombre)}</h2>
-          <p>Crea y administra a los coordinadores de Airtek, gestiona auditorías y respaldos del sistema.</p>
+          <p>Crea y administra a los coordinadores de GESTO, gestiona auditorías y respaldos del sistema.</p>
         </div>
         <a class="btn-account-pill" href="perfil.html">
           ${ICONS.cuenta}
@@ -1309,7 +1309,7 @@ async function descargarRespaldo() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `airtek-respaldo${conFotos ? "-con-fotos" : ""}-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `gesto-respaldo${conFotos ? "-con-fotos" : ""}-${new Date().toISOString().slice(0, 10)}.json`;
     document.body.appendChild(a);
     a.click();
     a.remove();

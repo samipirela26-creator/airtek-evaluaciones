@@ -34,7 +34,7 @@ protegerPagina("supervisor", async (s) => {
   const forms = await cargarPlantillasDeCoordinador(db, sesion.perfil.coordinadorUid);
   // Solo formularios para evaluar TÉCNICOS (no los privados de supervisores).
   const propios = forms.filter((f) => (f.tipo || "tecnico") === "tecnico");
-  // El formulario OFICIAL de Airtek siempre está disponible, más los del coordinador.
+  // El formulario OFICIAL de GESTO siempre está disponible, más los del coordinador.
   plantillasDisponibles = [...propios, PLANTILLA_DEFAULT];
   P = plantillasDisponibles[0];
 

@@ -1,4 +1,4 @@
-# Constitución — Airtek Evaluaciones
+# Constitución — GESTO Evaluaciones
 
 Principios innegociables del proyecto. Toda spec, plan y tarea debe cumplirlos:
 

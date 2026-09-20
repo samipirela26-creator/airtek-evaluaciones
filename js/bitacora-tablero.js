@@ -173,5 +173,5 @@ function exportar() {
     const fb = `${b.fecha || ""}${b.horaInicio || ""}`;
     return fa.localeCompare(fb);
   });
-  descargarCSV(nombreConFecha("bitacoras_airtek"), filasACSV(COLUMNAS_CSV_BITACORA, orden));
+  descargarCSV(nombreConFecha("bitacoras_gesto"), filasACSV(COLUMNAS_CSV_BITACORA, orden));
 }

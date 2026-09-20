@@ -44,7 +44,7 @@ let invitacion = null;
     const rol = invitacion.rol || "supervisor";
     const rolTexto = rol === "coordinador" ? "Coordinador" : "Supervisor";
     document.getElementById("sub-registro").textContent = `Crear cuenta de ${rolTexto}`;
-    estado.innerHTML = `<div class="msg ok">Invitación de <strong>${invitacion.creadorNombre || invitacion.coordinadorNombre || "Airtek"}</strong> para <strong>${rolTexto}</strong>. Completa tus datos.</div>`;
+    estado.innerHTML = `<div class="msg ok">Invitación de <strong>${invitacion.creadorNombre || invitacion.coordinadorNombre || "GESTO"}</strong> para <strong>${rolTexto}</strong>. Completa tus datos.</div>`;
     form.style.display = "block";
   } catch (err) {
     console.error(err);

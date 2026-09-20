@@ -93,7 +93,7 @@ export const PLANTILLA_DEFAULT = {
       escala: "calidad",
       preguntas: [
         "Uso de los implementos de seguridad (Manejo adecuado)",
-        "Cumplen con el estándar de calidad de Airtek (Rango de Potencia, Estética, Ubicación y Configuración de equipos)",
+        "Cumplen con el estándar de calidad de GESTO (Rango de Potencia, Estética, Ubicación y Configuración de equipos)",
         "Documentación correcta de las ordenes (Odoo y Sigo)",
         "Solicitud de Materiales (Realiza la solicitud en los tiempos establecidos)",
         "Utiliza los Materiales y Equipos de Manera adecuada (Administración de Recursos)",

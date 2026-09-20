@@ -1,7 +1,7 @@
 {
   "name": "airtek-evaluaciones",
   "version": "1.0.0",
-  "description": "Sistema de evaluación de técnicos (Airtek) — HTML/CSS/JS + Firebase, publicado en GitHub Pages.",
+  "description": "Sistema de evaluación de técnicos (GESTO) — HTML/CSS/JS + Firebase, publicado en GitHub Pages.",
   "private": true,
   "scripts": {
     "test": "node --test tests/",

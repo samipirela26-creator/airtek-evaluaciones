@@ -79,7 +79,7 @@ if (typeof document !== "undefined") {
   // iOS/Safari: abrir a pantalla completa como app
   add("meta", { name: "apple-mobile-web-app-capable", content: "yes" });
   add("meta", { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" });
-  add("meta", { name: "apple-mobile-web-app-title", content: "Airtek Eval" });
+  add("meta", { name: "apple-mobile-web-app-title", content: "GESTO Eval" });
   add("meta", { name: "mobile-web-app-capable", content: "yes" });
 
   if ("serviceWorker" in navigator) {
