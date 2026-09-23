@@ -607,6 +607,23 @@ textarea { min-height: 70px; resize: vertical; }
     border-radius: 50%;
     box-shadow: 0 0 0 4px rgba(0, 230, 118, 0.35);
   }
+
+  .brand-contact-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.92);
+    text-decoration: none;
+    transition: opacity 150ms ease;
+  }
+
+  .brand-contact-link:hover,
+  .brand-contact-link:focus-visible {
+    opacity: 0.8;
+  }
 }
 
 /* Panel Derecho / Principal: Formulario */
