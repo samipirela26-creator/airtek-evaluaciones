@@ -6,6 +6,8 @@
 //  · edición sin saltos de scroll
 import { db, toast, logAudit } from "./firebase.js";
 import { protegerPagina, contextoActual } from "./session.js";
+import { icono } from "./ui/iconos.js";
+import { montarShell } from "./shell.js";
 import { cargarPlantillasDeCoordinador, opcionesDeSeccion, PLANTILLA_DEFAULT, ESCALAS } from "./plantilla.js";
 import { bloqueaSiImpersona, deshabilitarControlesDeEscritura } from "./ver-como.js";
 import { conPrefijoPrueba } from "./prueba-data.js";
@@ -30,6 +32,7 @@ const PRESETS = [
 ];
 
 protegerPagina("coordinador", (s) => {
+  montarShell(contextoActual(s));
   sesion = contextoActual(s);
   verLista();
 });
@@ -69,7 +72,7 @@ async function verLista() {
         formularios a la nueva escala (Mala 0 · Regular 6 · Buena 8 · Excelente 10).
         Solo cambia columnas con los valores viejos; respeta lo que hayas personalizado.
       </div>
-      <button class="btn secundario" id="btn-migrar">🔄 Revisar y actualizar puntajes</button>
+      <button class="btn secundario" id="btn-migrar">${icono("actualizar", 16)} Revisar y actualizar puntajes</button>
     </div>`;
   // Formulario oficial de GESTO (precargado para todos, disponible a los supervisores).
   html += `<div class="card"><div class="srow" style="cursor:default">
@@ -90,7 +93,7 @@ async function verLista() {
             <span class="srow-sub">${f.tipo === "supervisor" ? "Evalúa supervisores (privado)" : "Evalúa técnicos"}</span>
           </div>
           <button class="btn secundario" data-editar="${f.id}">Editar</button>
-          <button class="srow-x" data-eliminar="${f.id}" title="Eliminar">✕</button>
+          <button class="srow-x" data-eliminar="${f.id}" title="Eliminar">${icono("cerrar", 16)}</button>
         </div>`
       )
       .join("") + `</div>`;
@@ -191,12 +194,12 @@ async function migrarPuntajes(forms) {
   }
 
   if (!porActualizar.length) {
-    btn.disabled = false; btn.textContent = "🔄 Revisar y actualizar puntajes";
+    btn.disabled = false; btn.innerHTML = icono("actualizar", 16) + " Revisar y actualizar puntajes";
     msg.innerHTML = `<div class="msg ok">Revisados ${forms.length} formulario(s): ninguno tenía la escala vieja. Nada que actualizar. ✓</div>`;
     return;
   }
   if (!confirm(`Se actualizarán ${porActualizar.length} formulario(s) a la nueva escala (Buena=8, Regular=6, Mala=0). Las evaluaciones ya guardadas no cambian. ¿Continuar?`)) {
-    btn.disabled = false; btn.textContent = "🔄 Revisar y actualizar puntajes";
+    btn.disabled = false; btn.innerHTML = icono("actualizar", 16) + " Revisar y actualizar puntajes";
     return;
   }
 
@@ -221,7 +224,7 @@ async function migrarPuntajes(forms) {
     }
   }
   logAudit("puntajes_migrados", { cantidad: ok });
-  btn.disabled = false; btn.textContent = "🔄 Revisar y actualizar puntajes";
+  btn.disabled = false; btn.innerHTML = icono("actualizar", 16) + " Revisar y actualizar puntajes";
   msg.innerHTML = `<div class="msg ok">Listo: ${ok} de ${porActualizar.length} formulario(s) actualizados a la nueva escala. ✓</div>`;
   toast("Puntajes actualizados ✓");
 }
@@ -323,7 +326,7 @@ function seccionEditor(sec, si) {
         <input type="text" data-edit="col" data-sec="${si}" data-col="${ci}" value="${escapar(op.label)}" placeholder="Opción">
         <input type="number" data-edit="col-val" data-sec="${si}" data-col="${ci}" value="${op.valor === null ? "" : op.valor}" min="0" step="1" placeholder="pts" title="Puntos" ${op.valor === null ? "disabled" : ""}>
         <label class="ed-nc"><input type="checkbox" data-edit="colnc" data-sec="${si}" data-col="${ci}" ${op.valor === null ? "checked" : ""}> no cuenta</label>
-        <button type="button" class="srow-x" data-accion="del-col" data-sec="${si}" data-col="${ci}" title="Eliminar columna">✕</button>
+        <button type="button" class="srow-x" data-accion="del-col" data-sec="${si}" data-col="${ci}" title="Eliminar columna">${icono("cerrar", 16)}</button>
       </div>`
     )
     .join("");
@@ -334,9 +337,9 @@ function seccionEditor(sec, si) {
       <div class="ed-preg">
         <span class="ed-num">${pi + 1}</span>
         <input type="text" data-edit="preg" data-sec="${si}" data-preg="${pi}" value="${escapar(preg)}" placeholder="Escribe la pregunta">
-        <button type="button" class="ed-mini" data-accion="preg-up" data-sec="${si}" data-preg="${pi}" ${pi === 0 ? "disabled" : ""} title="Subir">↑</button>
-        <button type="button" class="ed-mini" data-accion="preg-down" data-sec="${si}" data-preg="${pi}" ${pi === sec.preguntas.length - 1 ? "disabled" : ""} title="Bajar">↓</button>
-        <button type="button" class="srow-x" data-accion="del-preg" data-sec="${si}" data-preg="${pi}" title="Eliminar pregunta">✕</button>
+        <button type="button" class="ed-mini" data-accion="preg-up" data-sec="${si}" data-preg="${pi}" ${pi === 0 ? "disabled" : ""} title="Subir">${icono("subir", 16)}</button>
+        <button type="button" class="ed-mini" data-accion="preg-down" data-sec="${si}" data-preg="${pi}" ${pi === sec.preguntas.length - 1 ? "disabled" : ""} title="Bajar">${icono("bajar", 16)}</button>
+        <button type="button" class="srow-x" data-accion="del-preg" data-sec="${si}" data-preg="${pi}" title="Eliminar pregunta">${icono("cerrar", 16)}</button>
       </div>`
     )
     .join("");
@@ -345,9 +348,9 @@ function seccionEditor(sec, si) {
     <div class="ed-seccion-head">
       <span class="ed-badge">Sección ${si + 1}</span>
       <div class="ed-seccion-tools">
-        <button type="button" class="ed-mini" data-accion="sec-up" data-sec="${si}" ${si === 0 ? "disabled" : ""} title="Subir sección">↑</button>
-        <button type="button" class="ed-mini" data-accion="sec-down" data-sec="${si}" ${si === total - 1 ? "disabled" : ""} title="Bajar sección">↓</button>
-        <button type="button" class="srow-x" data-accion="del-seccion" data-sec="${si}" title="Eliminar sección">✕</button>
+        <button type="button" class="ed-mini" data-accion="sec-up" data-sec="${si}" ${si === 0 ? "disabled" : ""} title="Subir sección">${icono("subir", 16)}</button>
+        <button type="button" class="ed-mini" data-accion="sec-down" data-sec="${si}" ${si === total - 1 ? "disabled" : ""} title="Bajar sección">${icono("bajar", 16)}</button>
+        <button type="button" class="srow-x" data-accion="del-seccion" data-sec="${si}" title="Eliminar sección">${icono("cerrar", 16)}</button>
       </div>
     </div>
 

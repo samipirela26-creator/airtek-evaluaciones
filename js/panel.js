@@ -3,6 +3,7 @@
 //  - Coordinador: edita el formulario y ve todas las planillas.
 import { db, auth, toast, logAudit, crearCuentaAux } from "./firebase.js";
 import { protegerPagina, cerrarSesion, contextoActual } from "./session.js";
+import { montarShell } from "./shell.js";
 import { montarSelectorVerComo, bloqueaSiImpersona, deshabilitarControlesDeEscritura } from "./ver-como.js";
 import { montarSelectorPrueba } from "./prueba.js";
 import { conPrefijoPrueba } from "./prueba-data.js";
@@ -274,6 +275,7 @@ function montarSidebar(perfil) {
 }
 
 protegerPagina(null, async ({ user, perfil }) => {
+  montarShell(contextoActual({ user, perfil }));
   // `sesion` guarda la identidad EFECTIVA (la de "Ver como" si está activo).
   // Toda lectura de este archivo debe usar sesion.uid/sesion.perfil; toda
   // ESCRITURA que registre "quién hizo esto" debe usar sesion.real (la

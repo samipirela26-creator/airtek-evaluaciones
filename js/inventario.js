@@ -7,6 +7,7 @@
 
 import { db, toast, logAudit } from "./firebase.js";
 import { protegerPagina, contextoActual } from "./session.js";
+import { montarShell } from "./shell.js";
 import { misSupervisores, traerPorLotes } from "./consultas.js";
 import { bloqueaSiImpersona, deshabilitarControlesDeEscritura } from "./ver-como.js";
 import {
@@ -52,6 +53,7 @@ function setMsg(id, tipo, texto) {
 }
 
 protegerPagina(["supervisor", "coordinador"], async (s) => {
+  montarShell(contextoActual(s));
   sesion = contextoActual(s);
   const esCoord = sesion.perfil.rol === "coordinador";
   document.getElementById("sup-info").textContent = esCoord

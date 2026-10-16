@@ -1,6 +1,7 @@
 // evaluacion.js — renderiza la plantilla, recoge respuestas, calcula puntajes y guarda.
 import { db, toast } from "./firebase.js";
 import { protegerPagina, contextoActual } from "./session.js";
+import { montarShell } from "./shell.js";
 import { bloqueaSiImpersona, deshabilitarControlesDeEscritura } from "./ver-como.js";
 import { cargarPlantillasDeCoordinador, opcionesDeSeccion, PLANTILLA_DEFAULT } from "./plantilla.js";
 import {
@@ -30,6 +31,7 @@ let evalCargada = null; // datos de la evaluación que se está editando
 
 // Solo supervisores evalúan.
 protegerPagina("supervisor", async (s) => {
+  montarShell(contextoActual(s));
   sesion = contextoActual(s);
   const forms = await cargarPlantillasDeCoordinador(db, sesion.perfil.coordinadorUid);
   // Solo formularios para evaluar TÉCNICOS (no los privados de supervisores).

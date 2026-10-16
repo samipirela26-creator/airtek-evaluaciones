@@ -98,9 +98,25 @@ test('los enlaces locales del HTML existen', () => {
 
 // ── 5. Las páginas nuevas están enlazadas desde algún sitio ─────────────
 // Una página a la que no se llega es una página que no existe para el usuario.
-test('las páginas del módulo están enlazadas desde el panel', () => {
-    const panel = fs.readFileSync(path.join(RAIZ, 'js', 'panel.js'), 'utf8');
+// La navegación vive ahora en js/navegacion.js (la tabla de pantallas por
+// rol); js/panel.js sigue enlazando algunas desde sus tarjetas. Vale
+// cualquiera de los dos: lo que importa es que se pueda llegar.
+test('las páginas del módulo están enlazadas desde algún sitio', () => {
+    const fuentes = ['navegacion.js', 'panel.js']
+        .map((f) => fs.readFileSync(path.join(RAIZ, 'js', f), 'utf8'))
+        .join('\n');
     for (const pagina of ['bitacora-tablero.html', 'inventario.html', 'reporte-herramientas.html']) {
-        assert.ok(panel.includes(pagina), `nadie enlaza a ${pagina} desde el panel`);
+        assert.ok(fuentes.includes(pagina), `nadie enlaza a ${pagina}`);
+    }
+});
+
+// ── 6. La tabla de navegación no apunta a páginas que no existen ────────
+// Un botón del dock que lleva a un 404 es peor que no tener el botón.
+test('cada pantalla de js/navegacion.js tiene su archivo', () => {
+    const nav = fs.readFileSync(path.join(RAIZ, 'js', 'navegacion.js'), 'utf8');
+    const archivos = [...nav.matchAll(/archivo: "([^"]+)"/g)].map((m) => m[1]);
+    assert.ok(archivos.length > 0, 'la tabla de navegación está vacía');
+    for (const archivo of archivos) {
+        assert.ok(fs.existsSync(path.join(RAIZ, archivo)), `navegacion.js apunta a ${archivo}, que no existe`);
     }
 });

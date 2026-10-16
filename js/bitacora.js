@@ -1,6 +1,7 @@
 // bitacora.js — Controlador de Bitácora de Supervisión (Paso 1 y Paso 2).
 import { db, toast, logAudit } from "./firebase.js";
 import { protegerPagina, contextoActual } from "./session.js";
+import { montarShell } from "./shell.js";
 import { bloqueaSiImpersona, deshabilitarControlesDeEscritura } from "./ver-como.js";
 import {
   ZONAS,
@@ -41,6 +42,7 @@ function setMsg(elemId, tipo, texto) {
 
 // ── Inicialización y protección de sesión ──
 protegerPagina("supervisor", (s) => {
+  montarShell(contextoActual(s));
   sesion = contextoActual(s);
   document.getElementById("sup-info").textContent = `Supervisor: ${sesion.perfil.nombre || sesion.real.user.email}`;
   document.getElementById("campo-supervisor").value = sesion.perfil.nombre || sesion.real.user.email;

@@ -2,6 +2,7 @@
 // de coordinador o supervisor, con su propia sesión real, para crear datos
 // inventados y probar flujos completos sin tocar cuentas reales.
 import { activarModoPrueba, salirDeModoPrueba } from "./session.js";
+import { icono } from "./ui/iconos.js";
 
 const ETIQUETA_ROL = { coordinador: "Coordinador", supervisor: "Supervisor" };
 
@@ -12,8 +13,8 @@ export function montarSelectorPrueba(contenedor) {
   if (!contenedor) return;
   contenedor.innerHTML = `
     <div class="btn-row">
-      <button class="btn secundario" id="prueba-btn-coordinador">🧪 Actuar como coordinador</button>
-      <button class="btn secundario" id="prueba-btn-supervisor">🧪 Actuar como supervisor</button>
+      <button class="btn secundario" id="prueba-btn-coordinador">${icono("prueba", 16)} Actuar como coordinador</button>
+      <button class="btn secundario" id="prueba-btn-supervisor">${icono("prueba", 16)} Actuar como supervisor</button>
     </div>`;
 
   const activar = async (rol) => {
@@ -40,7 +41,7 @@ export function montarAvisoPrueba(prueba) {
   const banner = document.createElement("div");
   banner.className = "banner-modo-prueba";
   banner.innerHTML = `
-    <span>🧪 Modo de prueba activo — actuando como <strong>${rolLabel}</strong></span>
+    <span>${icono("prueba", 16)} Modo de prueba activo — actuando como <strong>${rolLabel}</strong></span>
     <button type="button" id="btn-salir-modo-prueba">Salir del modo de prueba</button>`;
   topbar.insertAdjacentElement("afterend", banner);
 

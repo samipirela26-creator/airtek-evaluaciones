@@ -1,6 +1,7 @@
 // detalle.js — muestra una evaluación completa (solo lectura) y la exporta a PDF.
 import { db, toast, logAudit } from "./firebase.js";
 import { protegerPagina, contextoActual } from "./session.js";
+import { montarShell } from "./shell.js";
 import { bloqueaSiImpersona, deshabilitarControlesDeEscritura } from "./ver-como.js";
 import {
   doc,
@@ -19,6 +20,7 @@ let E = null; // la evaluación
 let impersonando = false;
 
 protegerPagina(null, async ({ user, perfil }) => {
+  montarShell(contextoActual({ user, perfil }));
   impersonando = contextoActual({ user, perfil }).impersonando;
   const cont = document.getElementById("detalle");
   if (!id) {

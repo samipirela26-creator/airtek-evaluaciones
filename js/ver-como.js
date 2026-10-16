@@ -3,6 +3,7 @@
 import { db, toast } from "./firebase.js";
 import { activarVerComo, salirDeVerComo } from "./session.js";
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+import { icono } from "./ui/iconos.js";
 
 function esc(s) {
   return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
@@ -42,7 +43,7 @@ export async function montarSelectorVerComo(contenedor) {
   contenedor.innerHTML = `
     <div class="add-row" style="align-items:center">
       <select id="ver-como-select" style="flex:1">
-        <option value="">👁️ Ver como…</option>
+        <option value="">Ver como…</option>
         ${objetivos
           .map(
             (o) =>
@@ -79,7 +80,7 @@ export function montarAvisoVerComo(verComo) {
   const banner = document.createElement("div");
   banner.className = "banner-ver-como";
   banner.innerHTML = `
-    <span>👁️ Viendo como <strong>${esc(verComo.nombre)}</strong> (${esc(rolLabel)})</span>
+    <span>${icono("ojo", 16)} Viendo como <strong>${esc(verComo.nombre)}</strong> (${esc(rolLabel)})</span>
     <button type="button" id="btn-volver-mi-cuenta">Volver a mi cuenta</button>`;
   topbar.insertAdjacentElement("afterend", banner);
 

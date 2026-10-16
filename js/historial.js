@@ -1,6 +1,8 @@
 // historial.js — muestra todas las evaluaciones de un técnico y su evolución.
 import { db } from "./firebase.js";
-import { protegerPagina } from "./session.js";
+import { protegerPagina, contextoActual } from "./session.js";
+import { montarShell } from "./shell.js";
+import { renderLista } from "./ui/listas.js";
 import {
   doc,
   getDoc,
@@ -16,7 +18,8 @@ function esc(s) {
 
 const tecnicoId = new URLSearchParams(location.search).get("tecnico");
 
-protegerPagina(null, async () => {
+protegerPagina(null, async (s) => {
+  montarShell(contextoActual(s));
   if (!tecnicoId) {
     document.getElementById("lista-evals").innerHTML = `<div class="msg error">Falta el técnico.</div>`;
     return;
@@ -76,16 +79,21 @@ protegerPagina(null, async () => {
     },
   });
 
-  // Lista (recientes primero)
-  const html = [...evals].reverse().map((e) => {
-    const fecha = e.createdAt?.toDate ? e.createdAt.toDate().toLocaleString("es-VE") : "";
-    const prom = e.puntajes?.promedioGeneral;
-    const badge = prom != null ? `${prom.toFixed(2)} / 10` : "—";
-    return `<div class="lista-item">
-      <div><strong>${esc(e.area) || ""}</strong>
-        <div class="meta">${esc(e.motivo) || "s/motivo"} · Supervisor: ${esc(e.supervisorNombre) || ""}<br>${fecha}</div>
-      </div>
-      <span class="badge">${badge}</span></div>`;
-  }).join("");
-  document.getElementById("lista-evals").innerHTML = html;
+  // Lista (recientes primero), acotada: nunca un muro de evaluaciones.
+  renderLista({
+    nodo: document.getElementById("lista-evals"),
+    items: [...evals].reverse(),
+    unidad: "evaluación",
+    comoAfinar: "Son las más recientes. Para ver las viejas, exportá el historial completo.",
+    pintar: (e) => {
+      const fecha = e.createdAt?.toDate ? e.createdAt.toDate().toLocaleString("es-VE") : "";
+      const prom = e.puntajes?.promedioGeneral;
+      const badge = prom != null ? `${prom.toFixed(2)} / 10` : "—";
+      return `<div class="lista-item">
+        <div><strong>${esc(e.area) || ""}</strong>
+          <div class="meta">${esc(e.motivo) || "s/motivo"} · Supervisor: ${esc(e.supervisorNombre) || ""}<br>${fecha}</div>
+        </div>
+        <span class="badge">${badge}</span></div>`;
+    },
+  });
 });

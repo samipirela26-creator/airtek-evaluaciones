@@ -4,6 +4,7 @@
 
 import { db } from "./firebase.js";
 import { protegerPagina, contextoActual } from "./session.js";
+import { montarShell } from "./shell.js";
 import { misSupervisores, traerPorLotes } from "./consultas.js";
 import { barChart, donaChart, acortar, AZUL } from "./graficas.js";
 import { filasACSV, descargarCSV, nombreConFecha } from "./exportar-csv.js";
@@ -30,6 +31,7 @@ function primerDiaDelMes() {
 }
 
 protegerPagina("coordinador", async ({ user, perfil }) => {
+  montarShell(contextoActual({ user, perfil }));
   const sesion = contextoActual({ user, perfil });
   const vacio = document.getElementById("vacio");
   vacio.innerHTML = `<div class="card lista-vacia">Cargando bitácoras…</div>`;

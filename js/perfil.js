@@ -1,6 +1,7 @@
 // perfil.js — editar el propio nombre y correo, y (coordinador) el nombre de los supervisores.
 import { auth, db } from "./firebase.js";
 import { protegerPagina, contextoActual } from "./session.js";
+import { montarShell } from "./shell.js";
 import { bloqueaSiImpersona, deshabilitarControlesDeEscritura } from "./ver-como.js";
 import {
   updateEmail,
@@ -31,6 +32,7 @@ let sesion = null;
 let impersonando = false;
 
 protegerPagina(null, async ({ user, perfil }) => {
+  montarShell(contextoActual({ user, perfil }));
   sesion = { user, perfil };
   impersonando = contextoActual({ user, perfil }).impersonando;
   document.getElementById("mi-nombre").value = perfil.nombre || "";

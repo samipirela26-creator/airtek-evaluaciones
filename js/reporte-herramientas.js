@@ -4,6 +4,7 @@
 
 import { db } from "./firebase.js";
 import { protegerPagina, contextoActual } from "./session.js";
+import { montarShell } from "./shell.js";
 import { misSupervisores, traerPorLotes } from "./consultas.js";
 import { filasACSV, descargarCSV, nombreConFecha } from "./exportar-csv.js";
 import {
@@ -21,6 +22,7 @@ function esc(s) {
 }
 
 protegerPagina("coordinador", async ({ user, perfil }) => {
+  montarShell(contextoActual({ user, perfil }));
   const sesion = contextoActual({ user, perfil });
   const aviso = document.getElementById("aviso");
   aviso.innerHTML = `<div class="lista-vacia">Cargando inventarios…</div>`;

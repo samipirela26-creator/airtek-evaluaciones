@@ -21,6 +21,28 @@ const CLAVE = "airtek_novedades_vistas";
  */
 export const VERSIONES = [
   {
+    version: "2.4.0",
+    fecha: "2026-10-16",
+    titulo: "La misma app, más cómoda de usar",
+    cambios: {
+      todos: [
+        "Ahora hay una <strong>barra fija abajo</strong> en todas las pantallas, con los accesos de tu perfil: ya no hace falta volver al panel para ir a otro lado.",
+        "Los títulos son más grandes y los botones más fáciles de tocar con una sola mano, pensando en el uso en la calle.",
+        "El botón de volver ahora se ve. Antes quedaba blanco sobre fondo blanco en varias pantallas y había que adivinar dónde estaba.",
+        "Las listas largas muestran una cantidad razonable y te dicen cuántas quedan, en vez de crecer sin fin.",
+      ],
+      supervisor: [
+        "Desde cualquier pantalla llegás a tu bitácora, al inventario o a una evaluación nueva con un solo toque.",
+      ],
+      coordinador: [
+        "Métricas, tablero e inventario quedan a un toque desde donde estés; lo demás está en el botón Más.",
+      ],
+      root: [
+        "La auditoría y tu cuenta quedan a un toque desde cualquier pantalla.",
+      ],
+    },
+  },
+  {
     version: "2.3.0",
     fecha: "2026-09-18",
     titulo: "Nuevo panel para computadora y teléfono",

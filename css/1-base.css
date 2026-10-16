@@ -1,0 +1,144 @@
+/* 1-base.css — tokens, reset y tipografía.
+ *
+ * EL NÚMERO ES LA CASCADA. Si cambias el orden de los <link> en los .html,
+ * cambias los estilos. El orden es: 1-base, 2-layout, 3-componentes, 4-pantallas.
+ *
+ * Estilo: los colores son los del DESIGN.md de GESTO (azul eléctrico sobre
+ * gris hielo antideslumbrante, pensado para leerse a pleno sol). La forma de
+ * usarlos viene de Mis Detallitos: bloques de color llenos, titulares enormes
+ * y CERO sombras en reposo — el color separa las piezas, no la sombra. Bajo el
+ * sol una sombra suave no se ve de todos modos.
+ *
+ * El login NO usa este archivo. Vive aislado en css/login.css a propósito.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap');
+
+:root {
+  /* --- Fuentes --- */
+  --fuente-titulo: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --fuente-cuerpo: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* --- Tokens oficiales DESIGN.md — Edición Exteriores / Campo --- */
+  --azul-airtek: #0066ff;       /* azul insignia oficial. Blanco encima: 4,83:1 */
+  --azul-hover: #0047b3;        /* 8,23:1 sobre blanco — el de los rótulos chicos */
+  --azul-suave: #dbeafe;        /* relleno de chips, pestañas y etiquetas informativas */
+  --sobre-azul: #ffffff;        /* texto encima de un bloque azul lleno */
+  --cian-acento: #00ccfc;       /* cian de fibra. DECORATIVO: nunca como texto */
+  --fondo-campo: #f4f6fa;       /* gris hielo antideslumbrante */
+  --tarjeta-bg: #ffffff;        /* blanco puro satín */
+  --tarjeta-borde: #e2e8f0;     /* borde pizarra claro 1px */
+  --texto-primario: #0f172a;    /* carbón navy ultra-profundo */
+  --texto-secundario: #475569;  /* pizarra medio */
+
+  /* Semánticos, cada uno con su relleno suave y su texto legible encima.
+     El par suave+texto es lo que usan .etiqueta y .msg: un relleno claro con
+     texto oscuro pasa el contraste, un relleno saturado con texto blanco no
+     siempre. */
+  --ok: #059669;                --ok-suave: #d1fae5;           --ok-texto: #065f46;
+  --advertencia: #ea580c;       --advertencia-suave: #ffedd5;  --advertencia-texto: #9a3412;
+  --error: #dc2626;             --error-suave: #fee2e2;        --error-texto: #991b1b;
+  --prueba: #7c3aed;            --prueba-suave: #ede9fe;       --prueba-texto: #5b21b6;
+
+  /* --- Compatibilidad: los usan el JS y el HTML existentes. No renombrar. --- */
+  --azul: var(--azul-airtek);
+  --azul-osc: var(--azul-hover);
+  --negro: var(--texto-primario);
+  --gris: var(--fondo-campo);
+  --borde: var(--tarjeta-borde);
+  --texto: var(--texto-primario);
+  --texto2: var(--texto-secundario);
+
+  /* --- Forma y elevación ---
+     Sin sombras en reposo. Sólo los diálogos y los avisos flotantes levantan
+     del papel, porque tienen que leerse por encima de todo lo demás. */
+  --sombra: none;
+  --sombra-card: none;
+  --sombra-btn: none;
+  --sombra-alta: 0 18px 40px -8px rgba(15, 23, 42, 0.28);
+  --radio-bento: 20px;
+  --radio-card: 18px;
+  --radio-chico: 14px;
+  --pildora: 9999px;
+
+  /* --- Medidas ---
+     --toque es el mínimo táctil del DESIGN.md §6: nada interactivo baja de ahí. */
+  --toque: 48px;
+  --toque-min: 44px;
+  --ancho: 1040px;
+
+  /* Espaciado, para dejar de hardcodear rem y px mezclados. */
+  --esp-xs: 0.4rem;
+  --esp-sm: 0.65rem;
+  --esp-md: 1rem;
+  --esp-lg: 1.5rem;
+  --esp-xl: 2rem;
+
+  /* Hueco que el dock flotante reserva al pie del contenido. */
+  --hueco-dock: calc(var(--toque) + 4.5rem + env(safe-area-inset-bottom));
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--fuente-cuerpo);
+  background: var(--fondo-campo);
+  color: var(--texto-primario);
+  line-height: 1.5;
+  overflow-x: hidden;            /* DESIGN.md §6: nada se desborda a los lados */
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: contain;
+}
+
+/* Los titulares cargan la pantalla. En GESTO el <h1> de cada página YA es su
+   título, así que es él quien se agranda: el titular es la pantalla. */
+h1, h2, h3 {
+  font-family: var(--fuente-titulo);
+  color: var(--texto-primario);
+  font-weight: 700;
+}
+h1 {
+  font-size: 2.1rem;
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 0.98;
+  margin: 0 0 0.5rem;
+}
+h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: 10px;
+  letter-spacing: -0.01em;
+}
+h3 { font-size: 1.02rem; font-weight: 700; }
+
+p { margin: 0 0 0.75rem; }
+
+a { color: var(--azul-hover); text-decoration: none; font-weight: 500; }
+a:hover { text-decoration: underline; }
+
+/* Cifras: tabulares, para que no bailen al actualizarse. */
+.cifra, .valor, td.num, th.num,
+input[inputmode="decimal"], input[inputmode="numeric"] {
+  font-family: var(--fuente-titulo);
+  font-variant-numeric: tabular-nums;
+}
+
+.oculto { display: none !important; }
+.solo-lectores {
+  position: absolute; width: 1px; height: 1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+/* Foco visible y consistente en todo lo que se puede enfocar. */
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.45);
+  border-radius: var(--radio-chico);
+}
+
+@media (min-width: 700px) {
+  h1 { font-size: 2.6rem; }
+}

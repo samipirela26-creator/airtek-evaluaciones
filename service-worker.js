@@ -3,11 +3,15 @@
 // trae lo más nuevo (adiós al problema del caché / Ctrl+Shift+R); si no hay
 // señal, responde desde la copia guardada.
 // Sube este número en cada despliegue para avisar "nueva versión" a los usuarios.
-const CACHE = "gesto-v1";
+const CACHE = "gesto-v3";
 const CORE = [
   "./",
   "./index.html",
-  "./css/styles.css",
+  "./css/login.css",
+  "./css/1-base.css",
+  "./css/2-layout.css",
+  "./css/3-componentes.css",
+  "./css/4-pantallas.css",
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png",

@@ -3,10 +3,12 @@
 // La actividad de campo se mide aparte, en bitacora-tablero.js.
 import { db } from "./firebase.js";
 import { protegerPagina, contextoActual } from "./session.js";
+import { montarShell } from "./shell.js";
 import { misSupervisores, traerPorLotes } from "./consultas.js";
 import { barChart, AZUL, PALETA, SIN_DATOS } from "./graficas.js";
 
 protegerPagina("coordinador", async ({ user, perfil }) => {
+  montarShell(contextoActual({ user, perfil }));
   const sesion = contextoActual({ user, perfil });
   // ── Estado de carga ──
   const vacio = document.getElementById("vacio");

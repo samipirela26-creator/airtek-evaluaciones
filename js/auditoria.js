@@ -1,6 +1,8 @@
 // auditoria.js — el root ve el registro de actividad.
 import { db } from "./firebase.js";
-import { protegerPagina, cargarPerfil } from "./session.js";
+import { protegerPagina, cargarPerfil, contextoActual } from "./session.js";
+import { montarShell } from "./shell.js";
+import { renderLista, TOPE } from "./ui/listas.js";
 import {
   collection,
   query,
@@ -33,7 +35,8 @@ const ACCIONES = {
   modo_prueba_fin: "Modo de prueba: fin",
 };
 
-protegerPagina("root", async () => {
+protegerPagina("root", async (s) => {
+  montarShell(contextoActual(s));
   const cont = document.getElementById("lista-audit");
   try {
     const snap = await getDocs(query(collection(db, "auditoria"), orderBy("en", "desc"), limit(200)));
@@ -42,9 +45,12 @@ protegerPagina("root", async () => {
       return;
     }
     // Cache de nombres de usuario para mostrar quién hizo cada acción.
+    // Se recorta ANTES del bucle a propósito: resolver el nombre de cada uno
+    // de los 200 movimientos son 200 lecturas a Firestore para filas que
+    // igual no se van a pintar.
     const nombres = {};
     const filas = [];
-    for (const d of snap.docs) {
+    for (const d of snap.docs.slice(0, TOPE)) {
       const a = d.data();
       let quien = "—";
       if (a.uid) {
@@ -61,7 +67,16 @@ protegerPagina("root", async () => {
           <div class="meta">${esc(quien)} · ${fecha}${detalle ? "<br>" + detalle : ""}</div>
         </div></div>`);
     }
-    cont.innerHTML = filas.join("");
+    // `items` son todos los documentos traídos, pero sólo se pintan los
+    // primeros: así el aviso puede decir "25 de 200" con el total de verdad.
+    renderLista({
+      nodo: cont,
+      items: snap.docs,
+      tope: TOPE,
+      unidad: "movimiento",
+      comoAfinar: "Son los más recientes. La auditoría guarda todo, pero se lee de a poco.",
+      pintar: (_d, i) => filas[i],
+    });
   } catch (err) {
     console.error(err);
     cont.innerHTML = `<div class="msg error">No se pudo cargar. Si menciona un "index", abre el enlace de la consola (F12) para crearlo.</div>`;
