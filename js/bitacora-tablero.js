@@ -5,7 +5,7 @@
 import { db } from "./firebase.js";
 import { protegerPagina, contextoActual } from "./session.js";
 import { montarShell } from "./shell.js";
-import { misSupervisores, traerPorLotes } from "./consultas.js";
+import { misSupervisores, traerPorLotes, haceMeses } from "./consultas.js";
 import { barChart, donaChart, acortar, AZUL } from "./graficas.js";
 import { filasACSV, descargarCSV, nombreConFecha } from "./exportar-csv.js";
 import {
@@ -39,8 +39,12 @@ protegerPagina("coordinador", async ({ user, perfil }) => {
   let supervisores = [];
   try {
     supervisores = await misSupervisores(db, sesion.uid);
-    const uids = supervisores.map((s) => s.uid);
-    todas = await traerPorLotes(db, "bitacoras", "supervisorUid", uids);
+    uidsSupervisores = supervisores.map((s) => s.uid);
+    // Se baja el último año, no la historia entera: el filtro de arriba
+    // arranca en el mes en curso, así que traer años de bitácoras para
+    // mostrar un mes era tiempo y datos del teléfono tirados. Si alguien
+    // pide una fecha más vieja, `asegurarRango` las busca entonces.
+    await cargarDesde(haceMeses(12));
   } catch (err) {
     console.error(err);
     vacio.innerHTML = `<div class="msg error">No se pudieron cargar las bitácoras: ${esc(err.message)}</div>`;
@@ -69,7 +73,7 @@ protegerPagina("coordinador", async ({ user, perfil }) => {
   document.getElementById("f-hasta").value = hoyISO();
 
   ["f-desde", "f-hasta", "f-supervisor", "f-zona"].forEach((id) =>
-    document.getElementById(id).addEventListener("change", pintar)
+    document.getElementById(id).addEventListener("change", asegurarRango)
   );
   document.getElementById("btn-mes-actual").addEventListener("click", () => {
     document.getElementById("f-desde").value = primerDiaDelMes();
@@ -79,7 +83,7 @@ protegerPagina("coordinador", async ({ user, perfil }) => {
   document.getElementById("btn-todo").addEventListener("click", () => {
     document.getElementById("f-desde").value = "";
     document.getElementById("f-hasta").value = "";
-    pintar();
+    asegurarRango();
   });
   document.getElementById("btn-exportar").addEventListener("click", exportar);
 
@@ -89,6 +93,37 @@ protegerPagina("coordinador", async ({ user, perfil }) => {
   }
   pintar();
 });
+
+// Hasta dónde atrás llega lo que ya tenemos bajado. null = todo.
+let pisoCargado = null;
+let uidsSupervisores = [];
+
+async function cargarDesde(piso) {
+  todas = await traerPorLotes(db, "bitacoras", "supervisorUid", uidsSupervisores,
+    piso ? { campoFecha: "fecha", desde: piso } : {});
+  pisoCargado = piso;
+}
+
+/** Si el filtro pide fechas más viejas de lo que tenemos bajado, va a
+ *  buscarlas antes de pintar. Si no, pinta directo: filtrar dentro de lo que
+ *  ya está en memoria es instantáneo y así se siente. */
+async function asegurarRango() {
+  const desde = document.getElementById("f-desde").value || null;
+  const faltan = pisoCargado !== null && (desde === null || desde < pisoCargado);
+  if (faltan) {
+    const vacio = document.getElementById("vacio");
+    vacio.innerHTML = `<div class="card lista-vacia">Buscando bitácoras más antiguas…</div>`;
+    try {
+      await cargarDesde(desde);
+      vacio.innerHTML = "";
+    } catch (err) {
+      console.error(err);
+      vacio.innerHTML = `<div class="msg error">No se pudieron cargar: ${esc(err.message)}</div>`;
+      return;
+    }
+  }
+  pintar();
+}
 
 function filtroActual() {
   return {

@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Genera las páginas de PREVISUALIZACIÓN a partir de las reales.
 # Reescribe rutas a absolutas y redirige firebase.js/session.js/CDN a los mocks.
+# Quita los <link rel="modulepreload">: apuntan a js/ con ruta relativa (que
+# aquí daría /preview/js/, un 404) y además precargarían los módulos reales,
+# que el importmap de abajo reemplaza por los mocks. En producción sí sirven.
 # Vuelve a correrlo cada vez que cambies el HTML de alguna página real.
 set -euo pipefail
 cd "$(dirname "$0")/.."   # raíz del repo
@@ -19,6 +22,7 @@ for f in *.html; do
   [ "$f" = "index.html" ] && continue   # el index de preview es el menú (hecho a mano)
   awk -v im="$IMPORTMAP" '{ print } /<head>/ { print im }' "$f" \
     | sed -E \
+        -e '/rel="modulepreload"/d' \
         -e 's#href="css/#href="/css/#g' \
         -e 's#src="js/#src="/js/#g' \
         -e 's#src="img/#src="/img/#g' \

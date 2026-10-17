@@ -1,6 +1,6 @@
 // perfil.js — editar el propio nombre y correo, y (coordinador) el nombre de los supervisores.
 import { auth, db } from "./firebase.js";
-import { protegerPagina, contextoActual } from "./session.js";
+import { protegerPagina, contextoActual, olvidarPerfil } from "./session.js";
 import { montarShell } from "./shell.js";
 import { bloqueaSiImpersona, deshabilitarControlesDeEscritura } from "./ver-como.js";
 import {
@@ -57,6 +57,7 @@ async function guardarNombre() {
   if (!nombre) return set("msg-nombre", "error", "El nombre no puede quedar vacío.");
   try {
     await updateDoc(doc(db, "usuarios", sesion.user.uid), { nombre });
+    olvidarPerfil(); // si no, la cabecera seguiría mostrando el nombre viejo
     set("msg-nombre", "ok", "✔ Nombre actualizado.");
   } catch (err) {
     set("msg-nombre", "error", "No se pudo: " + err.message);

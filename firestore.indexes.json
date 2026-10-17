@@ -1,0 +1,23 @@
+{
+  "indexes": [
+    {
+      "comment": "Tablero de bitácora: las bitácoras de varios supervisores acotadas por fecha. Sin esto, la consulta de js/bitacora-tablero.js cae de vuelta a traerse la colección entera.",
+      "collectionGroup": "bitacoras",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "supervisorUid", "order": "ASCENDING" },
+        { "fieldPath": "fecha", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "comment": "Métricas de personal: las evaluaciones de varios supervisores acotadas por fecha (js/dashboard.js).",
+      "collectionGroup": "evaluaciones",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "supervisorUid", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

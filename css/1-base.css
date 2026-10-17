@@ -12,7 +12,10 @@
  * El login NO usa este archivo. Vive aislado en css/login.css a propósito.
  */
 
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap');
+/* La fuente se pide con <link> desde el <head> de cada página, NO con
+ * @import. Un @import obliga al navegador a bajar esta hoja y parsearla
+ * antes de descubrir que necesita la fuente: se pedían en fila, no a la
+ * vez. Medido en producción, la fuente arrancaba recién al terminar el CSS. */
 
 :root {
   /* --- Fuentes --- */

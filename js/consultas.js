@@ -29,15 +29,62 @@ export async function misSupervisores(db, coordUid) {
 }
 
 /**
- * Trae todos los documentos de `col` cuyo `campo` esté en `valores`,
- * partiendo la consulta en lotes de 10 y corriéndolos en paralelo.
+ * Trae los documentos de `col` cuyo `campo` esté en `valores`, partiendo la
+ * consulta en lotes de 10 y corriéndolos en paralelo.
+ *
+ * `desde` acota por fecha EN EL SERVIDOR, que es lo importante. Antes esto se
+ * traía la colección entera y el filtro de fechas se aplicaba después, en el
+ * navegador: el tablero bajaba todas las bitácoras de la historia para
+ * mostrar las de este mes. Con el tiempo eso sólo empeora.
+ *
+ * @param {object}   [rango]
+ * @param {string}   [rango.campoFecha] campo por el que acotar ("fecha", "createdAt"…).
+ * @param {*}        [rango.desde]      valor mínimo: un "YYYY-MM-DD" para campos
+ *                                      de texto, un Date para marcas de tiempo.
+ *
+ * OJO: combinar `in` con un rango sobre otro campo necesita un índice
+ * compuesto (ver firestore.indexes.json). Si el índice todavía no está
+ * desplegado, Firestore responde "failed-precondition" y aquí se cae de vuelta
+ * a la consulta sin acotar: más lenta, pero la pantalla funciona igual.
  */
-export async function traerPorLotes(db, col, campo, valores) {
+export async function traerPorLotes(db, col, campo, valores, rango = {}) {
   if (!valores || !valores.length) return [];
-  const resultados = await Promise.all(
-    enLotesDe(valores).map((lote) => getDocs(query(collection(db, col), where(campo, "in", lote))))
-  );
+  const { campoFecha, desde } = rango;
+  const acotar = Boolean(campoFecha && desde != null);
+
+  const correr = (conFecha) =>
+    Promise.all(
+      enLotesDe(valores).map((lote) => {
+        const partes = [where(campo, "in", lote)];
+        if (conFecha) partes.push(where(campoFecha, ">=", desde));
+        return getDocs(query(collection(db, col), ...partes));
+      })
+    );
+
+  let resultados;
+  try {
+    resultados = await correr(acotar);
+  } catch (err) {
+    if (acotar && err && err.code === "failed-precondition") {
+      console.warn(
+        `[consultas] Falta el índice compuesto de ${col} (${campo} + ${campoFecha}). ` +
+          "Se trae sin acotar, que es más lento. Desplegalo con: firebase deploy --only firestore:indexes"
+      );
+      resultados = await correr(false);
+    } else {
+      throw err;
+    }
+  }
+
   const docs = [];
   resultados.forEach((snap) => snap.forEach((d) => docs.push({ id: d.id, ...d.data() })));
   return docs;
+}
+
+/** El "YYYY-MM-DD" de hace `meses` meses. Para acotar por defecto sin tener
+ *  que elegir una fecha a mano en cada pantalla. */
+export function haceMeses(meses) {
+  const d = new Date();
+  d.setMonth(d.getMonth() - meses);
+  return d.toISOString().slice(0, 10);
 }

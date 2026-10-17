@@ -4,7 +4,7 @@
 import { db } from "./firebase.js";
 import { protegerPagina, contextoActual } from "./session.js";
 import { montarShell } from "./shell.js";
-import { misSupervisores, traerPorLotes } from "./consultas.js";
+import { misSupervisores, traerPorLotes, haceMeses } from "./consultas.js";
 import { barChart, AZUL, PALETA, SIN_DATOS } from "./graficas.js";
 
 protegerPagina("coordinador", async ({ user, perfil }) => {
@@ -18,7 +18,12 @@ protegerPagina("coordinador", async ({ user, perfil }) => {
   try {
     // Solo MIS supervisores (no los de otros coordinadores).
     const supUids = (await misSupervisores(db, sesion.uid)).map((s) => s.uid);
-    evals = await traerPorLotes(db, "evaluaciones", "supervisorUid", supUids);
+    // Últimos 12 meses, no la historia entera. Para medir cómo evalúa un
+    // supervisor, lo de hace tres años pesa poco y pesa mucho de bajar.
+    const desde = new Date();
+    desde.setMonth(desde.getMonth() - 12);
+    evals = await traerPorLotes(db, "evaluaciones", "supervisorUid", supUids,
+      { campoFecha: "createdAt", desde });
   } catch (err) {
     vacio.innerHTML = `<div class="msg error">No se pudieron cargar los datos: ${err.message}</div>`;
     return;

@@ -13,12 +13,62 @@ import {
 import { leerVerComo, escribirVerComo, borrarVerComo, contextoEfectivo } from "./ver-como-data.js";
 import { leerPrueba, escribirPrueba, borrarPrueba, contextoEfectivoPrueba } from "./prueba-data.js";
 
+// ── Caché del perfil ────────────────────────────────────────────────────
+// Cada página pedía el perfil a Firestore al cargar: una ida y vuelta al
+// servidor antes de pintar nada, en CADA clic de la navegación. Como el perfil
+// casi nunca cambia, se guarda unos minutos en sessionStorage.
+//
+// Por qué unos minutos y no toda la sesión: si un coordinador inhabilita a
+// alguien o le cambia el rol, el cambio tiene que llegar pronto. Las reglas de
+// Firestore mandan igual —un perfil viejo en el navegador no habilita a
+// escribir nada que el servidor no permita— pero no queremos que la interfaz
+// mienta más de la cuenta.
+const CLAVE_PERFIL = "airtek_perfil";
+const VIGENCIA_PERFIL = 5 * 60 * 1000; // 5 minutos
+
+function perfilGuardado(uid) {
+  try {
+    const crudo = sessionStorage.getItem(CLAVE_PERFIL);
+    if (!crudo) return null;
+    const { uid: guardadoUid, perfil, ts } = JSON.parse(crudo);
+    if (guardadoUid !== uid) return null;
+    if (Date.now() - ts > VIGENCIA_PERFIL) return null;
+    return perfil;
+  } catch {
+    return null; // almacenamiento no disponible o valor corrupto: se pide de nuevo
+  }
+}
+
+function guardarPerfil(uid, perfil) {
+  try {
+    sessionStorage.setItem(CLAVE_PERFIL, JSON.stringify({ uid, perfil, ts: Date.now() }));
+  } catch {
+    /* sin almacenamiento se sigue sin caché, nada más */
+  }
+}
+
+/** Borra el perfil guardado. Se llama al cerrar sesión y cuando el propio
+ *  usuario edita su nombre, para no quedar mostrando el anterior. */
+export function olvidarPerfil() {
+  try {
+    sessionStorage.removeItem(CLAVE_PERFIL);
+  } catch {
+    /* nada que borrar */
+  }
+}
+
 // Lee el perfil del usuario (nombre y rol) desde la colección "usuarios".
 // Cada documento tiene id = uid y campos: { nombre, rol }.
 // rol es "root", "coordinador" o "supervisor".
-export async function cargarPerfil(uid) {
+export async function cargarPerfil(uid, { usarCache = false } = {}) {
+  if (usarCache) {
+    const guardado = perfilGuardado(uid);
+    if (guardado) return guardado;
+  }
   const snap = await getDoc(doc(db, "usuarios", uid));
-  return snap.exists() ? snap.data() : null;
+  const perfil = snap.exists() ? snap.data() : null;
+  if (perfil) guardarPerfil(uid, perfil);
+  return perfil;
 }
 
 // Protege una página: si no hay sesión, redirige al login.
@@ -35,7 +85,7 @@ export function protegerPagina(rolRequerido, callback) {
       window.location.href = "index.html";
       return;
     }
-    const perfil = await cargarPerfil(user.uid);
+    const perfil = await cargarPerfil(user.uid, { usarCache: true });
     if (!perfil) {
       alert(
         "Tu usuario existe pero no tiene perfil (nombre/rol) en la base de datos. Avisa al coordinador."
@@ -79,6 +129,7 @@ export function protegerPagina(rolRequerido, callback) {
 }
 
 export async function cerrarSesion() {
+  olvidarPerfil();
   await signOut(auth);
   window.location.href = "index.html";
 }

@@ -52,13 +52,26 @@ export async function getDocs(q) {
 }
 
 function val(d, f) { return d ? d[f] : undefined; }
+
+// Un timestamp (el de serverTimestamp, o un Date) pasa a milisegundos para
+// poder compararlo. Sin esto, `createdAt >= new Date(...)` comparaba un objeto
+// contra un Date, los dos se volvían texto y el resultado era basura: las
+// consultas acotadas por fecha devolvían cero filas aunque hubiera datos.
+// Los strings "YYYY-MM-DD" se dejan como están: se ordenan bien tal cual.
+function escalar(x) {
+  if (x && typeof x.toDate === "function") return x.toDate().getTime();
+  if (x instanceof Date) return x.getTime();
+  if (x && typeof x.seconds === "number") return x.seconds * 1000;
+  return x;
+}
+
 function matchWhere(v, op, x) {
   switch (op) {
     case "==": return v === x;
     case "!=": return v !== x;
     case "in": return Array.isArray(x) && x.includes(v);
-    case ">=": return v >= x; case "<=": return v <= x;
-    case ">": return v > x; case "<": return v < x;
+    case ">=": return escalar(v) >= escalar(x); case "<=": return escalar(v) <= escalar(x);
+    case ">": return escalar(v) > escalar(x); case "<": return escalar(v) < escalar(x);
     default: return true;
   }
 }
