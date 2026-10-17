@@ -6,6 +6,7 @@ import {
   onAuthStateChanged,
   GoogleAuthProvider,
   signInWithPopup,
+  browserPopupRedirectResolver,
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 
 const form = document.getElementById("form-login");
@@ -79,7 +80,10 @@ if (btnGoogle) {
     msg.innerHTML = "";
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
+      // El resolvedor va acá y no en la inicialización: así la infraestructura
+      // de Google Sign-In se baja recién ahora, al tocar el botón, y no en
+      // cada carga de página. Ver el comentario de js/firebase.js.
+      await signInWithPopup(auth, provider, browserPopupRedirectResolver);
       window.location.href = "panel.html";
     } catch (err) {
       if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") return;

@@ -11,6 +11,9 @@
 import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
 import {
   getAuth,
+  initializeAuth,
+  indexedDBLocalPersistence,
+  browserLocalPersistence,
   createUserWithEmailAndPassword,
   signOut,
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
@@ -31,7 +34,24 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+// initializeAuth en vez de getAuth, a propósito.
+//
+// getAuth() arma la autenticación con el resolvedor de ventanas emergentes ya
+// puesto, y eso hace que al abrir CUALQUIER página se baje la infraestructura
+// de Google Sign-In: api.js de gapi más un iframe oculto. Medido en el login
+// desplegado, eso se llevaba de 706ms a 1734ms — un segundo entero, en la
+// primera pantalla que ve la gente, por un botón que la mayoría no toca.
+//
+// Al inicializar sin resolvedor, ese segundo desaparece. Quien toque
+// "Continuar con Google" lo carga en ese momento: js/login.js le pasa el
+// resolvedor explícitamente a signInWithPopup.
+//
+// La lista de persistencia es la misma que getAuth() usa por omisión en el
+// navegador (IndexedDB primero, localStorage de respaldo): si se cambiara,
+// la gente dejaría de quedar con la sesión iniciada.
+export const auth = initializeAuth(app, {
+  persistence: [indexedDBLocalPersistence, browserLocalPersistence],
+});
 export const db = getFirestore(app);
 
 // Crea una cuenta de acceso (correo+contraseña) SIN cerrar la sesión actual,
