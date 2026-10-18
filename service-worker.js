@@ -15,7 +15,7 @@
 // instalarse, este archivo vuelve a bajar los CORE, borra la caché vieja y
 // toma el control; js/firebase.js además revisa cada hora y avisa con un
 // "Nueva versión disponible".
-const CACHE = "gesto-v5";
+const CACHE = "gesto-v6";
 const CORE = [
   "./",
   "./index.html",

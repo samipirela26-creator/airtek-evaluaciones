@@ -728,3 +728,23 @@ textarea { min-height: 70px; resize: vertical; }
 .signup-link:hover {
   text-decoration: underline;
 }
+
+/* Crédito de autoría.
+ *
+ * Va en el panel del formulario y NO en el panel de marca azul, aunque ahí
+ * estén el badge y el WhatsApp: ese panel se oculta por debajo de 900px, así
+ * que en un teléfono el crédito no se vería — y desde el teléfono es desde
+ * donde entra casi todo el mundo.
+ *
+ * Los colores no son más claros por capricho: #64748b da 4,8:1 sobre blanco y
+ * #475569 da 7,6:1. Un gris más claro se vería mejor y no pasaría contraste. */
+.creador-credito {
+  text-align: center;
+  margin: 18px 0 0;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+.creador-credito strong {
+  color: #475569;
+  font-weight: 600;
+}
