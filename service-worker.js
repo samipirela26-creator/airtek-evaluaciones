@@ -21,7 +21,7 @@
 // Al subir CACHE una línea más abajo, al instalarse se vuelven a bajar los
 // CORE y se borra la caché anterior; js/firebase.js además revisa cada hora y
 // avisa con un "Nueva versión disponible".
-const CACHE = "gesto-v7";
+const CACHE = "gesto-v8";
 const CORE = [
   "./",
   "./index.html",

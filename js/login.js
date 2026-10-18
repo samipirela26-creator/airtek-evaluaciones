@@ -1,5 +1,6 @@
 // login.js — maneja el formulario de acceso.
 import { auth } from "./firebase.js";
+import { cargarPerfil } from "./session.js";
 import {
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
@@ -7,6 +8,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   browserPopupRedirectResolver,
+  signOut,
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 
 const form = document.getElementById("form-login");
@@ -83,10 +85,49 @@ if (btnGoogle) {
       // El resolvedor va acá y no en la inicialización: así la infraestructura
       // de Google Sign-In se baja recién ahora, al tocar el botón, y no en
       // cada carga de página. Ver el comentario de js/firebase.js.
-      await signInWithPopup(auth, provider, browserPopupRedirectResolver);
+      const cred = await signInWithPopup(auth, provider, browserPopupRedirectResolver);
+
+      // Entrar con Google AUTENTICA, pero no da de alta a nadie: el alta es
+      // por invitación (registro.html) o la hace un coordinador. Si esta
+      // cuenta no tiene perfil en "usuarios", no es de GESTO.
+      //
+      // Sin esta comprobación, cualquiera con una cuenta de Google entraba,
+      // se le creaba un usuario en Firebase Auth y recién en el panel se
+      // topaba con un alerta de "no tenés perfil" que no explica nada.
+      let perfil = null;
+      try {
+        perfil = await cargarPerfil(cred.user.uid);
+      } catch (e) {
+        // No se pudo comprobar (sin señal, permisos). NO se asume que no
+        // existe: se cierra sesión y se avisa, nada más.
+        console.warn("No se pudo leer el perfil:", e);
+        await signOut(auth).catch(() => {});
+        msg.innerHTML = `<div class="msg error">No se pudo comprobar tu cuenta. Revisá tu conexión y probá de nuevo.</div>`;
+        return;
+      }
+
+      if (!perfil) {
+        // A propósito NO se borra la cuenta de Firebase Auth que acaba de
+        // crearse: borrar la cuenta de alguien es irreversible y no es algo
+        // que deba pasar solo. Queda huérfana y sin poder hacer nada —las
+        // reglas de Firestore no le permiten leer ni escribir— y Samuel la
+        // puede eliminar desde la consola si le molesta.
+        await signOut(auth).catch(() => {});
+        msg.innerHTML = `<div class="msg error">Esa cuenta de Google no está registrada en GESTO. Pedile a tu coordinador el enlace de invitación.</div>`;
+        return;
+      }
+
       window.location.href = "panel.html";
     } catch (err) {
       if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") return;
+      if (err.code === "auth/account-exists-with-different-credential") {
+        msg.innerHTML = `<div class="msg error">Ese correo ya tiene cuenta con contraseña. Entrá con correo y contraseña.</div>`;
+        return;
+      }
+      if (err.code === "auth/operation-not-allowed") {
+        msg.innerHTML = `<div class="msg error">El acceso con Google no está habilitado en este momento. Entrá con tu correo y contraseña.</div>`;
+        return;
+      }
       msg.innerHTML = `<div class="msg error">No se pudo iniciar sesión con Google: ${err.message}</div>`;
     }
   });
