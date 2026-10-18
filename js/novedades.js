@@ -21,6 +21,28 @@ const CLAVE = "airtek_novedades_vistas";
  */
 export const VERSIONES = [
   {
+    version: "2.5.0",
+    fecha: "2026-10-18",
+    titulo: "Ahora vuela",
+    cambios: {
+      todos: [
+        "Moverse entre pantallas es <strong>inmediato</strong>. Antes cada botón te hacía esperar; ahora la app guarda en tu teléfono lo que no cambia y lo muestra al instante, aunque tengas poca señal.",
+        "La pantalla de entrada abre mucho más rápido: le sacamos un peso que cargaba de más sin que nadie lo usara.",
+        "Si entrás con Google y tu cuenta todavía no está dada de alta, la app te lo dice claro y te indica pedirle el enlace de invitación a tu coordinador, en vez de dejarte a medio camino.",
+      ],
+      supervisor: [
+        "Tu bitácora, el inventario y las evaluaciones abren sin esperas, también en la calle con mala señal.",
+      ],
+      coordinador: [
+        "El tablero de bitácora y las métricas cargan mucho más rápido: ahora traen solo el período que estás mirando, en vez de todo el historial desde el principio.",
+        "Métricas de Personal muestra los <strong>últimos 12 meses</strong>. En el tablero de bitácora, si necesitás mirar más atrás, cambiá la fecha de inicio y la app va a buscar lo que falte.",
+      ],
+      root: [
+        "Las pantallas de administración y la auditoría también abren sin esperas.",
+      ],
+    },
+  },
+  {
     version: "2.4.0",
     fecha: "2026-10-16",
     titulo: "La misma app, más cómoda de usar",
