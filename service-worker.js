@@ -1,21 +1,27 @@
 // service-worker.js — hace la app instalable, offline y rápida.
 //
-// ESTRATEGIA: "stale-while-revalidate" en los archivos propios.
-// Si el archivo ya está guardado, se responde con la copia AL INSTANTE y se
-// baja la versión nueva en segundo plano para la próxima vez.
+// ESTRATEGIA: distinta para la página y para lo que la página carga.
 //
-// Antes era "network-first": cada navegación esperaba a la red aunque el
-// archivo ya estuviera guardado. Eso hacía que tocar cualquier botón se
-// sintiera lento, y en la calle con señal mala, lentísimo. El contenido de
-// verdad (técnicos, evaluaciones, bitácoras) viene de Firestore en cada carga,
-// así que el HTML y el CSS son plantillas: servirlos de la copia guardada no
-// muestra datos viejos, solo la misma cáscara.
+//   - PÁGINAS (.html): la red primero, la copia guardada como respaldo.
+//     Una página pesa unos pocos KB; esperar por ella no se siente. Y así,
+//     cuando se despliega algo nuevo, se ve enseguida.
 //
-// ¿Y cuando sale una versión nueva? Sube CACHE una línea más abajo. Al
-// instalarse, este archivo vuelve a bajar los CORE, borra la caché vieja y
-// toma el control; js/firebase.js además revisa cada hora y avisa con un
-// "Nueva versión disponible".
-const CACHE = "gesto-v6";
+//   - TODO LO DEMÁS (css, js, iconos): la copia guardada AL INSTANTE, y la
+//     versión nueva se baja por detrás para la próxima. Acá es donde estaba
+//     el peso de verdad: cuatro hojas de estilo y una veintena de módulos.
+//
+// Antes TODO era "network-first" y cada navegación esperaba a la red aunque
+// ya tuviera el archivo: tocar cualquier botón se sentía lento, y en la calle
+// con señal mala, lentísimo.
+//
+// Después pasé TODO a "copia primero", HTML incluido, y eso estuvo mal: tras
+// cada despliegue la primera visita mostraba la página vieja. De ahí esta
+// mezcla, que es la que corresponde.
+//
+// Al subir CACHE una línea más abajo, al instalarse se vuelven a bajar los
+// CORE y se borra la caché anterior; js/firebase.js además revisa cada hora y
+// avisa con un "Nueva versión disponible".
+const CACHE = "gesto-v7";
 const CORE = [
   "./",
   "./index.html",
@@ -64,18 +70,27 @@ self.addEventListener("fetch", (e) => {
   // directo a la red y los maneja la caché normal del navegador.
   if (url.origin !== self.location.origin) return;
 
+  // Una página siempre se pide a la red: es chica y así lo nuevo se ve ya.
+  // Sin señal, se cae a la copia guardada.
+  if (req.mode === "navigate" || req.destination === "document") {
+    e.respondWith(
+      revalidar(req).then(
+        (res) => res || caches.match(req).then((g) => g || caches.match("./index.html"))
+      )
+    );
+    return;
+  }
+
+  // El resto (css, js, iconos): la copia al instante si la hay.
   e.respondWith(
     caches.match(req).then((guardado) => {
-      const red = revalidar(req);
-      // Si ya lo tenemos, se responde al instante; la red actualiza por detrás.
-      if (guardado) return guardado;
-      // Primera vez: hay que esperar a la red. Si no hay señal y es una
-      // navegación, al menos mostramos algo en vez de la pantalla de error.
-      return red.then((res) => {
-        if (res) return res;
-        if (req.mode === "navigate") return caches.match("./index.html");
-        return new Response("", { status: 504, statusText: "Sin conexión" });
-      });
+      if (guardado) {
+        revalidar(req); // se actualiza por detrás, sin hacer esperar
+        return guardado;
+      }
+      return revalidar(req).then(
+        (res) => res || new Response("", { status: 504, statusText: "Sin conexión" })
+      );
     })
   );
 });
